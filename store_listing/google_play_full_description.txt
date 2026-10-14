@@ -30,10 +30,6 @@ Play the wider world:
 
 Time runs on a game clock: each month that passes closes your books, and your loans and leases amortize a payment at a time. Set a game year to last anywhere from 15 minutes to 24 hours, for a quick game or a patient one.
 
-Never lost? The Help tab explains every part of the game, from founding your airline to configuring cabin seats and assigning aircraft. The Information tab lets you send a message straight to the developer and read the responses you have received.
+Maintenance Manager helps you keep everyday maintenance records organized. Use Home, Favorites and Profile to navigate the app, open Application DB to add, edit or delete records, and visit Information for Contact and Submissions. Play on Android, Web or Windows.
 
-The Help tab guides you through the game; Information lets you contact the developer and read responses. Play on Android, Web or Windows.
-
-Airline Investor is designed to be approachable and deep. Prices, distances and revenue are estimated for you, so you can focus on the decisions: which cities to connect, which aircraft to fly, and how to grow a small carrier into a worldwide airline. Your progress saves automatically, and every tab can be imported and exported as CSV if you want to inspect or edit the numbers yourself.
-
-Start with one aircraft and one route - and see how far your airline can fly.
+Maintenance Manager is designed to make it easy to keep application-related records in one place. Your Application DB records are stored locally on your device.
