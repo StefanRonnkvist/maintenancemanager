@@ -1,7 +1,7 @@
 name: maintenancemanager
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.2+3
 
 environment:
   sdk: ^3.13.4
@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   http: ^1.5.0
   package_info_plus: ^9.0.0
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +20,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+msix_config:
+  msix_version: 0.1.2.3

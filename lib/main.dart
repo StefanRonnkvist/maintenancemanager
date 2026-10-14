@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'contact/contact_page.dart';
+import 'contact/submissions_csv_page.dart';
+import 'db/application_db_page.dart';
 
 void main() {
   runApp(const MainApp());
@@ -12,7 +14,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tabbed App',
+      title: 'Maintenance Manager',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
@@ -38,6 +40,7 @@ class _TabBarViewPageState extends State<TabBarViewPage>
     _TabItem(label: 'Favorites', icon: Icons.favorite_outline),
     _TabItem(label: 'Profile', icon: Icons.person_outline),
     _TabItem(label: 'Information', icon: Icons.info_outline),
+    _TabItem(label: 'Application DB', icon: Icons.storage_outlined),
   ];
 
   @override
@@ -56,7 +59,7 @@ class _TabBarViewPageState extends State<TabBarViewPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My App'),
+        title: const Text('Maintenance Manager'),
         bottom: TabBar(
           controller: _tabController,
           tabs: _tabs
@@ -67,7 +70,7 @@ class _TabBarViewPageState extends State<TabBarViewPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          ..._tabs.take(_tabs.length - 1).map(
+          ..._tabs.take(3).map(
                 (tab) => Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -86,10 +89,43 @@ class _TabBarViewPageState extends State<TabBarViewPage>
                   ),
                 ),
               ),
-          ContactPage(
-            serverUri: Uri.https('stefanronnkvist.com', '/contact'),
-            showAppBar: false,
-            wrapInScaffold: false,
+          const _InformationTabs(),
+          const ApplicationDbPage(),
+        ],
+      ),
+    );
+  }
+}
+
+class _InformationTabs extends StatelessWidget {
+  const _InformationTabs();
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: <Widget>[
+          const Material(
+            color: Colors.transparent,
+            child: TabBar(
+              tabs: <Widget>[
+                Tab(icon: Icon(Icons.contact_support_outlined), text: 'Contact'),
+                Tab(icon: Icon(Icons.receipt_long_outlined), text: 'Submissions'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              children: <Widget>[
+                ContactPage(
+                  serverUri: Uri.https('stefanronnkvist.com', '/contact'),
+                  showAppBar: false,
+                  wrapInScaffold: false,
+                ),
+                SubmissionsCsvCardsView(),
+              ],
+            ),
           ),
         ],
       ),
