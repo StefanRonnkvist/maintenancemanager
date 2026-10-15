@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
-import '../models/ui_text_catalog.dart';
 import '../tabs/business_tab.dart';
 import 'form_section.dart';
 
@@ -9,14 +8,12 @@ class BusinessForm extends StatefulWidget {
   const BusinessForm({
     required this.kind,
     required this.businesses,
-    required this.text,
     required this.onSubmit,
     super.key,
   });
 
   final BusinessTabKind kind;
   final List<BusinessEntry> businesses;
-  final UiTextCatalog text;
   final ValueChanged<BusinessEntry> onSubmit;
 
   @override
@@ -42,11 +39,8 @@ class _BusinessFormState extends State<BusinessForm> {
   String? _selectedAirport;
   String? _businessType;
   bool _remoteWork = false;
-  bool _businessFormExpanded = false;
-  bool _peopleFormExpanded = false;
 
   bool get _isPeople => widget.kind == BusinessTabKind.people;
-  String get _tabKey => _isPeople ? 'people' : 'business';
 
   @override
   void dispose() {
@@ -96,8 +90,8 @@ class _BusinessFormState extends State<BusinessForm> {
           initialValue: _airports.contains(_selectedAirport)
               ? _selectedAirport
               : null,
-          decoration: InputDecoration(
-            labelText: widget.text.fieldLabel(_tabKey, 'nearestAirport'),
+          decoration: const InputDecoration(
+            labelText: 'Nearest Airport',
             border: OutlineInputBorder(),
           ),
           items: _airports
@@ -113,8 +107,8 @@ class _BusinessFormState extends State<BusinessForm> {
         width: 220,
         child: TextField(
           controller: _airportController,
-          decoration: InputDecoration(
-            labelText: widget.text.fieldLabel(_tabKey, 'addAirport'),
+          decoration: const InputDecoration(
+            labelText: 'Add airport',
             border: OutlineInputBorder(),
           ),
           onSubmitted: (_) => _addAirport(),
@@ -198,7 +192,7 @@ class _BusinessFormState extends State<BusinessForm> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       FormSection(
-        title: widget.text.section(_tabKey, 'personalDetails'),
+        title: 'Personal details',
         icon: Icons.person_outline,
         child: Wrap(
           spacing: 16,
@@ -207,27 +201,27 @@ class _BusinessFormState extends State<BusinessForm> {
           children: [
             _field(
               controller: _nameController,
-              label: widget.text.fieldLabel(_tabKey, 'name'),
+              label: 'Name',
               validator: (value) => _required(value, 'a name'),
             ),
             _field(
               controller: _phoneController,
-              label: widget.text.fieldLabel(_tabKey, 'contactPhone'),
+              label: 'Direct Phone',
               keyboardType: TextInputType.phone,
             ),
             _field(
               controller: _phoneExtensionController,
-              label: widget.text.fieldLabel(_tabKey, 'extension'),
+              label: 'Extension',
               keyboardType: TextInputType.number,
             ),
             _field(
               controller: _cellPhoneController,
-              label: widget.text.fieldLabel(_tabKey, 'cellPhone'),
+              label: 'Cell Phone',
               keyboardType: TextInputType.phone,
             ),
             _field(
               controller: _emailController,
-              label: widget.text.fieldLabel(_tabKey, 'email'),
+              label: 'eMail',
               keyboardType: TextInputType.emailAddress,
             ),
           ],
@@ -235,7 +229,7 @@ class _BusinessFormState extends State<BusinessForm> {
       ),
       const SizedBox(height: 16),
       FormSection(
-        title: widget.text.section(_tabKey, 'workLocation'),
+        title: 'Work location',
         icon: Icons.location_on_outlined,
         child: Wrap(
           spacing: 16,
@@ -251,8 +245,8 @@ class _BusinessFormState extends State<BusinessForm> {
                     )
                     ? _selectedBusinessName
                     : null,
-                decoration: InputDecoration(
-                  labelText: widget.text.fieldLabel(_tabKey, 'businessName'),
+                decoration: const InputDecoration(
+                  labelText: 'Business Name',
                   border: OutlineInputBorder(),
                 ),
                 items: widget.businesses
@@ -273,7 +267,7 @@ class _BusinessFormState extends State<BusinessForm> {
               width: 220,
               child: CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(widget.text.fieldLabel(_tabKey, 'remoteWork')),
+                title: const Text('Remote Work'),
                 value: _remoteWork,
                 onChanged: (checked) => setState(() {
                   _remoteWork = checked ?? false;
@@ -298,8 +292,8 @@ class _BusinessFormState extends State<BusinessForm> {
                           )
                       ? _selectedLocationName
                       : null,
-                  decoration: InputDecoration(
-                    labelText: widget.text.fieldLabel(_tabKey, 'locationName'),
+                  decoration: const InputDecoration(
+                    labelText: 'Location Name',
                     border: OutlineInputBorder(),
                   ),
                   items: widget.businesses
@@ -324,7 +318,7 @@ class _BusinessFormState extends State<BusinessForm> {
       ),
       const SizedBox(height: 16),
       FormSection(
-        title: widget.text.section(_tabKey, 'contactDetails'),
+        title: 'Contact details',
         icon: Icons.contact_phone_outlined,
         child: Wrap(
           spacing: 16,
@@ -333,13 +327,13 @@ class _BusinessFormState extends State<BusinessForm> {
           children: [
             _field(
               controller: _addressController,
-              label: widget.text.fieldLabel(_tabKey, 'contactAddress'),
+              label: 'Address',
               width: 300,
               validator: (value) => _required(value, 'an address'),
             ),
             _field(
               controller: _phoneController,
-              label: widget.text.fieldLabel(_tabKey, 'contactPhone'),
+              label: 'Direct phone',
               keyboardType: TextInputType.phone,
               validator: (value) => _required(value, 'a direct phone number'),
             ),
@@ -354,7 +348,7 @@ class _BusinessFormState extends State<BusinessForm> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       FormSection(
-        title: widget.text.section(_tabKey, 'details'),
+        title: 'Business details',
         icon: Icons.business_outlined,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,7 +356,7 @@ class _BusinessFormState extends State<BusinessForm> {
             RadioGroup<String>(
               groupValue: _businessType,
               onChanged: (value) => setState(() => _businessType = value),
-              child: Wrap(
+              child: const Wrap(
                 spacing: 8,
                 runSpacing: 4,
                 children: [
@@ -370,39 +364,21 @@ class _BusinessFormState extends State<BusinessForm> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Radio<String>(value: 'Customer'),
-                      Text(
-                        widget.text.option(
-                          'business',
-                          'businessType',
-                          'Customer',
-                        ),
-                      ),
+                      Text('Customer'),
                     ],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Radio<String>(value: 'Vendor'),
-                      Text(
-                        widget.text.option(
-                          'business',
-                          'businessType',
-                          'Vendor',
-                        ),
-                      ),
+                      Text('Vendor'),
                     ],
                   ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Radio<String>(value: 'Principle'),
-                      Text(
-                        widget.text.option(
-                          'business',
-                          'businessType',
-                          'Principle',
-                        ),
-                      ),
+                      Text('Principle'),
                     ],
                   ),
                 ],
@@ -416,18 +392,18 @@ class _BusinessFormState extends State<BusinessForm> {
               children: [
                 _field(
                   controller: _nameController,
-                  label: widget.text.fieldLabel(_tabKey, 'businessName'),
+                  label: 'Business name',
                   validator: (value) => _required(value, 'a business name'),
                 ),
                 _field(
                   controller: _addressController,
-                  label: widget.text.fieldLabel(_tabKey, 'businessAddress'),
+                  label: 'Business Address',
                   width: 300,
                   validator: (value) => _required(value, 'a business address'),
                 ),
                 _field(
                   controller: _phoneController,
-                  label: widget.text.fieldLabel(_tabKey, 'businessDirectPhone'),
+                  label: 'Business Direct Phone',
                   keyboardType: TextInputType.phone,
                   validator: (value) =>
                       _required(value, 'a direct phone number'),
@@ -440,7 +416,7 @@ class _BusinessFormState extends State<BusinessForm> {
       ),
       const SizedBox(height: 16),
       FormSection(
-        title: widget.text.section(_tabKey, 'locations'),
+        title: 'Business locations',
         icon: Icons.place_outlined,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -452,23 +428,23 @@ class _BusinessFormState extends State<BusinessForm> {
               children: [
                 _field(
                   controller: _locationNameController,
-                  label: widget.text.fieldLabel(_tabKey, 'locationName'),
+                  label: 'Location Name',
                 ),
                 _field(
                   controller: _locationAddressController,
-                  label: widget.text.fieldLabel(_tabKey, 'locationAddress'),
+                  label: 'Location Address',
                   width: 300,
                 ),
                 _field(
                   controller: _locationPhoneController,
-                  label: widget.text.fieldLabel(_tabKey, 'locationDirectPhone'),
+                  label: 'Location Direct Phone',
                   keyboardType: TextInputType.phone,
                 ),
                 _airportControls(),
                 FilledButton.icon(
                   onPressed: _addLocation,
                   icon: const Icon(Icons.add_location_alt_outlined),
-                  label: Text(widget.text.action(_tabKey, 'addLocation')),
+                  label: const Text('Add Location'),
                 ),
               ],
             ),
@@ -495,50 +471,31 @@ class _BusinessFormState extends State<BusinessForm> {
 
   @override
   Widget build(BuildContext context) => Card(
-    clipBehavior: Clip.antiAlias,
-    child: Column(
-      children: [
-        ListTile(
-          title: Text(
-            widget.text('formTitle', tab: _tabKey),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _isPeople ? 'Add person' : 'Add business',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          trailing: Icon(
-            (_isPeople ? _peopleFormExpanded : _businessFormExpanded)
-                ? Icons.expand_less
-                : Icons.expand_more,
+          const SizedBox(height: 16),
+          Form(
+            key: _formKey,
+            child: _isPeople ? _peopleFields() : _businessFields(),
           ),
-          onTap: () => setState(() {
-            if (_isPeople) {
-              _peopleFormExpanded = !_peopleFormExpanded;
-            } else {
-              _businessFormExpanded = !_businessFormExpanded;
-            }
-          }),
-        ),
-        if (_isPeople ? _peopleFormExpanded : _businessFormExpanded)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Form(
-                  key: _formKey,
-                  child: _isPeople ? _peopleFields() : _businessFields(),
-                ),
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton.icon(
-                    onPressed: _submit,
-                    icon: const Icon(Icons.add),
-                    label: Text(widget.text.action(_tabKey, 'add')),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 20),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: _submit,
+              icon: const Icon(Icons.add),
+              label: Text(_isPeople ? 'Add Person' : 'Add Business'),
             ),
           ),
-      ],
+        ],
+      ),
     ),
   );
 }

@@ -4,22 +4,39 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../models/ui_text_catalog.dart';
-
 /// Downloads submissions and displays those belonging to the current package.
 class SubmissionsCsvCardsView extends StatefulWidget {
-  const SubmissionsCsvCardsView({super.key, required this.text});
+  const SubmissionsCsvCardsView({
+    super.key,
+    this.csvUrl = 'https://stefanronnkvist.com/submissions.csv',
+  });
 
-  final UiTextCatalog text;
+  /// Address of the CSV file that holds every submission and its response.
+  final String csvUrl;
 
   @override
   State<SubmissionsCsvCardsView> createState() =>
       _SubmissionsCsvCardsViewState();
 }
 
-/// Downloads submissions, keeps the rows whose App column matches this app's
-/// package name, and shows each as a card.
+/// Downloads [SubmissionsCsvCardsView.csvUrl], keeps the rows whose App column
+/// matches this app's package name, and shows each as a card.
 class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
+  static const double _titleFontSize = 15;
+  static const double _fieldFontSize = 13.5;
+  static const int _visibleFieldStartIndex = 2;
+  static const int _appColumnIndex = 2;
+
+  static const List<String> _fixedHeaders = <String>[
+    'Name',
+    'eMail',
+    'App',
+    'Version',
+    'Series',
+    'Content',
+    'Date Time',
+  ];
+
   late Future<_CsvTableData> _tableFuture;
 
   @override
@@ -30,7 +47,7 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
 
   /// Fetches, normalizes, and package-filters the remote CSV rows.
   Future<_CsvTableData> _loadCsv() async {
-    final Uri uri = Uri.parse(widget.text.configText('submissions', 'csvUrl'));
+    final Uri uri = Uri.parse(widget.csvUrl);
     final http.Response response = await http
         .get(uri)
         .timeout(const Duration(seconds: 20));
@@ -46,11 +63,8 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
       return const _CsvTableData(headers: <String>[], rows: <List<String>>[]);
     }
 
-    final List<String> headers = widget.text.configList(
-      'submissions',
-      'headers',
-    );
-    final int maxColumnCount = headers.length;
+    final int maxColumnCount = _fixedHeaders.length;
+    final List<String> headers = List<String>.from(_fixedHeaders);
 
     // Padding guarantees that package filtering and card rendering are indexed safely.
     final List<List<String>> normalizedRows = rows
@@ -67,10 +81,7 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
 
     final List<List<String>> filteredRows = normalizedRows
         .where((List<String> row) {
-          final String appValue =
-              row[widget.text.configInteger('submissions', 'appColumnIndex')]
-                  .trim()
-                  .toLowerCase();
+          final String appValue = row[_appColumnIndex].trim().toLowerCase();
           return appValue == currentApp;
         })
         .toList(growable: false);
@@ -141,9 +152,7 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
 
   /// Builds the shared empty/error state without exposing transport details.
   Widget _buildNoInformationMessage() {
-    return Center(
-      child: Text(widget.text.configText('submissions', 'emptyMessage')),
-    );
+    return const Center(child: Text('No inquiries available'));
   }
 
   /// Builds one response card while hiding the submitter identity columns.
@@ -165,37 +174,24 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
             Text(
               'Submission #$index',
               style: TextStyle(
-                fontSize: widget.text.configNumber(
-                  'submissions',
-                  'titleFontSize',
-                ),
+                fontSize: _titleFontSize,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 10),
-            ...List<Widget>.generate(
-              headers.length -
-                  widget.text.configInteger(
-                    'submissions',
-                    'visibleFieldStartIndex',
-                  ),
-              (int offset) {
-                final int fieldIndex =
-                    widget.text.configInteger(
-                      'submissions',
-                      'visibleFieldStartIndex',
-                    ) +
-                    offset;
-                final String value = fieldIndex < row.length
-                    ? row[fieldIndex]
-                    : '';
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _buildFieldRow(headers[fieldIndex], value),
-                );
-              },
-            ),
+            ...List<Widget>.generate(headers.length - _visibleFieldStartIndex, (
+              int offset,
+            ) {
+              final int fieldIndex = _visibleFieldStartIndex + offset;
+              final String value = fieldIndex < row.length
+                  ? row[fieldIndex]
+                  : '';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildFieldRow(headers[fieldIndex], value),
+              );
+            }),
           ],
         ),
       ),
@@ -209,17 +205,14 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
     return RichText(
       text: TextSpan(
         style: TextStyle(
-          fontSize: widget.text.configNumber('submissions', 'fieldFontSize'),
+          fontSize: _fieldFontSize,
           color: colorScheme.onSurface,
         ),
         children: <InlineSpan>[
           TextSpan(
             text: '$label: ',
             style: TextStyle(
-              fontSize: widget.text.configNumber(
-                'submissions',
-                'fieldFontSize',
-              ),
+              fontSize: _fieldFontSize,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),

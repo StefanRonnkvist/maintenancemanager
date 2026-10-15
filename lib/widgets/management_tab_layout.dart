@@ -1,47 +1,54 @@
 import 'package:flutter/material.dart';
 
-import '../models/ui_text_catalog.dart';
-
 class ManagementTabLayout extends StatelessWidget {
   const ManagementTabLayout({
-    required this.text,
+    required this.title,
+    required this.icon,
     required this.form,
     required this.recordsTitle,
     required this.records,
-    this.title,
     super.key,
   });
 
-  final UiTextCatalog text;
+  final String title;
+  final IconData icon;
   final Widget form;
-  final String? title;
   final String recordsTitle;
   final Widget records;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      final maxWidth = text.number('maxWidth', tab: 'layout');
-      final width = constraints.maxWidth < maxWidth
-          ? constraints.maxWidth
-          : maxWidth;
+      final width = constraints.maxWidth < 1100 ? constraints.maxWidth : 1100.0;
+      final colors = Theme.of(context).colorScheme;
       return SingleChildScrollView(
-        padding: EdgeInsets.all(text.number('pagePadding', tab: 'layout')),
+        padding: const EdgeInsets.all(20),
         child: Center(
           child: SizedBox(
             width: width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (title != null) ...[
-                  Text(
-                    title!,
-                    style: Theme.of(context).textTheme.headlineSmall,
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Icon(icon, size: 48, color: colors.primary),
+                        const SizedBox(height: 12),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 24),
+                        form,
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-                form,
-                SizedBox(height: text.number('sectionSpacing', tab: 'layout')),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   recordsTitle,
                   style: Theme.of(context).textTheme.titleLarge,

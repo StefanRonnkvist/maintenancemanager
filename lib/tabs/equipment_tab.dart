@@ -1,41 +1,71 @@
 import 'package:flutter/material.dart';
 
+import '../models/app_tab.dart';
 import '../models/business_entry.dart';
-import '../models/equipment_record.dart';
-import '../models/ui_text_catalog.dart';
-import '../widgets/management_record_table.dart';
 import '../widgets/management_tab_layout.dart';
 
 class EquipmentTab extends StatelessWidget {
-  const EquipmentTab({required this.businesses, required this.text, super.key});
+  const EquipmentTab({required this.businesses, super.key});
 
   final List<BusinessEntry> businesses;
-  final UiTextCatalog text;
+
+  static const Map<String, List<String>> _equipmentCategories = {
+    'Manufacturing and Production Machinery': [
+      'CNC machines',
+      'Lathes',
+      'Lasers',
+      'Milling machines',
+      'Stamping presses',
+      'Robotic welders',
+    ],
+    'Material Handling and Transport': [
+      'Conveyor systems',
+      'Forklifts',
+      'Cranes',
+      'Auger conveyors',
+      'Automation',
+    ],
+    'Heavy Construction and Earthmoving Equipment': [
+      'Bulldozers',
+      'Excavators',
+      'Articulated trucks',
+      'Compactors',
+    ],
+    'Facility and HVAC Systems': [
+      'Furnaces',
+      'Boilers',
+      'Heat exchangers',
+      'Industrial compressors',
+      'Large-scale water pumps',
+    ],
+    'Processing and Packaging Equipment': [
+      'Extrusion machines',
+      'Injection molds',
+      'Granulators',
+      'Bagging machinery',
+      'Shrink-wrapping machines',
+    ],
+  };
 
   @override
   Widget build(BuildContext context) => _EquipmentBrowser(
-    categories: text.stringListMap('equipmentCategories'),
+    categories: _equipmentCategories,
     businesses: businesses,
-    text: text,
   );
 }
 
 class _EquipmentBrowser extends StatefulWidget {
-  const _EquipmentBrowser({
-    required this.categories,
-    required this.businesses,
-    required this.text,
-  });
+  const _EquipmentBrowser({required this.categories, required this.businesses});
 
   final Map<String, List<String>> categories;
   final List<BusinessEntry> businesses;
-  final UiTextCatalog text;
 
   @override
   State<_EquipmentBrowser> createState() => _EquipmentBrowserState();
 }
 
 class _EquipmentBrowserState extends State<_EquipmentBrowser> {
+  bool _formExpanded = false;
   final _localNameController = TextEditingController();
   final _localNumberController = TextEditingController();
   final _manufacturerNameController = TextEditingController();
@@ -50,8 +80,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   String? _selectedEquipment;
   String? _selectedBusinessName;
   String? _selectedLocationName;
-  final List<EquipmentRecord> _records = [];
-  bool _formExpanded = false;
+  final List<_EquipmentRecord> _records = [];
   late final Map<String, List<String>> _categories = {
     for (final entry in widget.categories.entries)
       entry.key: List<String>.from(entry.value),
@@ -106,7 +135,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   }
 
   void _addEquipment() {
-    final record = EquipmentRecord(
+    final record = _EquipmentRecord(
       localName: _localNameController.text.trim(),
       localNumber: _localNumberController.text.trim(),
       manufacturerName: _manufacturerNameController.text.trim(),
@@ -115,10 +144,6 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
           : (_selectedEquipment ?? ''),
       equipmentModel: _equipmentModelController.text.trim(),
       serialNumber: _serialNumberController.text.trim(),
-      maintenanceManual: _maintenanceManualController.text.trim(),
-      publisher: _publisherController.text.trim(),
-      businessName: _selectedBusinessName ?? '',
-      locationName: _selectedLocationName ?? '',
     );
 
     if (record.localName.isEmpty &&
@@ -126,11 +151,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
         record.manufacturerName.isEmpty &&
         record.equipmentName.isEmpty &&
         record.equipmentModel.isEmpty &&
-        record.serialNumber.isEmpty &&
-        record.maintenanceManual.isEmpty &&
-        record.publisher.isEmpty &&
-        record.businessName.isEmpty &&
-        record.locationName.isEmpty) {
+        record.serialNumber.isEmpty) {
       return;
     }
 
@@ -142,8 +163,6 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
       _equipmentNameController.clear();
       _equipmentModelController.clear();
       _serialNumberController.clear();
-      _maintenanceManualController.clear();
-      _publisherController.clear();
     });
   }
 
@@ -160,18 +179,16 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     final colors = Theme.of(context).colorScheme;
 
     return ManagementTabLayout(
-      text: widget.text,
-      title: widget.text.tabTitle('equipment'),
-      recordsTitle: widget.text('recordsTitle', tab: 'equipment'),
+      title: AppTab.equipment.label,
+      icon: AppTab.equipment.icon,
+      recordsTitle: 'Equipment list',
+      records: _EquipmentTable(records: _records),
       form: Card(
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
             ListTile(
-              title: Text(
-                widget.text('formTitle', tab: 'equipment'),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              title: const Text('Add equipment'),
               trailing: Icon(
                 _formExpanded ? Icons.expand_less : Icons.expand_more,
               ),
@@ -187,11 +204,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                       initialValue: categories.contains(_selectedCategory)
                           ? _selectedCategory
                           : null,
-                      decoration: InputDecoration(
-                        labelText: widget.text.fieldLabel(
-                          'equipment',
-                          'category',
-                        ),
+                      decoration: const InputDecoration(
+                        labelText: 'Equipment category',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.category_outlined),
                       ),
@@ -214,11 +228,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                         Expanded(
                           child: TextField(
                             controller: _newCategoryController,
-                            decoration: InputDecoration(
-                              labelText: widget.text.fieldLabel(
-                                'equipment',
-                                'newCategory',
-                              ),
+                            decoration: const InputDecoration(
+                              labelText: 'New equipment category',
                               border: OutlineInputBorder(),
                             ),
                             onSubmitted: (_) => _addCategory(),
@@ -237,11 +248,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                       initialValue: equipment.contains(_selectedEquipment)
                           ? _selectedEquipment
                           : null,
-                      decoration: InputDecoration(
-                        labelText: widget.text.fieldLabel(
-                          'equipment',
-                          'equipment',
-                        ),
+                      decoration: const InputDecoration(
+                        labelText: 'Equipment',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(
                           Icons.precision_manufacturing_outlined,
@@ -265,11 +273,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                         Expanded(
                           child: TextField(
                             controller: _newEquipmentController,
-                            decoration: InputDecoration(
-                              labelText: widget.text.fieldLabel(
-                                'equipment',
-                                'newEquipment',
-                              ),
+                            decoration: const InputDecoration(
+                              labelText: 'New equipment',
                               border: OutlineInputBorder(),
                             ),
                             onSubmitted: (_) => _addEquipmentOption(),
@@ -285,7 +290,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      widget.text.section('equipment', 'businessLocation'),
+                      'Business and location',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -297,11 +302,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                           )
                           ? _selectedBusinessName
                           : null,
-                      decoration: InputDecoration(
-                        labelText: widget.text.fieldLabel(
-                          'equipment',
-                          'businessName',
-                        ),
+                      decoration: const InputDecoration(
+                        labelText: 'Business Name',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.business_outlined),
                       ),
@@ -327,11 +329,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                           )
                           ? _selectedLocationName
                           : null,
-                      decoration: InputDecoration(
-                        labelText: widget.text.fieldLabel(
-                          'equipment',
-                          'locationName',
-                        ),
+                      decoration: const InputDecoration(
+                        labelText: 'Location Name',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.location_on_outlined),
                       ),
@@ -350,7 +349,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      widget.text.section('equipment', 'details'),
+                      'Equipment details',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -366,80 +365,56 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'localName',
-                                ),
+                                'Local Name',
                                 _localNameController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'localNumber',
-                                ),
+                                'Local Number',
                                 _localNumberController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'manufacturerName',
-                                ),
+                                'Manufacturer Name',
                                 _manufacturerNameController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'equipmentName',
-                                ),
+                                'Equipment Name',
                                 _equipmentNameController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'equipmentModel',
-                                ),
+                                'Equipment Model',
                                 _equipmentModelController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'serialNumber',
-                                ),
+                                'Serial Number',
                                 _serialNumberController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'maintenanceManual',
-                                ),
+                                'Maintenance Manual',
                                 _maintenanceManualController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                widget.text.fieldLabel(
-                                  'equipment',
-                                  'publisher',
-                                ),
+                                'Publisher',
                                 _publisherController,
                               ),
                             ),
@@ -453,7 +428,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                       child: FilledButton.icon(
                         onPressed: _addEquipment,
                         icon: const Icon(Icons.add),
-                        label: Text(widget.text.action('equipment', 'add')),
+                        label: const Text('Add Equipment'),
                       ),
                     ),
                     if (_selectedEquipment != null) ...[
@@ -477,11 +452,78 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
           ],
         ),
       ),
-      records: ManagementRecordTable(
-        columns: widget.text.list('equipmentTableColumns'),
-        rows: [for (final record in _records) record.values],
-        emptyMessage: widget.text('emptyMessage', tab: 'equipment'),
-      ),
     );
   }
+}
+
+class _EquipmentRecord {
+  const _EquipmentRecord({
+    required this.localName,
+    required this.localNumber,
+    required this.manufacturerName,
+    required this.equipmentName,
+    required this.equipmentModel,
+    required this.serialNumber,
+  });
+
+  final String localName;
+  final String localNumber;
+  final String manufacturerName;
+  final String equipmentName;
+  final String equipmentModel;
+  final String serialNumber;
+}
+
+class _EquipmentTable extends StatelessWidget {
+  const _EquipmentTable({required this.records});
+
+  final List<_EquipmentRecord> records;
+
+  @override
+  Widget build(BuildContext context) {
+    final table = _buildTable(context);
+    if (records.isNotEmpty) return table;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        table,
+        const Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: Text('No equipment added yet.')),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTable(BuildContext context) => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: DataTable(
+      headingRowColor: WidgetStatePropertyAll(
+        Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
+      dataRowMinHeight: 52,
+      columns: const [
+        DataColumn(label: Text('Local Name')),
+        DataColumn(label: Text('Local Number')),
+        DataColumn(label: Text('Manufacturer Name')),
+        DataColumn(label: Text('Equipment Name')),
+        DataColumn(label: Text('Equipment Model')),
+        DataColumn(label: Text('Serial Number')),
+      ],
+      rows: records
+          .map(
+            (record) => DataRow(
+              cells: [
+                DataCell(Text(record.localName)),
+                DataCell(Text(record.localNumber)),
+                DataCell(Text(record.manufacturerName)),
+                DataCell(Text(record.equipmentName)),
+                DataCell(Text(record.equipmentModel)),
+                DataCell(Text(record.serialNumber)),
+              ],
+            ),
+          )
+          .toList(),
+    ),
+  );
 }

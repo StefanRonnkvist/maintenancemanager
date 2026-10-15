@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
-import '../models/ui_text_catalog.dart';
 import '../widgets/business_form.dart';
 import '../widgets/business_table.dart';
 import '../widgets/management_tab_layout.dart';
@@ -11,7 +10,6 @@ class BusinessTab extends StatefulWidget {
     required this.entries,
     required this.onAdd,
     required this.kind,
-    required this.text,
     this.businesses = const [],
     super.key,
   });
@@ -19,7 +17,6 @@ class BusinessTab extends StatefulWidget {
   final List<BusinessEntry> entries;
   final ValueChanged<BusinessEntry> onAdd;
   final BusinessTabKind kind;
-  final UiTextCatalog text;
   final List<BusinessEntry> businesses;
 
   @override
@@ -27,26 +24,46 @@ class BusinessTab extends StatefulWidget {
 }
 
 class _BusinessTabState extends State<BusinessTab> {
+  bool _formExpanded = false;
+
   @override
-  Widget build(BuildContext context) => ManagementTabLayout(
-    text: widget.text,
-    title: widget.text.tabTitle(
-      widget.kind == BusinessTabKind.people ? 'people' : 'business',
-    ),
-    form: BusinessForm(
-      kind: widget.kind,
-      text: widget.text,
-      businesses: widget.businesses,
-      onSubmit: (entry) => setState(() => widget.onAdd(entry)),
-    ),
-    recordsTitle: widget.text(
-      'recordsTitle',
-      tab: widget.kind == BusinessTabKind.people ? 'people' : 'business',
-    ),
-    records: widget.kind == BusinessTabKind.people
-        ? PeopleTable(entries: widget.entries, text: widget.text)
-        : BusinessTable(entries: widget.entries, text: widget.text),
-  );
+  Widget build(BuildContext context) {
+    final isPeople = widget.kind == BusinessTabKind.people;
+    final title = isPeople ? 'People' : 'Business';
+    return ManagementTabLayout(
+      title: title,
+      icon: isPeople ? Icons.people_outline : Icons.business_outlined,
+      form: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            ListTile(
+              title: Text(isPeople ? 'Add person' : 'Add business'),
+              trailing: Icon(
+                _formExpanded ? Icons.expand_less : Icons.expand_more,
+              ),
+              onTap: () => setState(() => _formExpanded = !_formExpanded),
+            ),
+            if (_formExpanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: BusinessForm(
+                  kind: widget.kind,
+                  businesses: widget.businesses,
+                  onSubmit: (entry) => setState(() => widget.onAdd(entry)),
+                ),
+              ),
+          ],
+        ),
+      ),
+      recordsTitle: isPeople ? 'People' : 'Businesses',
+      records: Center(
+        child: isPeople
+            ? PeopleTable(entries: widget.entries)
+            : BusinessTable(entries: widget.entries),
+      ),
+    );
+  }
 }
 
 enum BusinessTabKind { people, business }
