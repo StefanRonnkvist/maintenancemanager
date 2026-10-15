@@ -20,7 +20,6 @@ class ManagementTabLayout extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final width = constraints.maxWidth < 1100 ? constraints.maxWidth : 1100.0;
-      final colors = Theme.of(context).colorScheme;
       return SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -32,20 +31,7 @@ class ManagementTabLayout extends StatelessWidget {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Icon(icon, size: 48, color: colors.primary),
-                        const SizedBox(height: 12),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 24),
-                        form,
-                      ],
-                    ),
+                    child: form,
                   ),
                 ),
                 const SizedBox(height: 24),
