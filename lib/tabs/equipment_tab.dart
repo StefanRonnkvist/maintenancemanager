@@ -72,11 +72,17 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   final _serialNumberController = TextEditingController();
   final _maintenanceManualController = TextEditingController();
   final _publisherController = TextEditingController();
+  final _newCategoryController = TextEditingController();
+  final _newEquipmentController = TextEditingController();
   String? _selectedCategory;
   String? _selectedEquipment;
   String? _selectedBusinessName;
   String? _selectedLocationName;
   final List<_EquipmentRecord> _records = [];
+  late final Map<String, List<String>> _categories = {
+    for (final entry in widget.categories.entries)
+      entry.key: List<String>.from(entry.value),
+  };
 
   @override
   void dispose() {
@@ -88,6 +94,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     _serialNumberController.dispose();
     _maintenanceManualController.dispose();
     _publisherController.dispose();
+    _newCategoryController.dispose();
+    _newEquipmentController.dispose();
     super.dispose();
   }
 
@@ -99,6 +107,30 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
           border: const OutlineInputBorder(),
         ),
       );
+
+  void _addCategory() {
+    final name = _newCategoryController.text.trim();
+    if (name.isEmpty || _categories.containsKey(name)) return;
+    setState(() {
+      _categories[name] = [];
+      _selectedCategory = name;
+      _selectedEquipment = null;
+      _newCategoryController.clear();
+    });
+  }
+
+  void _addEquipmentOption() {
+    final category = _selectedCategory;
+    final name = _newEquipmentController.text.trim();
+    if (category == null || name.isEmpty) return;
+    final options = _categories[category]!;
+    if (options.contains(name)) return;
+    setState(() {
+      options.add(name);
+      _selectedEquipment = name;
+      _newEquipmentController.clear();
+    });
+  }
 
   void _addEquipment() {
     final record = _EquipmentRecord(
@@ -134,10 +166,10 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = widget.categories.keys.toList();
+    final categories = _categories.keys.toList();
     final equipment = _selectedCategory == null
         ? const <String>[]
-        : widget.categories[_selectedCategory] ?? const <String>[];
+        : _categories[_selectedCategory] ?? const <String>[];
     final locations = widget.businesses
         .where((business) => business.name == _selectedBusinessName)
         .expand((business) => business.locations)
@@ -186,6 +218,27 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                     }),
                   ),
                   const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _newCategoryController,
+                          decoration: const InputDecoration(
+                            labelText: 'New equipment category',
+                            border: OutlineInputBorder(),
+                          ),
+                          onSubmitted: (_) => _addCategory(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton.filledTonal(
+                        tooltip: 'Add category',
+                        onPressed: _addCategory,
+                        icon: const Icon(Icons.add),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: equipment.contains(_selectedEquipment)
                         ? _selectedEquipment
@@ -204,6 +257,27 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                     onChanged: equipment.isEmpty
                         ? null
                         : (name) => setState(() => _selectedEquipment = name),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _newEquipmentController,
+                          decoration: const InputDecoration(
+                            labelText: 'New equipment',
+                            border: OutlineInputBorder(),
+                          ),
+                          onSubmitted: (_) => _addEquipmentOption(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton.filledTonal(
+                        tooltip: 'Add equipment',
+                        onPressed: _addEquipmentOption,
+                        icon: const Icon(Icons.add),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
                   Text(
