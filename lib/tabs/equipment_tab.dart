@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/app_tab.dart';
 import '../models/business_entry.dart';
+import '../models/equipment_record.dart';
+import '../widgets/management_record_table.dart';
+import '../widgets/management_tab_layout.dart';
 
 class EquipmentTab extends StatelessWidget {
   const EquipmentTab({required this.businesses, super.key});
@@ -78,7 +80,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   String? _selectedEquipment;
   String? _selectedBusinessName;
   String? _selectedLocationName;
-  final List<_EquipmentRecord> _records = [];
+  final List<EquipmentRecord> _records = [];
   bool _formExpanded = false;
   late final Map<String, List<String>> _categories = {
     for (final entry in widget.categories.entries)
@@ -134,7 +136,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   }
 
   void _addEquipment() {
-    final record = _EquipmentRecord(
+    final record = EquipmentRecord(
       localName: _localNameController.text.trim(),
       localNumber: _localNumberController.text.trim(),
       manufacturerName: _manufacturerNameController.text.trim(),
@@ -143,6 +145,10 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
           : (_selectedEquipment ?? ''),
       equipmentModel: _equipmentModelController.text.trim(),
       serialNumber: _serialNumberController.text.trim(),
+      maintenanceManual: _maintenanceManualController.text.trim(),
+      publisher: _publisherController.text.trim(),
+      businessName: _selectedBusinessName ?? '',
+      locationName: _selectedLocationName ?? '',
     );
 
     if (record.localName.isEmpty &&
@@ -150,7 +156,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
         record.manufacturerName.isEmpty &&
         record.equipmentName.isEmpty &&
         record.equipmentModel.isEmpty &&
-        record.serialNumber.isEmpty) {
+        record.serialNumber.isEmpty &&
+        record.maintenanceManual.isEmpty &&
+        record.publisher.isEmpty &&
+        record.businessName.isEmpty &&
+        record.locationName.isEmpty) {
       return;
     }
 
@@ -162,6 +172,8 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
       _equipmentNameController.clear();
       _equipmentModelController.clear();
       _serialNumberController.clear();
+      _maintenanceManualController.clear();
+      _publisherController.clear();
     });
   }
 
@@ -177,400 +189,285 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
         .toList();
     final colors = Theme.of(context).colorScheme;
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(AppTab.equipment.icon, size: 48, color: colors.primary),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppTab.equipment.label,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          title: Text(
-                            'Add Equipment',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          trailing: Icon(
-                            _formExpanded
-                                ? Icons.expand_less
-                                : Icons.expand_more,
-                          ),
-                          onTap: () =>
-                              setState(() => _formExpanded = !_formExpanded),
-                        ),
-                        if (_formExpanded)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                DropdownButtonFormField<String>(
-                                  initialValue:
-                                      categories.contains(_selectedCategory)
-                                      ? _selectedCategory
-                                      : null,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Equipment category',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.category_outlined),
-                                  ),
-                                  items: categories
-                                      .map(
-                                        (category) => DropdownMenuItem(
-                                          value: category,
-                                          child: Text(category),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (category) => setState(() {
-                                    _selectedCategory = category;
-                                    _selectedEquipment = null;
-                                  }),
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _newCategoryController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'New equipment category',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        onSubmitted: (_) => _addCategory(),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    IconButton.filledTonal(
-                                      tooltip: 'Add category',
-                                      onPressed: _addCategory,
-                                      icon: const Icon(Icons.add),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                DropdownButtonFormField<String>(
-                                  initialValue:
-                                      equipment.contains(_selectedEquipment)
-                                      ? _selectedEquipment
-                                      : null,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Equipment',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(
-                                      Icons.precision_manufacturing_outlined,
-                                    ),
-                                  ),
-                                  items: equipment
-                                      .map(
-                                        (name) => DropdownMenuItem(
-                                          value: name,
-                                          child: Text(name),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: equipment.isEmpty
-                                      ? null
-                                      : (name) => setState(
-                                          () => _selectedEquipment = name,
-                                        ),
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _newEquipmentController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'New equipment',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        onSubmitted: (_) =>
-                                            _addEquipmentOption(),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    IconButton.filledTonal(
-                                      tooltip: 'Add equipment',
-                                      onPressed: _addEquipmentOption,
-                                      icon: const Icon(Icons.add),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Business and location',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
-                                ),
-                                const SizedBox(height: 12),
-                                DropdownButtonFormField<String>(
-                                  initialValue:
-                                      widget.businesses.any(
-                                        (business) =>
-                                            business.name ==
-                                            _selectedBusinessName,
-                                      )
-                                      ? _selectedBusinessName
-                                      : null,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Business Name',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.business_outlined),
-                                  ),
-                                  items: widget.businesses
-                                      .map(
-                                        (business) => DropdownMenuItem<String>(
-                                          value: business.name,
-                                          child: Text(business.name),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (name) => setState(() {
-                                    _selectedBusinessName = name;
-                                    _selectedLocationName = null;
-                                  }),
-                                ),
-                                const SizedBox(height: 16),
-                                DropdownButtonFormField<String>(
-                                  initialValue:
-                                      locations.any(
-                                        (location) =>
-                                            location.name ==
-                                            _selectedLocationName,
-                                      )
-                                      ? _selectedLocationName
-                                      : null,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Location Name',
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(
-                                      Icons.location_on_outlined,
-                                    ),
-                                  ),
-                                  items: locations
-                                      .map(
-                                        (location) => DropdownMenuItem<String>(
-                                          value: location.name,
-                                          child: Text(location.name),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: _selectedBusinessName == null
-                                      ? null
-                                      : (name) => setState(
-                                          () => _selectedLocationName = name,
-                                        ),
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Equipment details',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
-                                ),
-                                const SizedBox(height: 12),
-                                LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final fieldWidth =
-                                        constraints.maxWidth >= 560
-                                        ? (constraints.maxWidth - 16) / 2
-                                        : constraints.maxWidth;
-                                    return Wrap(
-                                      spacing: 16,
-                                      runSpacing: 16,
-                                      children: [
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Local Name',
-                                            _localNameController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Local Number',
-                                            _localNumberController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Manufacturer Name',
-                                            _manufacturerNameController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Equipment Name',
-                                            _equipmentNameController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Equipment Model',
-                                            _equipmentModelController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Serial Number',
-                                            _serialNumberController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Maintenance Manual',
-                                            _maintenanceManualController,
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: fieldWidth,
-                                          child: _textField(
-                                            'Publisher',
-                                            _publisherController,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: FilledButton.icon(
-                                    onPressed: _addEquipment,
-                                    icon: const Icon(Icons.add),
-                                    label: const Text('Add Equipment'),
-                                  ),
-                                ),
-                                if (_selectedEquipment != null) ...[
-                                  const SizedBox(height: 20),
-                                  ListTile(
-                                    leading: Icon(
-                                      Icons.check_circle_outline,
-                                      color: colors.primary,
-                                    ),
-                                    title: Text(_selectedEquipment!),
-                                    subtitle: Text(_selectedCategory!),
-                                    tileColor: colors.surfaceContainerLow,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                ],
-                              ],
+    return ManagementTabLayout(
+      recordsTitle: 'Equipment list',
+      form: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            ListTile(
+              title: Text(
+                'Add Equipment',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              trailing: Icon(
+                _formExpanded ? Icons.expand_less : Icons.expand_more,
+              ),
+              onTap: () => setState(() => _formExpanded = !_formExpanded),
+            ),
+            if (_formExpanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: categories.contains(_selectedCategory)
+                          ? _selectedCategory
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Equipment category',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category_outlined),
+                      ),
+                      items: categories
+                          .map(
+                            (category) => DropdownMenuItem(
+                              value: category,
+                              child: Text(category),
                             ),
+                          )
+                          .toList(),
+                      onChanged: (category) => setState(() {
+                        _selectedCategory = category;
+                        _selectedEquipment = null;
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _newCategoryController,
+                            decoration: const InputDecoration(
+                              labelText: 'New equipment category',
+                              border: OutlineInputBorder(),
+                            ),
+                            onSubmitted: (_) => _addCategory(),
                           ),
+                        ),
+                        const SizedBox(width: 12),
+                        IconButton.filledTonal(
+                          tooltip: 'Add category',
+                          onPressed: _addCategory,
+                          icon: const Icon(Icons.add),
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Equipment list',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Center(child: _EquipmentTable(records: _records)),
-                ],
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: equipment.contains(_selectedEquipment)
+                          ? _selectedEquipment
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Equipment',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(
+                          Icons.precision_manufacturing_outlined,
+                        ),
+                      ),
+                      items: equipment
+                          .map(
+                            (name) => DropdownMenuItem(
+                              value: name,
+                              child: Text(name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: equipment.isEmpty
+                          ? null
+                          : (name) => setState(() => _selectedEquipment = name),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _newEquipmentController,
+                            decoration: const InputDecoration(
+                              labelText: 'New equipment',
+                              border: OutlineInputBorder(),
+                            ),
+                            onSubmitted: (_) => _addEquipmentOption(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        IconButton.filledTonal(
+                          tooltip: 'Add equipment',
+                          onPressed: _addEquipmentOption,
+                          icon: const Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Business and location',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue:
+                          widget.businesses.any(
+                            (business) =>
+                                business.name == _selectedBusinessName,
+                          )
+                          ? _selectedBusinessName
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Business Name',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.business_outlined),
+                      ),
+                      items: widget.businesses
+                          .map(
+                            (business) => DropdownMenuItem<String>(
+                              value: business.name,
+                              child: Text(business.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (name) => setState(() {
+                        _selectedBusinessName = name;
+                        _selectedLocationName = null;
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue:
+                          locations.any(
+                            (location) =>
+                                location.name == _selectedLocationName,
+                          )
+                          ? _selectedLocationName
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Location Name',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                      items: locations
+                          .map(
+                            (location) => DropdownMenuItem<String>(
+                              value: location.name,
+                              child: Text(location.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _selectedBusinessName == null
+                          ? null
+                          : (name) =>
+                                setState(() => _selectedLocationName = name),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Equipment details',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final fieldWidth = constraints.maxWidth >= 560
+                            ? (constraints.maxWidth - 16) / 2
+                            : constraints.maxWidth;
+                        return Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          children: [
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Local Name',
+                                _localNameController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Local Number',
+                                _localNumberController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Manufacturer Name',
+                                _manufacturerNameController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Equipment Name',
+                                _equipmentNameController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Equipment Model',
+                                _equipmentModelController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Serial Number',
+                                _serialNumberController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Maintenance Manual',
+                                _maintenanceManualController,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _textField(
+                                'Publisher',
+                                _publisherController,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: _addEquipment,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Equipment'),
+                      ),
+                    ),
+                    if (_selectedEquipment != null) ...[
+                      const SizedBox(height: 20),
+                      ListTile(
+                        leading: Icon(
+                          Icons.check_circle_outline,
+                          color: colors.primary,
+                        ),
+                        title: Text(_selectedEquipment!),
+                        subtitle: Text(_selectedCategory!),
+                        tileColor: colors.surfaceContainerLow,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ),
+          ],
         ),
+      ),
+      records: ManagementRecordTable(
+        columns: EquipmentRecord.columns,
+        rows: [for (final record in _records) record.values],
+        emptyMessage: 'No equipment added yet.',
       ),
     );
   }
-}
-
-class _EquipmentRecord {
-  const _EquipmentRecord({
-    required this.localName,
-    required this.localNumber,
-    required this.manufacturerName,
-    required this.equipmentName,
-    required this.equipmentModel,
-    required this.serialNumber,
-  });
-
-  final String localName;
-  final String localNumber;
-  final String manufacturerName;
-  final String equipmentName;
-  final String equipmentModel;
-  final String serialNumber;
-}
-
-class _EquipmentTable extends StatelessWidget {
-  const _EquipmentTable({required this.records});
-
-  final List<_EquipmentRecord> records;
-
-  @override
-  Widget build(BuildContext context) {
-    final table = _buildTable(context);
-    if (records.isNotEmpty) return table;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        table,
-        const Padding(
-          padding: EdgeInsets.all(20),
-          child: Center(child: Text('No equipment added yet.')),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTable(BuildContext context) => SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: DataTable(
-      headingRowColor: WidgetStatePropertyAll(
-        Theme.of(context).colorScheme.surfaceContainerHighest,
-      ),
-      dataRowMinHeight: 52,
-      columns: const [
-        DataColumn(label: Text('Local Name')),
-        DataColumn(label: Text('Local Number')),
-        DataColumn(label: Text('Manufacturer Name')),
-        DataColumn(label: Text('Equipment Name')),
-        DataColumn(label: Text('Equipment Model')),
-        DataColumn(label: Text('Serial Number')),
-      ],
-      rows: records
-          .map(
-            (record) => DataRow(
-              cells: [
-                DataCell(Text(record.localName)),
-                DataCell(Text(record.localNumber)),
-                DataCell(Text(record.manufacturerName)),
-                DataCell(Text(record.equipmentName)),
-                DataCell(Text(record.equipmentModel)),
-                DataCell(Text(record.serialNumber)),
-              ],
-            ),
-          )
-          .toList(),
-    ),
-  );
 }

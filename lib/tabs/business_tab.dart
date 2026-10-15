@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/business_entry.dart';
 import '../widgets/business_form.dart';
 import '../widgets/business_table.dart';
+import '../widgets/management_tab_layout.dart';
 
 class BusinessTab extends StatefulWidget {
   const BusinessTab({
@@ -24,41 +25,18 @@ class BusinessTab extends StatefulWidget {
 
 class _BusinessTabState extends State<BusinessTab> {
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final width = constraints.maxWidth < 1100 ? constraints.maxWidth : 1100.0;
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: SizedBox(
-            width: width,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                BusinessForm(
-                  kind: widget.kind,
-                  businesses: widget.businesses,
-                  onSubmit: (entry) => setState(() => widget.onAdd(entry)),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  widget.kind == BusinessTabKind.people
-                      ? 'People'
-                      : 'Businesses',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: widget.kind == BusinessTabKind.people
-                      ? PeopleTable(entries: widget.entries)
-                      : BusinessTable(entries: widget.entries),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
+  Widget build(BuildContext context) => ManagementTabLayout(
+    form: BusinessForm(
+      kind: widget.kind,
+      businesses: widget.businesses,
+      onSubmit: (entry) => setState(() => widget.onAdd(entry)),
+    ),
+    recordsTitle: widget.kind == BusinessTabKind.people
+        ? 'People'
+        : 'Businesses',
+    records: widget.kind == BusinessTabKind.people
+        ? PeopleTable(entries: widget.entries)
+        : BusinessTable(entries: widget.entries),
   );
 }
 
