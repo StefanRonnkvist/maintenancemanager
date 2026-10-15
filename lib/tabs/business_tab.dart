@@ -29,6 +29,7 @@ class BusinessTab extends StatefulWidget {
 class _BusinessTabState extends State<BusinessTab> {
   @override
   Widget build(BuildContext context) => ManagementTabLayout(
+    text: widget.text,
     title: widget.text.tabTitle(
       widget.kind == BusinessTabKind.people ? 'people' : 'business',
     ),

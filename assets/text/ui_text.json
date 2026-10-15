@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "tabs": {
+    "information": {},
     "equipment": {
       "title": "Equipment",
       "formTitle": "Add Equipment",
@@ -27,6 +28,13 @@
         "publisher": { "label": "Publisher", "type": "string", "control": "text" }
       },
       "tableColumns": ["Business Name", "Location Name", "Local Name", "Local Number", "Manufacturer Name", "Equipment Name", "Equipment Model", "Serial Number", "Maintenance Manual", "Publisher"],
+      "equipmentCategories": {
+        "Manufacturing and Production Machinery": ["CNC machines", "Lathes", "Lasers", "Milling machines", "Stamping presses", "Robotic welders"],
+        "Material Handling and Transport": ["Conveyor systems", "Forklifts", "Cranes", "Auger conveyors", "Automation"],
+        "Heavy Construction and Earthmoving Equipment": ["Bulldozers", "Excavators", "Articulated trucks", "Compactors"],
+        "Facility and HVAC Systems": ["Furnaces", "Boilers", "Heat exchangers", "Industrial compressors", "Large-scale water pumps"],
+        "Processing and Packaging Equipment": ["Extrusion machines", "Injection molds", "Granulators", "Bagging machinery", "Shrink-wrapping machines"]
+      },
       "actions": { "add": "Add Equipment" }
     },
     "spareParts": {
@@ -100,7 +108,7 @@
     },
     "information": {
       "title": "Information",
-      "tabs": { "contact": "Contact", "submissions": "Submissions" },
+      "tabs": { "contact": "Contact", "submissions": "Submissions" }
     },
     "applicationDb": {
       "title": "Application DB",
@@ -108,7 +116,28 @@
     }
   },
   "app": {
-    "title": "Maintenance Manager",
+    "title": "Maintenance Manager"
+    "theme": {
+      "seedColor": "indigo",
+      "fontFamily": "Roboto",
+      "textSizes": {
+        "displayLarge": 57, "displayMedium": 45, "displaySmall": 36,
+        "headlineLarge": 32, "headlineMedium": 28, "headlineSmall": 24,
+        "titleLarge": 22, "titleMedium": 16, "titleSmall": 14,
+        "bodyLarge": 16, "bodyMedium": 14, "bodySmall": 12,
+        "labelLarge": 14, "labelMedium": 12, "labelSmall": 11
+      }
+    },
+    "equipmentCategories": {
+      "Manufacturing and Production Machinery": ["CNC machines", "Lathes", "Lasers", "Milling machines", "Stamping presses", "Robotic welders"],
+      "Material Handling and Transport": ["Conveyor systems", "Forklifts", "Cranes", "Auger conveyors", "Automation"],
+      "Heavy Construction and Earthmoving Equipment": ["Bulldozers", "Excavators", "Articulated trucks", "Compactors"],
+      "Facility and HVAC Systems": ["Furnaces", "Boilers", "Heat exchangers", "Industrial compressors", "Large-scale water pumps"],
+      "Processing and Packaging Equipment": ["Extrusion machines", "Injection molds", "Granulators", "Bagging machinery", "Shrink-wrapping machines"]
+    },
+    "equipmentTableColumns": ["Business Name", "Location Name", "Local Name", "Local Number", "Manufacturer Name", "Equipment Name", "Equipment Model", "Serial Number", "Maintenance Manual", "Publisher"],
+    "sparePartsTableColumns": ["OEM Part Number", "OEM Description", "Vendor Part Number", "Vendor Description", "Serial Number", "Vendor Name", "Quantity in Stock", "Location"],
+    "applicationDbStorageKey": "application_db_records_v1",
     "actions": { "addCategory": "Add category", "addEquipment": "Add equipment", "addLocation": "Add Location", "addAirport": "Add Airport" },
     "options": {
       "equipmentCategories": ["Manufacturing and Production Machinery", "Material Handling and Transport", "Heavy Construction and Earthmoving Equipment", "Facility and HVAC Systems", "Processing and Packaging Equipment"],

@@ -23,5 +23,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/text/ui_text.json
+    - assets/config/static_config.json
 msix_config:
   msix_version: 0.1.13.14

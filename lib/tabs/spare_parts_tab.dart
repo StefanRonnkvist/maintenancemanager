@@ -77,6 +77,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
 
   @override
   Widget build(BuildContext context) => ManagementTabLayout(
+    text: widget.text,
     title: widget.text('title', tab: 'spareParts'),
     recordsTitle: widget.text('recordsTitle', tab: 'spareParts'),
     form: Card(
@@ -205,7 +206,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
       ),
     ),
     records: ManagementRecordTable(
-      columns: SparePartRecord.columns,
+      columns: widget.text.list('sparePartsTableColumns'),
       rows: [for (final record in _records) record.values],
       emptyMessage: widget.text('emptyMessage', tab: 'spareParts'),
     ),

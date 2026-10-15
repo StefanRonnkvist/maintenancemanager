@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../models/ui_text_catalog.dart';
+
 class ManagementTabLayout extends StatelessWidget {
   const ManagementTabLayout({
+    required this.text,
     required this.form,
     required this.recordsTitle,
     required this.records,
@@ -9,23 +12,21 @@ class ManagementTabLayout extends StatelessWidget {
     super.key,
   });
 
+  final UiTextCatalog text;
   final Widget form;
   final String? title;
   final String recordsTitle;
   final Widget records;
 
-  static const double maxWidth = 1100;
-  static const EdgeInsets pagePadding = EdgeInsets.all(20);
-  static const double sectionSpacing = 24;
-
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      final maxWidth = text.number('maxWidth', tab: 'layout');
       final width = constraints.maxWidth < maxWidth
           ? constraints.maxWidth
           : maxWidth;
       return SingleChildScrollView(
-        padding: pagePadding,
+        padding: EdgeInsets.all(text.number('pagePadding', tab: 'layout')),
         child: Center(
           child: SizedBox(
             width: width,
@@ -40,7 +41,7 @@ class ManagementTabLayout extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
                 form,
-                const SizedBox(height: sectionSpacing),
+                SizedBox(height: text.number('sectionSpacing', tab: 'layout')),
                 Text(
                   recordsTitle,
                   style: Theme.of(context).textTheme.titleLarge,

@@ -37,7 +37,7 @@ class InformationTabs extends StatelessWidget {
                 showAppBar: false,
                 wrapInScaffold: false,
               ),
-              SubmissionsCsvCardsView(),
+              SubmissionsCsvCardsView(text: text),
             ],
           ),
         ),

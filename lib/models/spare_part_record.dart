@@ -10,17 +10,6 @@ class SparePartRecord {
     required this.location,
   });
 
-  static const List<String> columns = [
-    'OEM Part Number',
-    'OEM Description',
-    'Vendor Part Number',
-    'Vendor Description',
-    'Serial Number',
-    'Vendor Name',
-    'Quantity in Stock',
-    'Location',
-  ];
-
   final String oemPartNumber;
   final String oemDescription;
   final String vendorPartNumber;

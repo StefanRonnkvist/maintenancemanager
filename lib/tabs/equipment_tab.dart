@@ -12,47 +12,9 @@ class EquipmentTab extends StatelessWidget {
   final List<BusinessEntry> businesses;
   final UiTextCatalog text;
 
-  static const Map<String, List<String>> _equipmentCategories = {
-    'Manufacturing and Production Machinery': [
-      'CNC machines',
-      'Lathes',
-      'Lasers',
-      'Milling machines',
-      'Stamping presses',
-      'Robotic welders',
-    ],
-    'Material Handling and Transport': [
-      'Conveyor systems',
-      'Forklifts',
-      'Cranes',
-      'Auger conveyors',
-      'Automation',
-    ],
-    'Heavy Construction and Earthmoving Equipment': [
-      'Bulldozers',
-      'Excavators',
-      'Articulated trucks',
-      'Compactors',
-    ],
-    'Facility and HVAC Systems': [
-      'Furnaces',
-      'Boilers',
-      'Heat exchangers',
-      'Industrial compressors',
-      'Large-scale water pumps',
-    ],
-    'Processing and Packaging Equipment': [
-      'Extrusion machines',
-      'Injection molds',
-      'Granulators',
-      'Bagging machinery',
-      'Shrink-wrapping machines',
-    ],
-  };
-
   @override
   Widget build(BuildContext context) => _EquipmentBrowser(
-    categories: _equipmentCategories,
+    categories: text.stringListMap('equipmentCategories'),
     businesses: businesses,
     text: text,
   );
@@ -198,6 +160,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     final colors = Theme.of(context).colorScheme;
 
     return ManagementTabLayout(
+      text: widget.text,
       title: widget.text.tabTitle('equipment'),
       recordsTitle: widget.text('recordsTitle', tab: 'equipment'),
       form: Card(
@@ -515,7 +478,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
         ),
       ),
       records: ManagementRecordTable(
-        columns: EquipmentRecord.columns,
+        columns: widget.text.list('equipmentTableColumns'),
         rows: [for (final record in _records) record.values],
         emptyMessage: widget.text('emptyMessage', tab: 'equipment'),
       ),

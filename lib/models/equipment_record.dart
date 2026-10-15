@@ -12,19 +12,6 @@ class EquipmentRecord {
     required this.locationName,
   });
 
-  static const List<String> columns = [
-    'Business Name',
-    'Location Name',
-    'Local Name',
-    'Local Number',
-    'Manufacturer Name',
-    'Equipment Name',
-    'Equipment Model',
-    'Serial Number',
-    'Maintenance Manual',
-    'Publisher',
-  ];
-
   final String localName;
   final String localNumber;
   final String manufacturerName;
