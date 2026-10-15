@@ -65,8 +65,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       if (!saved) throw StateError('The device did not save the records.');
       if (mounted) setState(() => _storageError = null);
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() => _storageError = 'Could not save local records: $error');
+      }
     }
   }
 

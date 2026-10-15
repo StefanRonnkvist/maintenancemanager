@@ -1,7 +1,7 @@
 name: maintenancemanager
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.13+14
+version: 0.1.14+15
 
 environment:
   sdk: ^3.13.4
@@ -25,4 +25,4 @@ flutter:
     - assets/text/ui_text.json
     - assets/config/static_config.json
 msix_config:
-  msix_version: 0.1.13.14
+  msix_version: 0.1.14.15

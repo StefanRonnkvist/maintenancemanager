@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 class UiTextCatalog {
   UiTextCatalog._(this._staticConfig);
 
-  static const assetPath = 'assets/config/static_config.json';
+  static final String assetPath = 'assets/config/static_config.json';
   static Future<UiTextCatalog>? _loading;
   static UiTextCatalog? _instance;
 
@@ -42,9 +42,7 @@ class UiTextCatalog {
     final tabData = tabs is Map<String, dynamic> && tab != null
         ? tabs[tab]
         : null;
-    final value = tabData is Map<String, dynamic>
-        ? tabData[key]
-        : null;
+    final value = tabData is Map<String, dynamic> ? tabData[key] : null;
     final appData = _staticConfig['app'];
     final appValue = appData is Map<String, dynamic> ? appData[key] : null;
     final selected = value ?? appValue ?? fallback;
@@ -125,8 +123,7 @@ class UiTextCatalog {
   }
 
   Map<String, dynamic> _configGroup(String group) {
-    final app = _staticConfig['app'];
-    final groupValue = app is Map<String, dynamic> ? app[group] : null;
+    final groupValue = _staticConfig[group];
     if (groupValue is Map<String, dynamic>) return groupValue;
     throw FormatException('Missing config group "$group".');
   }

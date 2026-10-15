@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tabs": {
-    "information": {},
+    "information": {"tabs": {"contact": "Contact", "submissions": "Submissions"}},
     "equipment": {
       "title": "Equipment",
       "formTitle": "Add Equipment",
@@ -116,7 +116,7 @@
     }
   },
   "app": {
-    "title": "Maintenance Manager"
+    "title": "Maintenance Manager",
     "theme": {
       "seedColor": "indigo",
       "fontFamily": "Roboto",
@@ -142,6 +142,7 @@
     "options": {
       "equipmentCategories": ["Manufacturing and Production Machinery", "Material Handling and Transport", "Heavy Construction and Earthmoving Equipment", "Facility and HVAC Systems", "Processing and Packaging Equipment"],
       "equipment": ["CNC machines", "Lathes", "Lasers", "Milling machines", "Stamping presses", "Robotic welders", "Conveyor systems", "Forklifts", "Cranes", "Auger conveyors", "Automation", "Bulldozers", "Excavators", "Articulated trucks", "Compactors", "Furnaces", "Boilers", "Heat exchangers", "Industrial compressors", "Large-scale water pumps", "Extrusion machines", "Injection molds", "Granulators", "Bagging machinery", "Shrink-wrapping machines"]
-    }
+    },
+    "actions": {"addCategory": "Add category", "addEquipment": "Add equipment", "addLocation": "Add Location", "addAirport": "Add Airport"}
   }
 }
