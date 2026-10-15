@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
+import '../models/ui_text_catalog.dart';
 import 'management_record_table.dart';
 
 class PeopleTable extends StatelessWidget {
-  const PeopleTable({required this.entries, super.key});
+  const PeopleTable({required this.entries, required this.text, super.key});
   final List<BusinessEntry> entries;
+  final UiTextCatalog text;
 
   @override
   Widget build(BuildContext context) => ManagementRecordTable(
-    columns: const [
-      'Name',
-      'Business Name',
-      'Location Name',
-      'Nearest Airport',
-      'Address',
-      'Direct Phone',
-      'Extension',
-      'Cell Phone',
-      'eMail',
-    ],
+    columns: text.tableColumns('people'),
     rows: [
       for (final entry in entries)
         [
@@ -34,27 +26,18 @@ class PeopleTable extends StatelessWidget {
           entry.email,
         ],
     ],
-    emptyMessage: 'No people added yet.',
+    emptyMessage: text.text('emptyMessage', tab: 'people'),
   );
 }
 
 class BusinessTable extends StatelessWidget {
-  const BusinessTable({required this.entries, super.key});
+  const BusinessTable({required this.entries, required this.text, super.key});
   final List<BusinessEntry> entries;
+  final UiTextCatalog text;
 
   @override
   Widget build(BuildContext context) => ManagementRecordTable(
-    columns: const [
-      'Business name',
-      'Business Address',
-      'Business Direct Phone',
-      'Nearest Airport',
-      'Location Name',
-      'Location Address',
-      'Location Direct Phone',
-      'Location Nearest Airport',
-      'Business Type',
-    ],
+    columns: text.tableColumns('business'),
     rows: [
       for (final business in entries)
         if (business.locations.isEmpty)
@@ -83,6 +66,6 @@ class BusinessTable extends StatelessWidget {
               if (index == 0) business.businessType else '',
             ],
     ],
-    emptyMessage: 'No businesses added yet.',
+    emptyMessage: text.text('emptyMessage', tab: 'business'),
   );
 }

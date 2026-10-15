@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
 import '../models/equipment_record.dart';
+import '../models/ui_text_catalog.dart';
 import '../widgets/management_record_table.dart';
 import '../widgets/management_tab_layout.dart';
 
 class EquipmentTab extends StatelessWidget {
-  const EquipmentTab({required this.businesses, super.key});
+  const EquipmentTab({required this.businesses, required this.text, super.key});
 
   final List<BusinessEntry> businesses;
+  final UiTextCatalog text;
 
   static const Map<String, List<String>> _equipmentCategories = {
     'Manufacturing and Production Machinery': [
@@ -52,14 +54,20 @@ class EquipmentTab extends StatelessWidget {
   Widget build(BuildContext context) => _EquipmentBrowser(
     categories: _equipmentCategories,
     businesses: businesses,
+    text: text,
   );
 }
 
 class _EquipmentBrowser extends StatefulWidget {
-  const _EquipmentBrowser({required this.categories, required this.businesses});
+  const _EquipmentBrowser({
+    required this.categories,
+    required this.businesses,
+    required this.text,
+  });
 
   final Map<String, List<String>> categories;
   final List<BusinessEntry> businesses;
+  final UiTextCatalog text;
 
   @override
   State<_EquipmentBrowser> createState() => _EquipmentBrowserState();
@@ -190,14 +198,15 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     final colors = Theme.of(context).colorScheme;
 
     return ManagementTabLayout(
-      recordsTitle: 'Equipment list',
+      title: widget.text.tabTitle('equipment'),
+      recordsTitle: widget.text('recordsTitle', tab: 'equipment'),
       form: Card(
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
             ListTile(
               title: Text(
-                'Add Equipment',
+                widget.text('formTitle', tab: 'equipment'),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               trailing: Icon(
@@ -215,8 +224,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                       initialValue: categories.contains(_selectedCategory)
                           ? _selectedCategory
                           : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Equipment category',
+                      decoration: InputDecoration(
+                        labelText: widget.text.fieldLabel(
+                          'equipment',
+                          'category',
+                        ),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.category_outlined),
                       ),
@@ -239,8 +251,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                         Expanded(
                           child: TextField(
                             controller: _newCategoryController,
-                            decoration: const InputDecoration(
-                              labelText: 'New equipment category',
+                            decoration: InputDecoration(
+                              labelText: widget.text.fieldLabel(
+                                'equipment',
+                                'newCategory',
+                              ),
                               border: OutlineInputBorder(),
                             ),
                             onSubmitted: (_) => _addCategory(),
@@ -259,8 +274,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                       initialValue: equipment.contains(_selectedEquipment)
                           ? _selectedEquipment
                           : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Equipment',
+                      decoration: InputDecoration(
+                        labelText: widget.text.fieldLabel(
+                          'equipment',
+                          'equipment',
+                        ),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(
                           Icons.precision_manufacturing_outlined,
@@ -284,8 +302,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                         Expanded(
                           child: TextField(
                             controller: _newEquipmentController,
-                            decoration: const InputDecoration(
-                              labelText: 'New equipment',
+                            decoration: InputDecoration(
+                              labelText: widget.text.fieldLabel(
+                                'equipment',
+                                'newEquipment',
+                              ),
                               border: OutlineInputBorder(),
                             ),
                             onSubmitted: (_) => _addEquipmentOption(),
@@ -301,7 +322,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Business and location',
+                      widget.text.section('equipment', 'businessLocation'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -313,8 +334,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                           )
                           ? _selectedBusinessName
                           : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Business Name',
+                      decoration: InputDecoration(
+                        labelText: widget.text.fieldLabel(
+                          'equipment',
+                          'businessName',
+                        ),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.business_outlined),
                       ),
@@ -340,8 +364,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                           )
                           ? _selectedLocationName
                           : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Location Name',
+                      decoration: InputDecoration(
+                        labelText: widget.text.fieldLabel(
+                          'equipment',
+                          'locationName',
+                        ),
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.location_on_outlined),
                       ),
@@ -360,7 +387,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Equipment details',
+                      widget.text.section('equipment', 'details'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -376,56 +403,80 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Local Name',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'localName',
+                                ),
                                 _localNameController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Local Number',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'localNumber',
+                                ),
                                 _localNumberController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Manufacturer Name',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'manufacturerName',
+                                ),
                                 _manufacturerNameController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Equipment Name',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'equipmentName',
+                                ),
                                 _equipmentNameController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Equipment Model',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'equipmentModel',
+                                ),
                                 _equipmentModelController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Serial Number',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'serialNumber',
+                                ),
                                 _serialNumberController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Maintenance Manual',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'maintenanceManual',
+                                ),
                                 _maintenanceManualController,
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
                               child: _textField(
-                                'Publisher',
+                                widget.text.fieldLabel(
+                                  'equipment',
+                                  'publisher',
+                                ),
                                 _publisherController,
                               ),
                             ),
@@ -439,7 +490,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                       child: FilledButton.icon(
                         onPressed: _addEquipment,
                         icon: const Icon(Icons.add),
-                        label: const Text('Add Equipment'),
+                        label: Text(widget.text.action('equipment', 'add')),
                       ),
                     ),
                     if (_selectedEquipment != null) ...[
@@ -466,7 +517,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
       records: ManagementRecordTable(
         columns: EquipmentRecord.columns,
         rows: [for (final record in _records) record.values],
-        emptyMessage: 'No equipment added yet.',
+        emptyMessage: widget.text('emptyMessage', tab: 'equipment'),
       ),
     );
   }

@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "tabs": {
+    "equipment": {
+      "title": "Equipment",
+      "formTitle": "Add Equipment",
+      "recordsTitle": "Equipment list",
+      "emptyMessage": "No equipment added yet.",
+      "sections": {
+        "businessLocation": "Business and location",
+        "details": "Equipment details"
+      },
+      "fields": {
+        "category": { "label": "Equipment category", "type": "string", "control": "select" },
+        "newCategory": { "label": "New equipment category", "type": "string", "control": "text" },
+        "equipment": { "label": "Equipment", "type": "string", "control": "select" },
+        "newEquipment": { "label": "New equipment", "type": "string", "control": "text" },
+        "businessName": { "label": "Business Name", "type": "string", "control": "select" },
+        "locationName": { "label": "Location Name", "type": "string", "control": "select" },
+        "localName": { "label": "Local Name", "type": "string", "control": "text" },
+        "localNumber": { "label": "Local Number", "type": "string", "control": "text" },
+        "manufacturerName": { "label": "Manufacturer Name", "type": "string", "control": "text" },
+        "equipmentName": { "label": "Equipment Name", "type": "string", "control": "text" },
+        "equipmentModel": { "label": "Equipment Model", "type": "string", "control": "text" },
+        "serialNumber": { "label": "Serial Number", "type": "string", "control": "text" },
+        "maintenanceManual": { "label": "Maintenance Manual", "type": "string", "control": "text" },
+        "publisher": { "label": "Publisher", "type": "string", "control": "text" }
+      },
+      "tableColumns": ["Business Name", "Location Name", "Local Name", "Local Number", "Manufacturer Name", "Equipment Name", "Equipment Model", "Serial Number", "Maintenance Manual", "Publisher"],
+      "actions": { "add": "Add Equipment" }
+    },
+    "spareParts": {
+      "title": "Spare Parts",
+      "formTitle": "Add Spare Part",
+      "recordsTitle": "Spare parts list",
+      "emptyMessage": "No spare parts added yet.",
+      "actions": { "add": "Add Spare Part" },
+      "fields": {
+        "oemPartNumber": { "label": "OEM Part Number", "type": "string", "control": "text" },
+        "oemDescription": { "label": "OEM Description", "type": "string", "control": "text" },
+        "vendorPartNumber": { "label": "Vendor Part Number", "type": "string", "control": "text" },
+        "vendorDescription": { "label": "Vendor Description", "type": "string", "control": "text" },
+        "serialNumber": { "label": "Serial Number", "type": "string", "control": "text" },
+        "vendorName": { "label": "Vendor Name", "type": "string", "control": "text" },
+        "quantityInStock": { "label": "Quantity in Stock", "type": "integer", "control": "number" },
+        "location": { "label": "Location", "type": "string", "control": "text" }
+      },
+      "tableColumns": ["OEM Part Number", "OEM Description", "Vendor Part Number", "Vendor Description", "Serial Number", "Vendor Name", "Quantity in Stock", "Location"],
+      "actions": { "add": "Add Spare Part" }
+    },
+    "people": {
+      "title": "People",
+      "formTitle": "Add person",
+      "recordsTitle": "People",
+      "emptyMessage": "No people added yet.",
+      "actions": { "add": "Add Person", "addLocation": "Add Location", "addAirport": "Add Airport" },
+      "sections": { "personalDetails": "Personal details", "workLocation": "Work location", "contactDetails": "Contact details" },
+      "fields": {
+        "name": { "label": "Name", "type": "string", "control": "text", "required": true },
+        "directPhone": { "label": "Direct Phone", "type": "string", "format": "phone", "control": "tel" },
+        "extension": { "label": "Extension", "type": "integer", "control": "number" },
+        "cellPhone": { "label": "Cell Phone", "type": "string", "format": "phone", "control": "tel" },
+        "email": { "label": "eMail", "type": "string", "format": "email", "control": "email" },
+        "businessName": { "label": "Business Name", "type": "string", "control": "select" },
+        "remoteWork": { "label": "Remote Work", "type": "boolean", "control": "checkbox" },
+        "locationName": { "label": "Location Name", "type": "string", "control": "select" },
+        "address": { "label": "Address", "type": "string", "control": "text", "required": true },
+        "nearestAirport": { "label": "Nearest Airport", "type": "string", "control": "select" },
+        "addAirport": { "label": "Add airport", "type": "string", "control": "text" }
+      },
+      "sections": { "personalDetails": "Personal details", "workLocation": "Work location", "contactDetails": "Contact details" },
+      "fields": {
+        "contactAddress": { "label": "Address", "type": "string", "control": "text", "required": true },
+        "contactPhone": { "label": "Direct phone", "type": "string", "format": "phone", "control": "tel", "required": true }
+      },
+      "tableColumns": ["Name", "Business Name", "Location Name", "Nearest Airport", "Address", "Direct Phone", "Extension", "Cell Phone", "eMail"]
+    },
+    "business": {
+      "title": "Business",
+      "formTitle": "Add business",
+      "recordsTitle": "Businesses",
+      "emptyMessage": "No businesses added yet.",
+      "actions": { "add": "Add Business", "addLocation": "Add Location", "addAirport": "Add Airport" },
+      "sections": { "details": "Business details", "locations": "Business locations" },
+      "fields": {
+        "businessType": { "label": "Business Type", "type": "string", "control": "radio", "options": ["Customer", "Vendor", "Principle"] },
+        "businessName": { "label": "Business name", "type": "string", "control": "text", "required": true },
+        "businessAddress": { "label": "Business Address", "type": "string", "control": "text", "required": true },
+        "businessDirectPhone": { "label": "Business Direct Phone", "type": "string", "format": "phone", "control": "tel", "required": true },
+        "nearestAirport": { "label": "Nearest Airport", "type": "string", "control": "select" },
+        "addAirport": { "label": "Add airport", "type": "string", "control": "text" },
+        "locationName": { "label": "Location Name", "type": "string", "control": "text" },
+        "locationAddress": { "label": "Location Address", "type": "string", "control": "text" },
+        "locationDirectPhone": { "label": "Location Direct Phone", "type": "string", "format": "phone", "control": "tel" },
+        "locationNearestAirport": { "label": "Nearest Airport", "type": "string", "control": "select" }
+      },
+      "tableColumns": ["Business name", "Business Address", "Business Direct Phone", "Nearest Airport", "Location Name", "Location Address", "Location Direct Phone", "Location Nearest Airport", "Business Type"],
+      "actions": { "add": "Add Business", "addLocation": "Add Location", "addAirport": "Add Airport" },
+      "options": { "businessType": ["Customer", "Vendor", "Principle"] }
+    },
+    "information": {
+      "title": "Information",
+      "tabs": { "contact": "Contact", "submissions": "Submissions" },
+    },
+    "applicationDb": {
+      "title": "Application DB",
+      "texts": { "database": "Application database" }
+    }
+  },
+  "app": {
+    "title": "Maintenance Manager",
+    "actions": { "addCategory": "Add category", "addEquipment": "Add equipment", "addLocation": "Add Location", "addAirport": "Add Airport" },
+    "options": {
+      "equipmentCategories": ["Manufacturing and Production Machinery", "Material Handling and Transport", "Heavy Construction and Earthmoving Equipment", "Facility and HVAC Systems", "Processing and Packaging Equipment"],
+      "equipment": ["CNC machines", "Lathes", "Lasers", "Milling machines", "Stamping presses", "Robotic welders", "Conveyor systems", "Forklifts", "Cranes", "Auger conveyors", "Automation", "Bulldozers", "Excavators", "Articulated trucks", "Compactors", "Furnaces", "Boilers", "Heat exchangers", "Industrial compressors", "Large-scale water pumps", "Extrusion machines", "Injection molds", "Granulators", "Bagging machinery", "Shrink-wrapping machines"]
+    }
+  }
+}

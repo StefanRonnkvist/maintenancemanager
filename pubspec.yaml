@@ -21,5 +21,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/text/ui_text.json
 msix_config:
   msix_version: 0.1.13.14

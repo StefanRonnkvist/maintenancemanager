@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'ui_text_catalog.dart';
+
 enum AppTab {
   equipment,
   spareParts,
@@ -10,13 +12,13 @@ enum AppTab {
 }
 
 extension AppTabPresentation on AppTab {
-  String get label => switch (this) {
-    AppTab.equipment => 'Equipment',
-    AppTab.spareParts => 'Spare Parts',
-    AppTab.people => 'People',
-    AppTab.business => 'Business',
-    AppTab.information => 'Information',
-    AppTab.applicationDb => 'Application DB',
+  String label(UiTextCatalog text) => switch (this) {
+    AppTab.equipment => text.tabTitle('equipment'),
+    AppTab.spareParts => text.tabTitle('spareParts'),
+    AppTab.people => text.tabTitle('people'),
+    AppTab.business => text.tabTitle('business'),
+    AppTab.information => text.tabTitle('information'),
+    AppTab.applicationDb => text.tabTitle('applicationDb'),
   };
 
   IconData get icon => switch (this) {

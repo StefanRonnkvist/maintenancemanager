@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/spare_part_record.dart';
+import '../models/ui_text_catalog.dart';
 import '../widgets/management_record_table.dart';
 import '../widgets/management_tab_layout.dart';
 
 class SparePartsTab extends StatefulWidget {
-  const SparePartsTab({super.key});
+  const SparePartsTab({required this.text, super.key});
+
+  final UiTextCatalog text;
 
   @override
   State<SparePartsTab> createState() => _SparePartsTabState();
@@ -74,14 +77,15 @@ class _SparePartsTabState extends State<SparePartsTab> {
 
   @override
   Widget build(BuildContext context) => ManagementTabLayout(
-    recordsTitle: 'Spare parts list',
+    title: widget.text('title', tab: 'spareParts'),
+    recordsTitle: widget.text('recordsTitle', tab: 'spareParts'),
     form: Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
           ListTile(
             title: Text(
-              'Add Spare Part',
+              widget.text('formTitle', tab: 'spareParts'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             trailing: Icon(
@@ -107,55 +111,79 @@ class _SparePartsTabState extends State<SparePartsTab> {
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'OEM Part Number',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'oemPartNumber',
+                              ),
                               _oemPartNumberController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'OEM Description',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'oemDescription',
+                              ),
                               _oemDescriptionController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'Vendor Part Number',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'vendorPartNumber',
+                              ),
                               _vendorPartNumberController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'Vendor Description',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'vendorDescription',
+                              ),
                               _vendorDescriptionController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'Serial Number',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'serialNumber',
+                              ),
                               _serialNumberController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'Vendor Name',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'vendorName',
+                              ),
                               _vendorNameController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
                             child: _textField(
-                              'Quantity in Stock',
+                              widget.text.fieldLabel(
+                                'spareParts',
+                                'quantityInStock',
+                              ),
                               _quantityInStockController,
                             ),
                           ),
                           SizedBox(
                             width: fieldWidth,
-                            child: _textField('Location', _locationController),
+                            child: _textField(
+                              widget.text.fieldLabel('spareParts', 'location'),
+                              _locationController,
+                            ),
                           ),
                         ],
                       );
@@ -167,7 +195,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
                     child: FilledButton.icon(
                       onPressed: _addSparePart,
                       icon: const Icon(Icons.add),
-                      label: const Text('Add Spare Part'),
+                      label: Text(widget.text.action('spareParts', 'add')),
                     ),
                   ),
                 ],
@@ -179,7 +207,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
     records: ManagementRecordTable(
       columns: SparePartRecord.columns,
       rows: [for (final record in _records) record.values],
-      emptyMessage: 'No spare parts added yet.',
+      emptyMessage: widget.text('emptyMessage', tab: 'spareParts'),
     ),
   );
 }

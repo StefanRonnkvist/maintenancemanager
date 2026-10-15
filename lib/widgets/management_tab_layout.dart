@@ -5,10 +5,12 @@ class ManagementTabLayout extends StatelessWidget {
     required this.form,
     required this.recordsTitle,
     required this.records,
+    this.title,
     super.key,
   });
 
   final Widget form;
+  final String? title;
   final String recordsTitle;
   final Widget records;
 
@@ -30,6 +32,13 @@ class ManagementTabLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (title != null) ...[
+                  Text(
+                    title!,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 form,
                 const SizedBox(height: sectionSpacing),
                 Text(

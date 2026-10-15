@@ -12,7 +12,7 @@ class EquipmentRecord {
     required this.locationName,
   });
 
-  static const columns = [
+  static const List<String> columns = [
     'Business Name',
     'Location Name',
     'Local Name',
