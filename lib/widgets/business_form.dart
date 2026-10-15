@@ -39,6 +39,8 @@ class _BusinessFormState extends State<BusinessForm> {
   String? _selectedAirport;
   String? _businessType;
   bool _remoteWork = false;
+  bool _businessFormExpanded = false;
+  bool _peopleFormExpanded = false;
 
   bool get _isPeople => widget.kind == BusinessTabKind.people;
 
@@ -471,31 +473,50 @@ class _BusinessFormState extends State<BusinessForm> {
 
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      children: [
+        ListTile(
+          title: Text(
             _isPeople ? 'Add person' : 'Add business',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 16),
-          Form(
-            key: _formKey,
-            child: _isPeople ? _peopleFields() : _businessFields(),
+          trailing: Icon(
+            (_isPeople ? _peopleFormExpanded : _businessFormExpanded)
+                ? Icons.expand_less
+                : Icons.expand_more,
           ),
-          const SizedBox(height: 20),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.add),
-              label: Text(_isPeople ? 'Add Person' : 'Add Business'),
+          onTap: () => setState(() {
+            if (_isPeople) {
+              _peopleFormExpanded = !_peopleFormExpanded;
+            } else {
+              _businessFormExpanded = !_businessFormExpanded;
+            }
+          }),
+        ),
+        if (_isPeople ? _peopleFormExpanded : _businessFormExpanded)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Form(
+                  key: _formKey,
+                  child: _isPeople ? _peopleFields() : _businessFields(),
+                ),
+                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    onPressed: _submit,
+                    icon: const Icon(Icons.add),
+                    label: Text(_isPeople ? 'Add Person' : 'Add Business'),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+      ],
     ),
   );
 }
