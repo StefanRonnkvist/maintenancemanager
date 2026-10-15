@@ -64,7 +64,7 @@ class _MainTabPageState extends State<MainTabPage>
       controller: _controller,
       children: [
         EquipmentTab(businesses: _businesses),
-        const SparePartsTab(),
+        SparePartsTab(businesses: _businesses),
         BusinessTab(
           entries: _people,
           onAdd: (entry) => setState(() => _people.add(entry)),
