@@ -6,6 +6,7 @@ enum AppTab {
   people,
   business,
   information,
+  message,
   applicationDb,
   help,
 }
@@ -17,6 +18,7 @@ extension AppTabPresentation on AppTab {
     AppTab.people => 'People',
     AppTab.business => 'Business',
     AppTab.information => 'Information',
+    AppTab.message => 'Message',
     AppTab.applicationDb => 'Application DB',
     AppTab.help => 'Help',
   };
@@ -27,6 +29,7 @@ extension AppTabPresentation on AppTab {
     AppTab.people => Icons.people_outline,
     AppTab.business => Icons.business_outlined,
     AppTab.information => Icons.contact_support_outlined,
+    AppTab.message => Icons.message_outlined,
     AppTab.applicationDb => Icons.storage_outlined,
     AppTab.help => Icons.help_outline,
   };

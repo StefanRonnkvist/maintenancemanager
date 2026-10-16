@@ -8,6 +8,7 @@ import 'tabs/help_tab.dart';
 import 'tabs/equipment_tab.dart';
 import 'tabs/spare_parts_tab.dart';
 import 'tabs/application_db_tab.dart';
+import 'tabs/message_tab.dart';
 import 'widgets/app_tab_item.dart';
 
 enum AppThemeMode { system, dark, light }
@@ -161,6 +162,7 @@ class _MainTabPageState extends State<MainTabPage>
           kind: BusinessTabKind.business,
         ),
         const InformationTabs(),
+        MessageTab(people: _people, businesses: _businesses),
         const ApplicationDbTab(),
         const HelpTab(),
       ],
