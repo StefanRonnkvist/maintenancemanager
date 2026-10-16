@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
+import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 import '../widgets/spare_parts_form.dart';
 import '../widgets/spare_parts_table.dart';
@@ -17,7 +18,10 @@ class SparePartsTab extends StatefulWidget {
 }
 
 class _SparePartsTabState extends State<SparePartsTab> {
+  static const _storageKey = 'spare_parts_records_v1';
   bool _formExpanded = false;
+  bool _isLoading = true;
+  String? _storageError;
   final _oemPartNumber = TextEditingController();
   final _oemDescription = TextEditingController();
   final _vendorPartNumber = TextEditingController();
@@ -27,6 +31,36 @@ class _SparePartsTabState extends State<SparePartsTab> {
   final _quantityInStock = TextEditingController();
   final _location = TextEditingController();
   final List<SparePartRecord> _records = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecords();
+  }
+
+  Future<void> _loadRecords() async {
+    try {
+      final rows = await LocalRecordStore.read(_storageKey);
+      _records.addAll(rows.map(SparePartRecord.fromJson));
+    } catch (error) {
+      _storageError = 'Could not load spare parts: $error';
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _persistRecords() async {
+    try {
+      await LocalRecordStore.write(
+        _storageKey,
+        _records.map((record) => record.toJson()).toList(),
+      );
+      if (mounted) setState(() => _storageError = null);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _storageError = 'Could not save spare parts: $error');
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -53,6 +87,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
       _quantityInStock.clear();
       _location.clear();
     });
+    _persistRecords();
   }
 
   @override
@@ -93,6 +128,18 @@ class _SparePartsTabState extends State<SparePartsTab> {
       ),
     ),
     recordsTitle: 'Spare parts list',
-    records: SparePartsTable(records: _records),
+    records: _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_storageError != null)
+                Text(
+                  _storageError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              SparePartsTable(records: _records),
+            ],
+          ),
   );
 }

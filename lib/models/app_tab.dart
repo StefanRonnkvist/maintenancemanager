@@ -7,6 +7,7 @@ enum AppTab {
   business,
   information,
   applicationDb,
+  help,
 }
 
 extension AppTabPresentation on AppTab {
@@ -17,6 +18,7 @@ extension AppTabPresentation on AppTab {
     AppTab.business => 'Business',
     AppTab.information => 'Information',
     AppTab.applicationDb => 'Application DB',
+    AppTab.help => 'Help',
   };
 
   IconData get icon => switch (this) {
@@ -26,5 +28,6 @@ extension AppTabPresentation on AppTab {
     AppTab.business => Icons.business_outlined,
     AppTab.information => Icons.contact_support_outlined,
     AppTab.applicationDb => Icons.storage_outlined,
+    AppTab.help => Icons.help_outline,
   };
 }

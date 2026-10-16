@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
+import '../services/local_record_store.dart';
 import '../widgets/business_form.dart';
 import '../widgets/business_table.dart';
 import '../widgets/management_tab_layout.dart';
@@ -24,7 +25,55 @@ class BusinessTab extends StatefulWidget {
 }
 
 class _BusinessTabState extends State<BusinessTab> {
+  static const _peopleStorageKey = 'people_records_v1';
+  static const _businessStorageKey = 'business_records_v1';
   bool _formExpanded = false;
+  bool _isLoading = true;
+  String? _storageError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEntries();
+  }
+
+  Future<void> _loadEntries() async {
+    try {
+      final key = widget.kind == BusinessTabKind.people
+          ? _peopleStorageKey
+          : _businessStorageKey;
+      final rows = await LocalRecordStore.read(key);
+      if (!mounted) return;
+      widget.entries
+        ..clear()
+        ..addAll(rows.map(BusinessEntry.fromJson));
+    } catch (error) {
+      _storageError = 'Could not load records: $error';
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _persistEntries() async {
+    try {
+      final key = widget.kind == BusinessTabKind.people
+          ? _peopleStorageKey
+          : _businessStorageKey;
+      await LocalRecordStore.write(
+        key,
+        widget.entries.map((entry) => entry.toJson()).toList(),
+      );
+      if (mounted) setState(() => _storageError = null);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _storageError = 'Could not save records: $error');
+      }
+    }
+  }
+
+  void _addEntry(BusinessEntry entry) {
+    setState(() => widget.onAdd(entry));
+    _persistEntries();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,18 +99,32 @@ class _BusinessTabState extends State<BusinessTab> {
                 child: BusinessForm(
                   kind: widget.kind,
                   businesses: widget.businesses,
-                  onSubmit: (entry) => setState(() => widget.onAdd(entry)),
+                  onSubmit: _addEntry,
                 ),
               ),
           ],
         ),
       ),
       recordsTitle: isPeople ? 'People' : 'Businesses',
-      records: Center(
-        child: isPeople
-            ? PeopleTable(entries: widget.entries)
-            : BusinessTable(entries: widget.entries),
-      ),
+      records: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_storageError != null)
+                  Text(
+                    _storageError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                Center(
+                  child: isPeople
+                      ? PeopleTable(entries: widget.entries)
+                      : BusinessTable(entries: widget.entries),
+                ),
+              ],
+            ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'models/app_tab.dart';
 import 'models/business_entry.dart';
 import 'tabs/business_tab.dart';
 import 'tabs/information_tabs.dart';
+import 'tabs/help_tab.dart';
 import 'tabs/equipment_tab.dart';
 import 'tabs/spare_parts_tab.dart';
 import 'tabs/application_db_tab.dart';
@@ -19,7 +20,7 @@ class MaintenanceManagerApp extends StatefulWidget {
 }
 
 class _MaintenanceManagerAppState extends State<MaintenanceManagerApp> {
-  AppThemeMode _themeMode = AppThemeMode.system;
+  AppThemeMode _themeMode = AppThemeMode.dark;
 
   void _setThemeMode(AppThemeMode mode) => setState(() => _themeMode = mode);
 
@@ -161,6 +162,7 @@ class _MainTabPageState extends State<MainTabPage>
         ),
         const InformationTabs(),
         const ApplicationDbTab(),
+        const HelpTab(),
       ],
     ),
   );

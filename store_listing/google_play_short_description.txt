@@ -1,1 +1,1 @@
-Build an airline, tailor its fleet, and schedule flights on a world map.
+Manage equipment, spare parts, people, businesses, and maintenance records.

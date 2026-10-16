@@ -1,35 +1,16 @@
-Take control of an airline and build it into a global network with Airline Investor.
+Keep maintenance and operational records organized with Maintenance Manager.
 
-Airline Investor is a single-player management game played on a map of the world. Found your airline, choose its headquarters, and decide where it flies next. Every route you open, every aircraft you buy, and every city you serve shapes how your airline grows.
+Use the management tabs to enter records and review them in tables:
 
-Plan your network on a living world map:
+- **Equipment** — track equipment category, business and location, local identifiers, manufacturer, model, serial number, maintenance manual, and publisher.
+- **Spare Parts** — record OEM and vendor part details, quantity in stock, and storage location. Choose vendor names from businesses marked as Vendor.
+- **People** — manage employee or contact details, phone numbers, email, business and work location, remote-work status, and nearest airport.
+- **Business** — organize customer, vendor, and principle contact details, airports, and business locations.
 
-- Pan and zoom a real world map to explore cities and regions
-- Open city-to-city routes by clicking cities right on the map, each flown from a hub
-- See every route drawn across the map, with cities colour-coded by trade pact
-- Filter the map to the regions a trade pact's airlines can reach
-- Set seat-class prices and freight rates, and watch each route's projected passenger and freight revenue
+Add forms are collapsible, so you can keep the records table in view while you work. Records are saved locally on your device and reload when you reopen the app.
 
-Run the business behind the routes:
+Application DB provides editable local key/value records, plus CSV import and export for Equipment, Spare Parts, People, and Business. Select a category, then import a matching CSV, export its records, or save an example or blank template. Keep CSV exports as backups. Imported rows are added to the selected category.
 
-- Keep the books in the General Ledger, with revenue and costs posted month by month
-- View the ledger daily, weekly, monthly, quarterly, semiannually or annually
-- Buy passenger and freighter jets from the Broker, or lease them and pay over the term
-- Sell an aircraft, or cancel a lease and hand the airframe back to the Broker's Used Aircraft list
-- Configure each cabin, from Ultra and First down to Main. Press Accept to save a seat count; the cabin seats together cannot exceed the aircraft's maximum
-- Assign your fleet to routes within each aircraft's range. All its assigned flights share a 24-hour day, so route times and daily frequencies must fit
-- Track pilots, cabin crew, mechanics, agents and administration in the Workforce tab. Staffing follows your schedule and wages follow your hub city
-- Study each country and city's population, GDP and economy in the Locations tab
+Open Information for the Contact form and Submissions view. Contact sends your question, return contact details, and basic app/device diagnostics to the support service. Settings lets you choose System, Dark, or Light appearance. The Help tab includes in-app usage guidance.
 
-Play the wider world:
-
-- Explore Trade Pacts by population, GDP, trade balance and economic sectors
-- Mark countries as autarkic in GeoPolitical and compare imports, exports and passenger traffic
-- Compare your airlines by routes, hubs and revenue in the Airlines tab
-- Form an Alliance so member airlines can open routes in each other's regions; each member airline's CEO approves changes
-
-Time runs on a game clock: each month that passes closes your books, and your loans and leases amortize a payment at a time. Set a game year to last anywhere from 15 minutes to 24 hours, for a quick game or a patient one.
-
-Maintenance Manager helps you keep everyday maintenance records organized. Use Home, Favorites and Profile to navigate the app, open Application DB to add, edit or delete records, and visit Information for Contact and Submissions. Play on Android, Web or Windows.
-
-Maintenance Manager is designed to make it easy to keep application-related records in one place. Your Application DB records are stored locally on your device.
+Available for Android, Web, and Windows. Management and Application DB records are stored locally on the device; uninstalling or clearing app data may remove them.

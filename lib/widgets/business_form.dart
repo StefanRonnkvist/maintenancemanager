@@ -164,10 +164,10 @@ class _BusinessFormState extends State<BusinessForm> {
         businessType: _isPeople ? '' : (_businessType ?? ''),
         cellPhone: _cellPhoneController.text.trim(),
         email: _emailController.text.trim(),
-        businessName: _selectedBusinessName ?? '',
-        locationName: _remoteWork
-            ? 'Remote Work'
-            : (_selectedLocationName ?? ''),
+        businessName: _isPeople ? (_selectedBusinessName ?? '') : '',
+        locationName: _isPeople
+            ? (_remoteWork ? 'Remote Work' : (_selectedLocationName ?? ''))
+            : '',
         nearestAirport: _selectedAirport ?? '',
         locations: List.unmodifiable(_locations),
         airports: List.unmodifiable(_airports),

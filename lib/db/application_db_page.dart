@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/local_record_store.dart';
 
 /// A lightweight persisted local database for application records.
 class ApplicationDbPage extends StatefulWidget {
@@ -15,8 +18,16 @@ class ApplicationDbPage extends StatefulWidget {
 
 class _ApplicationDbPageState extends State<ApplicationDbPage> {
   static const String _storageKey = 'application_db_records_v1';
+  static const Map<String, String> _managedStores = {
+    'Equipment': 'equipment_records_v1',
+    'Spare Parts': 'spare_parts_records_v1',
+    'People': 'people_records_v1',
+    'Business': 'business_records_v1',
+  };
 
   final List<_AppRecord> _records = <_AppRecord>[];
+  final Map<String, List<Map<String, dynamic>>> _managedRecords = {};
+  String _selectedTable = 'Equipment';
   bool _isLoading = true;
   String? _storageError;
 
@@ -42,6 +53,22 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               ),
             ),
           );
+      }
+      for (final entry in _managedStores.entries) {
+        _managedRecords[entry.key] = await LocalRecordStore.read(entry.value);
+        if (entry.key == 'Equipment') {
+          final equipment = _managedRecords[entry.key]!;
+          if (equipment.isNotEmpty &&
+              !equipment.first.containsKey('businessName')) {
+            for (final record in equipment) {
+              record['businessName'] = '';
+              record['locationName'] = '';
+              record['maintenanceManual'] = '';
+              record['publisher'] = '';
+            }
+            await LocalRecordStore.write(entry.value, equipment);
+          }
+        }
       }
     } catch (error) {
       _storageError = 'Could not read local records: $error';
@@ -89,14 +116,74 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     await _persistRecords();
   }
 
-  String _encodeCsv(List<_AppRecord> records) {
+  String _encodeCsv(
+    List<Map<String, dynamic>> records, {
+    required List<String> columns,
+  }) {
     final rows = <List<String>>[
-      const ['name', 'value', 'updatedAt'],
+      columns,
       for (final record in records)
-        [record.name, record.value, record.updatedAt.toIso8601String()],
+        columns.map((column) {
+          final value = record[column];
+          return value is String ? value : jsonEncode(value ?? '');
+        }).toList(),
     ];
     return rows.map((row) => row.map(_escapeCsv).join(',')).join('\r\n');
   }
+
+  List<String> _columnsFor(String table) => switch (table) {
+    'Equipment' => [
+      'localName',
+      'localNumber',
+      'manufacturerName',
+      'equipmentName',
+      'equipmentModel',
+      'serialNumber',
+      'maintenanceManual',
+      'publisher',
+      'businessName',
+      'locationName',
+    ],
+    'Spare Parts' => [
+      'oemPartNumber',
+      'oemDescription',
+      'vendorPartNumber',
+      'vendorDescription',
+      'serialNumber',
+      'vendorName',
+      'quantityInStock',
+      'location',
+    ],
+    'People' => [
+      'name',
+      'address',
+      'directPhone',
+      'directPhoneExtension',
+      'businessType',
+      'cellPhone',
+      'email',
+      'businessName',
+      'locationName',
+      'nearestAirport',
+      'locations',
+      'airports',
+    ],
+    'Business' => [
+      'name',
+      'address',
+      'directPhone',
+      'directPhoneExtension',
+      'businessType',
+      'cellPhone',
+      'email',
+      'businessName',
+      'locationName',
+      'nearestAirport',
+      'locations',
+      'airports',
+    ],
+    _ => const ['name', 'value', 'updatedAt'],
+  };
 
   String _escapeCsv(String value) {
     final escaped = value.replaceAll('"', '"');
@@ -150,22 +237,19 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     return rows;
   }
 
-  Future<void> _exportCsv() async {
+  Future<void> _exportCsv(String table) async {
     try {
-      final csv = _encodeCsv(_records);
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile.fromData(utf8.encode(csv), mimeType: 'text/csv')],
-          fileNameOverrides: const ['application_records.csv'],
-          subject: 'Application records CSV',
-        ),
-      );
+      final columns = _columnsFor(table);
+      final records = _managedRecords[table] ?? const <Map<String, dynamic>>[];
+      final csv = _encodeCsv(records, columns: columns);
+      final safeName = table.toLowerCase().replaceAll(' ', '_');
+      await _saveCsv('${safeName}_records.csv', csv);
     } catch (error) {
       _showMessage('Could not export CSV: $error');
     }
   }
 
-  Future<void> _importCsv() async {
+  Future<void> _importCsv(String table) async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -173,63 +257,107 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         withData: true,
       );
       if (result == null || result.files.isEmpty) return;
-      final bytes = result.files.single.bytes;
+      final file = result.files.single;
+      final bytes =
+          file.bytes ??
+          (file.path == null ? null : await XFile(file.path!).readAsBytes());
       if (bytes == null) {
         throw const FormatException('Unable to read selected CSV.');
       }
-      final rows = _parseCsv(utf8.decode(bytes));
-      if (rows.isEmpty || rows.first.length < 2) {
-        throw const FormatException('CSV must have name and value columns.');
+      final rows = _parseCsv(utf8.decode(bytes, allowMalformed: false));
+      final expected = _columnsFor(table);
+      if (rows.isEmpty) throw const FormatException('CSV is empty.');
+      final headers = rows.first.map((value) => value.trim()).toList();
+      if (headers.length != expected.length ||
+          !headers.toSet().containsAll(expected)) {
+        throw FormatException('CSV headers do not match the $table template.');
       }
-      final header = rows.first
-          .map((value) => value.trim().toLowerCase())
-          .toList();
-      final nameIndex = header.indexOf('name');
-      final valueIndex = header.indexOf('value');
-      final updatedIndex = header.indexOf('updatedat');
-      if (nameIndex < 0 || valueIndex < 0) {
-        throw const FormatException('CSV headers must include name and value.');
-      }
-      final imported = <_AppRecord>[];
+      final indexes = [for (final column in expected) headers.indexOf(column)];
+      final imported = <Map<String, dynamic>>[];
       for (final row in rows.skip(1)) {
-        if (row.length <= nameIndex || row.length <= valueIndex) continue;
-        final name = row[nameIndex].trim();
-        final value = row[valueIndex].trim();
-        if (name.isEmpty) continue;
-        imported.add(
-          _AppRecord(
-            id: '${DateTime.now().microsecondsSinceEpoch}_${imported.length}',
-            name: name,
-            value: value,
-            updatedAt: updatedIndex >= 0 && row.length > updatedIndex
-                ? DateTime.tryParse(row[updatedIndex]) ?? DateTime.now()
-                : DateTime.now(),
-          ),
-        );
+        if (row.length < headers.length) continue;
+        final mapped = <String, dynamic>{};
+        for (
+          var columnIndex = 0;
+          columnIndex < expected.length;
+          columnIndex++
+        ) {
+          final name = expected[columnIndex];
+          final value = row[indexes[columnIndex]];
+          if ((table == 'People' || table == 'Business') &&
+              (name == 'airports' || name == 'locations')) {
+            try {
+              mapped[name] = jsonDecode(value);
+            } catch (_) {
+              mapped[name] = <dynamic>[];
+            }
+          } else {
+            mapped[name] = value;
+          }
+        }
+        if (mapped.values.any((value) => '$value'.isNotEmpty)) {
+          imported.add(mapped);
+        }
       }
       if (imported.isEmpty) {
-        throw const FormatException('No valid records found in CSV.');
+        throw const FormatException('No valid rows found in CSV.');
       }
-      setState(() => _records.insertAll(0, imported));
-      await _persistRecords();
-      if (mounted) _showMessage('Imported ${imported.length} records.');
+      final key = _managedStores[table]!;
+      final existing = _managedRecords[table] ?? <Map<String, dynamic>>[];
+      final merged = [...imported, ...existing];
+      await LocalRecordStore.write(key, merged);
+      setState(() => _managedRecords[table] = merged);
+      if (mounted) _showMessage('Imported ${imported.length} $table records.');
     } catch (error) {
       _showMessage('Could not import CSV: $error');
     }
   }
 
-  Future<void> _shareTemplate(String filename, String csv) async {
+  Future<void> _shareTemplate(String table, {required bool example}) async {
+    final columns = _columnsFor(table);
+    final sample = <String, dynamic>{for (final column in columns) column: ''};
+    if (example) {
+      if (table == 'Equipment') sample['equipmentName'] = 'Example equipment';
+      if (table == 'Spare Parts') sample['oemPartNumber'] = 'PART-001';
+      if (table == 'People' || table == 'Business') sample['name'] = 'Example';
+    }
+    for (final field in ['locations', 'airports']) {
+      if (sample.containsKey(field)) {
+        sample[field] = '[]';
+      }
+    }
+    final csv = _encodeCsv(example ? [sample] : [], columns: columns);
     try {
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile.fromData(utf8.encode(csv), mimeType: 'text/csv')],
-          fileNameOverrides: [filename],
-          subject: 'Application records CSV template',
-        ),
-      );
+      final filename =
+          '${table.toLowerCase().replaceAll(' ', '_')}_template.csv';
+      await _saveCsv(filename, csv);
     } catch (error) {
       _showMessage('Could not create CSV template: $error');
     }
+  }
+
+  Future<void> _saveCsv(String filename, String csv) async {
+    final bytes = Uint8List.fromList(utf8.encode(csv));
+    if (kIsWeb) {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile.fromData(bytes, mimeType: 'text/csv')],
+          fileNameOverrides: [filename],
+          subject: filename,
+        ),
+      );
+      return;
+    }
+
+    final outputPath = await FilePicker.platform.saveFile(
+      dialogTitle: 'Save CSV file',
+      fileName: filename,
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+      bytes: bytes,
+    );
+    if (outputPath == null) return;
+    if (mounted) _showMessage('Saved CSV: $outputPath');
   }
 
   void _showMessage(String message) {
@@ -326,27 +454,32 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
+              DropdownButton<String>(
+                value: _selectedTable,
+                items: [
+                  for (final table in _managedStores.keys)
+                    DropdownMenuItem(value: table, child: Text(table)),
+                ],
+                onChanged: (table) {
+                  if (table != null) setState(() => _selectedTable = table);
+                },
+              ),
+              const SizedBox(width: 8),
               PopupMenuButton<String>(
                 tooltip: 'Import, export, and templates',
                 onSelected: (action) {
                   switch (action) {
                     case 'import':
-                      _importCsv();
+                      _importCsv(_selectedTable);
                       break;
                     case 'export':
-                      _exportCsv();
+                      _exportCsv(_selectedTable);
                       break;
                     case 'template':
-                      _shareTemplate(
-                        'application_records_template.csv',
-                        'name,value,updatedAt\r\nExample setting,Replace with your value,2026-01-01T00:00:00.000\r\n',
-                      );
+                      _shareTemplate(_selectedTable, example: true);
                       break;
                     case 'blank-template':
-                      _shareTemplate(
-                        'application_records_blank_template.csv',
-                        'name,value,updatedAt\r\n',
-                      );
+                      _shareTemplate(_selectedTable, example: false);
                       break;
                   }
                 },

@@ -5,7 +5,7 @@ param(
 # Audits the user-facing documentation against the app it describes:
 #   store_listing/google_play_short_description.txt
 #   store_listing/google_play_full_description.txt
-#   lib/main.dart (the app's current navigation and in-app Information tab)
+#   lib/app.dart + lib/models/app_tab.dart + lib/tabs/information_tabs.dart (navigation and Information sub-tabs)
 #   README.md
 #
 # The facts are read out of the source so the docs can never quietly drift from
@@ -32,13 +32,17 @@ $pubspecPath = Get-RequiredFile 'pubspec.yaml'
 $readmePath = Get-RequiredFile 'README.md'
 $shortPath = Get-RequiredFile 'store_listing/google_play_short_description.txt'
 $fullPath = Get-RequiredFile 'store_listing/google_play_full_description.txt'
-$appPath = Get-RequiredFile 'lib/main.dart'
+$appPath = Get-RequiredFile 'lib/app.dart'
+$appTabsPath = Get-RequiredFile 'lib/models/app_tab.dart'
+$informationPath = Get-RequiredFile 'lib/tabs/information_tabs.dart'
 
 $pubspec = Get-Content -Path $pubspecPath -Raw
 $readme = Get-Content -Path $readmePath -Raw
 $short = Get-Content -Path $shortPath -Raw
 $full = Get-Content -Path $fullPath -Raw
 $appSource = Get-Content -Path $appPath -Raw
+$appTabsSource = Get-Content -Path $appTabsPath -Raw
+$informationSource = Get-Content -Path $informationPath -Raw
 
 $failures = New-Object System.Collections.Generic.List[string]
 $checks = New-Object System.Collections.Generic.List[string]
@@ -59,31 +63,17 @@ if ($pubspec -match '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+\+[0-9]+)\s*$') {
     throw 'Could not read the version from pubspec.yaml'
 }
 
-# Top-level navigation labels are maintained in _tabs in lib/main.dart.
-$tabBlock = [regex]::Match(
-    $appSource,
-    'final\s+List<_TabItem>\s+_tabs\s*=\s*const\s*\[(?<tabs>.*?)\]\s*;',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $tabBlock.Success) {
-    throw 'Could not read the top-level navigation list (_tabs) from lib/main.dart'
-}
-$appTabs = [regex]::Matches($tabBlock.Groups['tabs'].Value, "label:\s*'(?<label>[^']+)'") |
-    ForEach-Object { $_.Groups['label'].Value }
+# Top-level navigation labels live in AppTabPresentation in lib/models/app_tab.dart.
+$appTabs = [regex]::Matches(
+    $appTabsSource,
+    "AppTab\.\w+\s*=>\s*'(?<label>[^']+)'"
+) | ForEach-Object { $_.Groups['label'].Value }
 if ($appTabs.Count -eq 0) {
-    throw 'No top-level navigation labels were found in lib/main.dart'
+    throw 'No top-level navigation labels were found in lib/models/app_tab.dart'
 }
 
-# The Information tab contains the app's nested Contact and Submissions tabs.
-$informationBlock = [regex]::Match(
-    $appSource,
-    'class\s+_InformationTabs\s+extends\s+StatelessWidget(?<body>.*?)(?=\nclass\s|\z)',
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $informationBlock.Success) {
-    throw 'Could not read the Information tab contents from lib/main.dart'
-}
-$appSubTabs = [regex]::Matches($informationBlock.Groups['body'].Value, "text:\s*'(?<label>[^']+)'") |
+# Information contains the nested Contact and Submissions views.
+$appSubTabs = [regex]::Matches($informationSource, "text:\s*'(?<label>[^']+)'") |
     ForEach-Object { $_.Groups['label'].Value }
 
 # --- 1. Every navigation tab is documented in the README ---------------------
@@ -126,8 +116,8 @@ Add-Check -name 'README documents every Information sub-tab' -passed ($missingSu
 
 # --- 4. The Information tab provides contact and response views ---------------
 
-$hasContactView = $informationBlock.Groups['body'].Value -match 'ContactPage\('
-$hasSubmissionsView = $informationBlock.Groups['body'].Value -match 'SubmissionsCsvCardsView\('
+$hasContactView = $informationSource -match 'ContactPage\('
+$hasSubmissionsView = $informationSource -match 'SubmissionsCsvCardsView\('
 Add-Check -name 'Information tab provides Contact and Submissions views' `
     -passed ($hasContactView -and $hasSubmissionsView) `
     -detail "Contact view: $hasContactView; Submissions view: $hasSubmissionsView"

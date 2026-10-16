@@ -24,6 +24,11 @@ class PeopleTable extends StatelessWidget {
           DataColumn(label: Text('Extension')),
           DataColumn(label: Text('Cell Phone')),
           DataColumn(label: Text('eMail')),
+          DataColumn(label: Text('Airports')),
+          DataColumn(label: Text('Contact Locations')),
+          DataColumn(label: Text('Location Addresses')),
+          DataColumn(label: Text('Location Phones')),
+          DataColumn(label: Text('Location Airports')),
         ],
         rows: entries
             .map(
@@ -38,6 +43,35 @@ class PeopleTable extends StatelessWidget {
                   DataCell(Text(entry.directPhoneExtension)),
                   DataCell(Text(entry.cellPhone)),
                   DataCell(Text(entry.email)),
+                  DataCell(Text(entry.airports.join(', '))),
+                  DataCell(
+                    Text(
+                      entry.locations
+                          .map((location) => location.name)
+                          .join(', '),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      entry.locations
+                          .map((location) => location.address)
+                          .join('; '),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      entry.locations
+                          .map((location) => location.directPhone)
+                          .join('; '),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      entry.locations
+                          .map((location) => location.nearestAirport)
+                          .join('; '),
+                    ),
+                  ),
                 ],
               ),
             )
@@ -80,6 +114,11 @@ class BusinessTable extends StatelessWidget {
           DataColumn(label: Text('Location Address')),
           DataColumn(label: Text('Location Direct Phone')),
           DataColumn(label: Text('Location Nearest Airport')),
+          DataColumn(label: Text('Airports')),
+          DataColumn(label: Text('Contact Locations')),
+          DataColumn(label: Text('Contact Location Addresses')),
+          DataColumn(label: Text('Contact Location Phones')),
+          DataColumn(label: Text('Contact Location Airports')),
         ],
         rows: [
           for (final business in entries)
@@ -95,6 +134,28 @@ class BusinessTable extends StatelessWidget {
                   const DataCell(Text('')),
                   const DataCell(Text('')),
                   const DataCell(Text('')),
+                  DataCell(Text(business.airports.join(', '))),
+                  DataCell(
+                    Text(
+                      business.locations
+                          .map((location) => location.name)
+                          .join(', '),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      business.locations
+                          .map((location) => location.address)
+                          .join('; '),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      business.locations
+                          .map((location) => location.directPhone)
+                          .join('; '),
+                    ),
+                  ),
                 ],
               )
             else
@@ -110,6 +171,43 @@ class BusinessTable extends StatelessWidget {
                     DataCell(Text(business.locations[index].address)),
                     DataCell(Text(business.locations[index].directPhone)),
                     DataCell(Text(business.locations[index].nearestAirport)),
+                    DataCell(
+                      Text(index == 0 ? business.airports.join(', ') : ''),
+                    ),
+                    DataCell(
+                      Text(
+                        index == 0
+                            ? '${business.businessName}; ${business.locationName}'
+                            : '',
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        index == 0
+                            ? business.locations
+                                  .map((location) => location.address)
+                                  .join('; ')
+                            : '',
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        index == 0
+                            ? business.locations
+                                  .map((location) => location.directPhone)
+                                  .join('; ')
+                            : '',
+                      ),
+                    ),
+                    DataCell(
+                      Text(
+                        index == 0
+                            ? business.locations
+                                  .map((location) => location.nearestAirport)
+                                  .join('; ')
+                            : '',
+                      ),
+                    ),
                   ],
                 ),
         ],

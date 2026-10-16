@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/app_tab.dart';
 import '../models/business_entry.dart';
+import '../models/equipment_record.dart';
+import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 
 class EquipmentTab extends StatelessWidget {
@@ -65,6 +67,9 @@ class _EquipmentBrowser extends StatefulWidget {
 }
 
 class _EquipmentBrowserState extends State<_EquipmentBrowser> {
+  static const _storageKey = 'equipment_records_v1';
+  bool _isLoading = true;
+  String? _storageError;
   bool _formExpanded = false;
   final _localNameController = TextEditingController();
   final _localNumberController = TextEditingController();
@@ -80,11 +85,41 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   String? _selectedEquipment;
   String? _selectedBusinessName;
   String? _selectedLocationName;
-  final List<_EquipmentRecord> _records = [];
+  final List<EquipmentRecord> _records = [];
   late final Map<String, List<String>> _categories = {
     for (final entry in widget.categories.entries)
       entry.key: List<String>.from(entry.value),
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecords();
+  }
+
+  Future<void> _loadRecords() async {
+    try {
+      final rows = await LocalRecordStore.read(_storageKey);
+      _records.addAll(rows.map(EquipmentRecord.fromJson));
+    } catch (error) {
+      _storageError = 'Could not load equipment: $error';
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _persistRecords() async {
+    try {
+      await LocalRecordStore.write(
+        _storageKey,
+        _records.map((record) => record.toJson()).toList(),
+      );
+      if (mounted) setState(() => _storageError = null);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _storageError = 'Could not save equipment: $error');
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -135,7 +170,9 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   }
 
   void _addEquipment() {
-    final record = _EquipmentRecord(
+    final record = EquipmentRecord(
+      businessName: _selectedBusinessName ?? '',
+      locationName: _selectedLocationName ?? '',
       localName: _localNameController.text.trim(),
       localNumber: _localNumberController.text.trim(),
       manufacturerName: _manufacturerNameController.text.trim(),
@@ -144,14 +181,11 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
           : (_selectedEquipment ?? ''),
       equipmentModel: _equipmentModelController.text.trim(),
       serialNumber: _serialNumberController.text.trim(),
+      maintenanceManual: _maintenanceManualController.text.trim(),
+      publisher: _publisherController.text.trim(),
     );
 
-    if (record.localName.isEmpty &&
-        record.localNumber.isEmpty &&
-        record.manufacturerName.isEmpty &&
-        record.equipmentName.isEmpty &&
-        record.equipmentModel.isEmpty &&
-        record.serialNumber.isEmpty) {
+    if (record.toJson().values.every((value) => value == '')) {
       return;
     }
 
@@ -163,7 +197,10 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
       _equipmentNameController.clear();
       _equipmentModelController.clear();
       _serialNumberController.clear();
+      _maintenanceManualController.clear();
+      _publisherController.clear();
     });
+    _persistRecords();
   }
 
   @override
@@ -172,17 +209,31 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     final equipment = _selectedCategory == null
         ? const <String>[]
         : _categories[_selectedCategory] ?? const <String>[];
-    final locations = widget.businesses
+    final selectedBusiness = widget.businesses
         .where((business) => business.name == _selectedBusinessName)
-        .expand((business) => business.locations)
-        .toList();
+        .firstOrNull;
+    final locations = selectedBusiness?.locations ?? const <BusinessLocation>[];
     final colors = Theme.of(context).colorScheme;
 
     return ManagementTabLayout(
       title: AppTab.equipment.label,
       icon: AppTab.equipment.icon,
       recordsTitle: 'Equipment list',
-      records: _EquipmentTable(records: _records),
+      records: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_storageError != null)
+                  Text(
+                    _storageError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                _EquipmentTable(records: _records),
+              ],
+            ),
       form: Card(
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -456,28 +507,10 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   }
 }
 
-class _EquipmentRecord {
-  const _EquipmentRecord({
-    required this.localName,
-    required this.localNumber,
-    required this.manufacturerName,
-    required this.equipmentName,
-    required this.equipmentModel,
-    required this.serialNumber,
-  });
-
-  final String localName;
-  final String localNumber;
-  final String manufacturerName;
-  final String equipmentName;
-  final String equipmentModel;
-  final String serialNumber;
-}
-
 class _EquipmentTable extends StatelessWidget {
   const _EquipmentTable({required this.records});
 
-  final List<_EquipmentRecord> records;
+  final List<EquipmentRecord> records;
 
   @override
   Widget build(BuildContext context) {
@@ -509,6 +542,10 @@ class _EquipmentTable extends StatelessWidget {
         DataColumn(label: Text('Equipment Name')),
         DataColumn(label: Text('Equipment Model')),
         DataColumn(label: Text('Serial Number')),
+        DataColumn(label: Text('Maintenance Manual')),
+        DataColumn(label: Text('Publisher')),
+        DataColumn(label: Text('Business Name')),
+        DataColumn(label: Text('Location Name')),
       ],
       rows: records
           .map(
@@ -520,6 +557,10 @@ class _EquipmentTable extends StatelessWidget {
                 DataCell(Text(record.equipmentName)),
                 DataCell(Text(record.equipmentModel)),
                 DataCell(Text(record.serialNumber)),
+                DataCell(Text(record.maintenanceManual)),
+                DataCell(Text(record.publisher)),
+                DataCell(Text(record.businessName)),
+                DataCell(Text(record.locationName)),
               ],
             ),
           )
