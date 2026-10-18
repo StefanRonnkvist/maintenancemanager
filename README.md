@@ -1,29 +1,30 @@
 # Maintenance Manager
-Maintenance Manager is a Flutter app for organizing equipment, spare parts, people, business contacts, and application records. Management forms and record tables are available in the main tab bar. The default appearance is Dark; change it from Settings.
+Maintenance Manager is a Flutter app for keeping maintenance equipment, spare parts, people, business contacts, and related records organized. Add forms collapse so you can focus on the saved record lists. The app starts in Dark appearance; choose System, Dark, or Light in Settings.
 
 ## Main tabs
-- **Equipment** — add equipment by category and type, associate it with a business and location, and record identifiers, manufacturer, model, serial number, maintenance manual, and publisher.
-- **Spare Parts** — keep OEM/vendor part details, stock quantity, and location. The vendor dropdown uses businesses marked as Vendor.
-- **People** — store contact information, business and work-location association, remote-work status, and nearest airport.
-- **Business** — store business type and contact information, business locations, and airports.
-- **Information** — use Contact to send a support question and Submissions to view available responses.
-- **Application DB** — create, edit, and delete key/value records. Select Equipment, Spare Parts, People, or Business to import/export that category's CSV data or download an example/blank CSV template.
-- **Help** — in-app guidance about forms, records, local data, CSV import/export, appearance, and support.
+- **Equipment** — add equipment under built-in or custom categories and types. Record the associated business and location, local name and number, manufacturer, model, serial number, maintenance manual, and publisher.
+- **Spare Parts** — track OEM and vendor part numbers and descriptions, serial number, quantity in stock, and location. The vendor selector lists businesses with type Vendor.
+- **People** — keep names, direct and cell phone numbers, email, business and location associations, remote-work status, and nearest airport.
+- **Business** — create Customer, Vendor, or Principle entries with contact details, airports, and one or more business locations.
+- **Information** — Contact sends a support question; Submissions displays available responses associated with this app.
+- **Message** — compose an email from your people and business lists. Set sender details, filter contacts by business, select To and Cc recipients, and open the system share/email app with a `mailto` link. Sender fields are for reference and are not included in that link; the app does not itself deliver email.
+- **Application DB** — create, edit, and delete local key/value records. Choose Equipment, Spare Parts, People, or Business to import or export that category's CSV records, or save an example or blank CSV template. Imports append records to the selected category.
+- **Help** — in-app guidance for using the tabs, managing records, CSV workflows, and appearance settings.
 
 ## Data and privacy
-Management records and Application DB records are stored locally on the device using local preferences. CSV export is available for backup, and CSV imports add records to the selected category. Contact submissions send the entered contact information, question, and basic app/device diagnostics to the configured support endpoint. Review the contact form before submitting sensitive information.
+Equipment, spare parts, people, business, and Application DB records are stored locally on the device. Clearing app data or uninstalling may remove these records; keep CSV exports as backups. Message hands a `mailto` link to the system share/email app, and delivery depends on the app you choose. Contact submissions send the details you enter, your question, and basic app/device diagnostics to the configured support service. Review the Contact form before sending sensitive information.
 
 ## Store listing
-Google Play copy is maintained in `store_listing/`:
+Google Play descriptions are maintained in `store_listing/`:
 
-- `google_play_short_description.txt`
-- `google_play_full_description.txt`
+- `google_play_short_description.txt` (80-character field limit)
+- `google_play_full_description.txt` (4,000-character field limit)
 
 ## Version and platforms
-The app version is `0.1.15+16` (from `pubspec.yaml`). Configured release tasks build for Android, Web, and Windows; the Windows workflow also produces an MSIX package.
+The app version is `0.1.17+18` (from `pubspec.yaml`). Configured release tasks build for Android, Web, and Windows; the Windows workflow also produces an MSIX package.
 
 ## Development
-Install Flutter, then run `flutter pub get` and `flutter run`. Run `flutter analyze` to check the code. To audit the README and store listing against the app, run:
+Install Flutter, then run `flutter pub get` and `flutter run`. Run `flutter analyze` to check the code. To audit documentation against the app, run:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/audit-docs.ps1

@@ -77,7 +77,7 @@ class SparePartsForm extends StatelessWidget {
         keyboardType: TextInputType.number,
       ),
       const SizedBox(height: 16),
-      _field(location, 'Location'),
+      _field(location, 'Storage Location'),
       const SizedBox(height: 16),
       Align(
         alignment: Alignment.centerRight,

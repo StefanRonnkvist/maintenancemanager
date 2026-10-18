@@ -1,16 +1,16 @@
-Keep maintenance and operational records organized with Maintenance Manager.
+Organize maintenance, equipment, parts, and business contacts in one place with Maintenance Manager.
 
-Use the management tabs to enter records and review them in tables:
+Create records, then review them in clear lists:
 
-- **Equipment** — track equipment category, business and location, local identifiers, manufacturer, model, serial number, maintenance manual, and publisher.
-- **Spare Parts** — record OEM and vendor part details, quantity in stock, and storage location. Choose vendor names from businesses marked as Vendor.
-- **People** — manage employee or contact details, phone numbers, email, business and work location, remote-work status, and nearest airport.
-- **Business** — organize customer, vendor, and principle contact details, airports, and business locations.
+- **Equipment** — track categories and equipment, business and work location, local name and number, manufacturer, model, serial number, manual, and publisher. Add custom categories and equipment types.
+- **Spare Parts** — record OEM and vendor part numbers and descriptions, serial number, stock quantity, and location. Select vendors from businesses marked Vendor.
+- **People** — keep names, phone numbers, email, business and work location, remote-work status, and nearest airport together.
+- **Business** — organize Customer, Vendor, and Principle contacts, airports, and business locations.
+- **Message** — prepare an email using people from your contact list. Filter recipients by business, select To and Cc contacts, and open your email app to send.
+- **Information** — contact support with a question and view available responses in Submissions.
+- **Application DB** — create, edit, and delete key/value records. Import and export CSV for Equipment, Spare Parts, People, or Business, and use example or blank templates to prepare files.
+- **Help** — find in-app guidance for forms, records, CSV, and appearance settings.
 
-Add forms are collapsible, so you can keep the records table in view while you work. Records are saved locally on your device and reload when you reopen the app.
+Choose System, Dark, or Light appearance in Settings. Management records and Application DB records are saved locally on your device and reload when you reopen the app. CSV exports are useful backups; clearing app data or uninstalling may remove local records.
 
-Application DB provides editable local key/value records, plus CSV import and export for Equipment, Spare Parts, People, and Business. Select a category, then import a matching CSV, export its records, or save an example or blank template. Keep CSV exports as backups. Imported rows are added to the selected category.
-
-Open Information for the Contact form and Submissions view. Contact sends your question, return contact details, and basic app/device diagnostics to the support service. Settings lets you choose System, Dark, or Light appearance. The Help tab includes in-app usage guidance.
-
-Available for Android, Web, and Windows. Management and Application DB records are stored locally on the device; uninstalling or clearing app data may remove them.
+Contact submissions send the details you enter, your question, and basic app/device diagnostics to the configured support service. Review your message before sending.

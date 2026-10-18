@@ -15,7 +15,7 @@ class SparePartsTable extends StatelessWidget {
     'Serial Number',
     'Vendor Name',
     'Quantity in Stock',
-    'Location',
+    'Storage Location',
   ];
 
   @override

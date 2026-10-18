@@ -7,22 +7,27 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Getting started',
       icon: Icons.start_outlined,
-      content: 'Use the tabs along the top to move between Equipment, Spare Parts, People, Business, Information, Application DB, and Help. Add forms are collapsed by default; tap the form heading to expand it.',
+      content: 'Use the tabs along the top to move between Equipment, Spare Parts, People, Business, Information, Message, Application DB, and Help. Add forms are collapsed by default; tap the form heading to expand it.',
     ),
     _HelpSection(
       title: 'Equipment',
       icon: Icons.precision_manufacturing_outlined,
-      content: 'Choose or add an equipment category and equipment type, select a business and location, then enter the equipment details. Add Equipment saves a row in the equipment list.',
+      content: 'Choose or add an equipment category and equipment type, select a business and location, then enter the equipment details: local name and number, manufacturer, model, serial number, maintenance manual, and publisher. Add Equipment saves a row in the equipment list.',
     ),
     _HelpSection(
       title: 'Spare Parts',
       icon: Icons.build_outlined,
-      content: 'Enter part, vendor, stock quantity, and location details. Vendor Name is selected from businesses whose type is Vendor. Add Spare Part adds the record to the list.',
+      content: 'Enter OEM and vendor part numbers and descriptions, serial number, stock quantity, and location. Vendor Name is selected from businesses whose type is Vendor. Add Spare Part adds the record to the list.',
     ),
     _HelpSection(
       title: 'People and Business',
       icon: Icons.people_outline,
-      content: 'Add people with their contact and work-location details. Add businesses by selecting a business type and entering contact and location information. Tables show saved records and their associated locations.',
+      content: 'Add people with their name, phone and email, business and work location, remote-work status, and nearest airport. Add businesses by choosing Customer, Vendor, or Principle, then enter contact details, airports, and business locations. Tables show saved records and their associated locations.',
+    ),
+    _HelpSection(
+      title: 'Message',
+      icon: Icons.message_outlined,
+      content: 'Set sender name, sender email, and reply email, then select a business to filter contacts. Choose recipients for To and Cc, add a subject and message, and tap Send to add a row to the in-app Messages list and open the system share/email app with a mailto link. The sender fields are for reference and are not included in the mailto link; message delivery depends on the app you choose.',
     ),
     _HelpSection(
       title: 'Saved data',
@@ -37,7 +42,7 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Appearance and Information',
       icon: Icons.settings_outlined,
-      content: 'Open Settings in the upper-right corner to choose System, Dark, or Light appearance. Information contains Contact for support questions and Submissions for viewing available responses.',
+      content: 'Open Settings in the upper-right corner to choose System, Dark, or Light appearance. Information contains Contact for support questions and Submissions for viewing available responses. Contact sends the details you enter, your question, and basic app/device diagnostics to the support service.',
     ),
   ];
 

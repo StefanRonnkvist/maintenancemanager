@@ -120,111 +120,152 @@ class _MessageTabState extends State<MessageTab> {
         style: Theme.of(context).textTheme.titleLarge,
       ),
       const SizedBox(height: 16),
-      Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        children: [
-          SizedBox(
-            width: 320,
-            child: TextField(
-              controller: _senderNameController,
-              readOnly: _senderDetailsSet,
-              decoration: const InputDecoration(
-                labelText: 'Sender Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          SizedBox(
-            width: 320,
-            child: TextField(
-              controller: _senderEmailController,
-              readOnly: _senderDetailsSet,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Sender Email',
-                border: OutlineInputBorder(),
-              ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sender details',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
-          SizedBox(
-            width: 320,
-            child: TextField(
-              controller: _senderReplyEmailController,
-              readOnly: _senderDetailsSet,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Sender Reply Email',
-                border: OutlineInputBorder(),
-              ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                SizedBox(
+                  width: 320,
+                  child: TextField(
+                    controller: _senderNameController,
+                    readOnly: _senderDetailsSet,
+                    decoration: const InputDecoration(
+                      labelText: 'Sender Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
+                  child: TextField(
+                    controller: _senderEmailController,
+                    readOnly: _senderDetailsSet,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Sender Email',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
+                  child: TextField(
+                    controller: _senderReplyEmailController,
+                    readOnly: _senderDetailsSet,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Sender Reply Email',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 120,
+                  child: FilledButton(
+                    onPressed: _toggleSenderDetails,
+                    child: Text(_senderDetailsSet ? 'Reset' : 'Set'),
+                  ),
+                ),
+              ],
             ),
+          ],
+        ),
+      ),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          SizedBox(
-            width: 120,
-            child: FilledButton(
-              onPressed: _toggleSenderDetails,
-              child: Text(_senderDetailsSet ? 'Reset' : 'Set'),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Recipients', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                SizedBox(
+                  width: 320,
+                  child: _MultiSelectField(
+                    label: 'Business',
+                    options: widget.businesses
+                        .map((business) => business.name)
+                        .where((name) => name.trim().isNotEmpty)
+                        .toSet(),
+                    selectedValues: _selectedBusinessNames,
+                    onChanged: (values) => setState(() {
+                      _selectedBusinessNames
+                        ..clear()
+                        ..addAll(values);
+                    }),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
+                  child: _MultiSelectField(
+                    label: 'To',
+                    options: _filteredPeople
+                        .where((person) => person.email.trim().isNotEmpty)
+                        .map((person) => '${person.name} <${person.email}>')
+                        .toSet(),
+                    selectedValues: _selectedToEmails,
+                    onChanged: (values) => setState(() {
+                      _selectedToEmails
+                        ..clear()
+                        ..addAll(values);
+                    }),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
+                  child: _MultiSelectField(
+                    label: 'Cc',
+                    options: _filteredPeople
+                        .where((person) => person.email.trim().isNotEmpty)
+                        .map((person) => '${person.name} <${person.email}>')
+                        .toSet(),
+                    selectedValues: _selectedCcEmails,
+                    onChanged: (values) => setState(() {
+                      _selectedCcEmails
+                        ..clear()
+                        ..addAll(values);
+                    }),
+                  ),
+                ),
+              ],
             ),
-          ),
-          SizedBox(
-            width: 320,
-            child: _MultiSelectField(
-              label: 'Business',
-              options: widget.businesses
-                  .map((business) => business.name)
-                  .where((name) => name.trim().isNotEmpty)
-                  .toSet(),
-              selectedValues: _selectedBusinessNames,
-              onChanged: (values) => setState(() {
-                _selectedBusinessNames
-                  ..clear()
-                  ..addAll(values);
-              }),
-            ),
-          ),
-          SizedBox(
-            width: 320,
-            child: _MultiSelectField(
-              label: 'To',
-              options: _filteredPeople
-                  .where((person) => person.email.trim().isNotEmpty)
-                  .map((person) => '${person.name} <${person.email}>')
-                  .toSet(),
-              selectedValues: _selectedToEmails,
-              onChanged: (values) => setState(() {
-                _selectedToEmails
-                  ..clear()
-                  ..addAll(values);
-              }),
-            ),
-          ),
-          SizedBox(
-            width: 320,
-            child: _MultiSelectField(
-              label: 'Cc',
-              options: _filteredPeople
-                  .where((person) => person.email.trim().isNotEmpty)
-                  .map((person) => '${person.name} <${person.email}>')
-                  .toSet(),
-              selectedValues: _selectedCcEmails,
-              onChanged: (values) => setState(() {
-                _selectedCcEmails
-                  ..clear()
-                  ..addAll(values);
-              }),
-            ),
-          ),
-          SizedBox(
-            width: 320,
-            child: TextField(
-              controller: _subjectController,
-              decoration: const InputDecoration(
-                labelText: 'Subject',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _subjectController,
+        decoration: const InputDecoration(
+          labelText: 'Subject',
+          border: OutlineInputBorder(),
+        ),
       ),
       const SizedBox(height: 16),
       TextField(
