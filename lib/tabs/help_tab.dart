@@ -24,7 +24,7 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Work Order',
       icon: Icons.assignment_outlined,
-      content: 'Choose a Business Name, then choose one of its Location Names. The location address, direct phone number, and nearest airport are displayed for reference. Add businesses and locations in the Business tab first. This tab currently selects and displays location information; it does not create or save work order records.',
+      content: 'Choose a Business Name, then choose one of its Location Names. The location address, direct phone number, and nearest airport are displayed. Tap Save Work Order to save the selected business and location details locally; saved records can be exported or imported from Application DB → Work Order.',
     ),
     _HelpSection(
       title: 'People and Business',
@@ -34,17 +34,17 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Message',
       icon: Icons.message_outlined,
-      content: 'Set sender name, sender email, and reply email, then select a business to filter contacts. Choose recipients for To and Cc, add a subject and message, and tap Send to add a row to the in-app Messages list and open the system share/email app with a mailto link. The sender fields are for reference and are not included in the mailto link; message delivery depends on the app you choose.',
+      content: 'Set sender name, sender email, and reply email, then select a business to filter contacts. Choose recipients for To and Cc, add a subject and message, and tap Send to add a row to the in-app Messages list and open the system share/email app with a mailto link. Message history is saved locally and is available for CSV import/export in Application DB → Messages. The sender fields are for reference and are not included in the mailto link; message delivery depends on the app you choose.'
     ),
     _HelpSection(
       title: 'Saved data',
       icon: Icons.save_outlined,
-      content: 'Equipment, spare parts, people, businesses, and Application DB records are stored locally on this device. Clearing app data or uninstalling may remove local records. Keep CSV exports as backups.',
+      content: 'Equipment, spare parts, people, businesses, saved work orders, message history, and Application DB records are stored locally on this device. Clearing app data or uninstalling may remove local records. Keep CSV exports as backups.'
     ),
     _HelpSection(
       title: 'Application DB and CSV',
       icon: Icons.table_view_outlined,
-      content: 'In Application DB, select a record category before using the menu. Import CSV adds rows to that category; the file must use the matching template headers. Export CSV saves the selected category. Example and blank templates help prepare compatible files.',
+      content: 'In Application DB, select Equipment, Spare Parts, People, Business, Work Order, or Messages before using the menu. Import CSV appends rows to that category; the file must use the matching template headers. Export CSV saves the selected category. Example and blank templates help prepare compatible files.'
     ),
     _HelpSection(
       title: 'Appearance and Information',

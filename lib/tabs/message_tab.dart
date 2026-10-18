@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../services/local_record_store.dart';
+
 import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../widgets/management_tab_layout.dart';
@@ -17,6 +19,8 @@ class MessageTab extends StatefulWidget {
 }
 
 class _MessageTabState extends State<MessageTab> {
+  static const _storageKey = 'message_records_v1';
+
   // Recipient labels preserve both a display name and email until the mailto is built.
   final Set<String> _selectedBusinessNames = {};
   final Set<String> _selectedToEmails = {};
@@ -31,6 +35,29 @@ class _MessageTabState extends State<MessageTab> {
   String _storedSenderReplyEmail = '';
   final _messageController = TextEditingController();
   final List<_EmailMessage> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    try {
+      final records = await LocalRecordStore.read(_storageKey);
+      if (!mounted) return;
+      setState(() => _messages.addAll(records.map(_EmailMessage.fromJson)));
+    } catch (_) {
+      // Message composition remains available when the history cannot be read.
+    }
+  }
+
+  Future<void> _persistMessages() async {
+    await LocalRecordStore.write(
+      _storageKey,
+      _messages.map((item) => item.toJson()).toList(),
+    );
+  }
 
   /// Records the composed message locally in this tab and opens a mailto target.
   Future<void> _sendMessage() async {
@@ -51,6 +78,15 @@ class _MessageTabState extends State<MessageTab> {
         _EmailMessage(to: to, cc: cc, subject: subject, message: message),
       );
     });
+    try {
+      await _persistMessages();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save message history: $error')),
+        );
+      }
+    }
 
     final mailUri = Uri(
       scheme: 'mailto',
@@ -349,6 +385,20 @@ class _EmailMessage {
   final String cc;
   final String subject;
   final String message;
+
+  Map<String, String> toJson() => {
+    'to': to,
+    'cc': cc,
+    'subject': subject,
+    'message': message,
+  };
+
+  factory _EmailMessage.fromJson(Map<String, dynamic> json) => _EmailMessage(
+    to: json['to'] as String? ?? '',
+    cc: json['cc'] as String? ?? '',
+    subject: json['subject'] as String? ?? '',
+    message: json['message'] as String? ?? '',
+  );
 }
 
 class _MultiSelectField extends StatelessWidget {

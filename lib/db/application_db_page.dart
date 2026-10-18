@@ -20,12 +20,14 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   // Separate key for flexible user-created name/value records.
   static const String _storageKey = 'application_db_records_v1';
 
-  // CSV actions in this page operate on these existing management collections.
+  // CSV actions in this page operate on these persisted tab collections.
   static const Map<String, String> _managedStores = {
     'Equipment': 'equipment_records_v1',
     'Spare Parts': 'spare_parts_records_v1',
     'People': 'people_records_v1',
     'Business': 'business_records_v1',
+    'Work Order': 'work_order_records_v1',
+    'Messages': 'message_records_v1',
   };
 
   final List<_AppRecord> _records = <_AppRecord>[];
@@ -190,6 +192,14 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locations',
       'airports',
     ],
+    'Work Order' => [
+      'businessName',
+      'locationName',
+      'locationAddress',
+      'locationDirectPhone',
+      'locationAirport',
+    ],
+    'Messages' => ['to', 'cc', 'subject', 'message'],
     _ => const ['name', 'value', 'updatedAt'],
   };
 
@@ -328,6 +338,11 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       if (table == 'Equipment') sample['equipmentName'] = 'Example equipment';
       if (table == 'Spare Parts') sample['oemPartNumber'] = 'PART-001';
       if (table == 'People' || table == 'Business') sample['name'] = 'Example';
+      if (table == 'Work Order') {
+        sample['businessName'] = 'Example Business';
+        sample['locationName'] = 'Example Location';
+      }
+      if (table == 'Messages') sample['subject'] = 'Example message';
     }
     for (final field in ['locations', 'airports']) {
       if (sample.containsKey(field)) {
