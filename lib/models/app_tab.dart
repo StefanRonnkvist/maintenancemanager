@@ -6,8 +6,8 @@ enum AppTab {
   spareParts,
   people,
   business,
-  message,
   information,
+  message,
   applicationDb,
   help,
 }
@@ -19,8 +19,8 @@ extension AppTabPresentation on AppTab {
     AppTab.spareParts => 'Spare Parts',
     AppTab.people => 'People',
     AppTab.business => 'Business',
-    AppTab.message => 'Message',
     AppTab.information => 'Information',
+    AppTab.message => 'Message',
     AppTab.applicationDb => 'Application DB',
     AppTab.help => 'Help',
   };
@@ -30,8 +30,8 @@ extension AppTabPresentation on AppTab {
     AppTab.spareParts => Icons.build_outlined,
     AppTab.people => Icons.people_outline,
     AppTab.business => Icons.business_outlined,
-    AppTab.message => Icons.message_outlined,
     AppTab.information => Icons.contact_support_outlined,
+    AppTab.message => Icons.message_outlined,
     AppTab.applicationDb => Icons.storage_outlined,
     AppTab.help => Icons.help_outline,
   };

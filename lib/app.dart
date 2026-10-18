@@ -73,13 +73,15 @@ class _MainTabPageState extends State<MainTabPage>
   void _openSettings() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               Text('Settings', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               Text(
@@ -109,17 +111,78 @@ class _MainTabPageState extends State<MainTabPage>
                 onSelectionChanged: (selection) =>
                     widget.onThemeModeChanged(selection.first),
               ),
-            ],
+              const SizedBox(height: 24),
+              Text(
+                'Tab order',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Drag tabs to change their order.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                buildDefaultDragHandles: false,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _tabs.length,
+                onReorderItem: _reorderTabs,
+                itemBuilder: (context, index) {
+                  final tab = _tabs[index];
+                  return ListTile(
+                    key: ValueKey(tab),
+                    leading: Icon(tab.icon),
+                    title: Text(tab.label),
+                    trailing: ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(Icons.drag_handle),
+                    ),
+                  );
+                },
+              ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Keep tab labels, icons, and page order driven by the same enum sequence.
-  static const List<AppTab> _tabs = AppTab.values;
+  // Page construction is keyed by tab so changing order keeps each page paired
+  // with its label and icon.
+  final List<AppTab> _tabs = List.of(AppTab.values);
 
   late final TabController _controller;
+
+  void _reorderTabs(int oldIndex, int newIndex) {
+    final selectedTab = _tabs[_controller.index];
+    setState(() {
+      final tab = _tabs.removeAt(oldIndex);
+      _tabs.insert(newIndex, tab);
+      _controller.index = _tabs.indexOf(selectedTab);
+    });
+  }
+
+  Widget _pageForTab(AppTab tab) => switch (tab) {
+    AppTab.equipment => EquipmentTab(businesses: _businesses),
+    AppTab.spareParts => SparePartsTab(businesses: _businesses),
+    AppTab.people => BusinessTab(
+      entries: _people,
+      onAdd: (entry) => setState(() => _people.add(entry)),
+      kind: BusinessTabKind.people,
+      businesses: _businesses,
+    ),
+    AppTab.business => BusinessTab(
+      entries: _businesses,
+      onAdd: (entry) => setState(() => _businesses.add(entry)),
+      kind: BusinessTabKind.business,
+    ),
+    AppTab.information => const InformationTabs(),
+    AppTab.message => MessageTab(people: _people, businesses: _businesses),
+    AppTab.applicationDb => const ApplicationDbTab(),
+    AppTab.help => const HelpTab(),
+  };
 
   // These shared lists connect records across tabs during this app session.
   // Each management tab is also responsible for saving its records locally.
@@ -157,26 +220,7 @@ class _MainTabPageState extends State<MainTabPage>
     ),
     body: TabBarView(
       controller: _controller,
-      // Keep these pages in the same order as AppTab.values above.
-      children: [
-        EquipmentTab(businesses: _businesses),
-        SparePartsTab(businesses: _businesses),
-        BusinessTab(
-          entries: _people,
-          onAdd: (entry) => setState(() => _people.add(entry)),
-          kind: BusinessTabKind.people,
-          businesses: _businesses,
-        ),
-        BusinessTab(
-          entries: _businesses,
-          onAdd: (entry) => setState(() => _businesses.add(entry)),
-          kind: BusinessTabKind.business,
-        ),
-        const InformationTabs(),
-        MessageTab(people: _people, businesses: _businesses),
-        const ApplicationDbTab(),
-        const HelpTab(),
-      ],
+      children: _tabs.map(_pageForTab).toList(),
     ),
   );
 }
