@@ -54,7 +54,7 @@ class _MaintenanceManagerAppState extends State<MaintenanceManagerApp> {
   );
 }
 
-/// Hosts the primary navigation and shares the people/business lists between tabs.
+/// Hosts the app's primary tab navigation.
 class MainTabPage extends StatefulWidget {
   const MainTabPage({
     required this.themeMode,
@@ -84,65 +84,65 @@ class _MainTabPageState extends State<MainTabPage>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-              Text('Settings', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              Text(
-                'Appearance',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<AppThemeMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: AppThemeMode.system,
-                    label: Text('System'),
-                    icon: Icon(Icons.settings_brightness_outlined),
-                  ),
-                  ButtonSegment(
-                    value: AppThemeMode.dark,
-                    label: Text('Dark'),
-                    icon: Icon(Icons.dark_mode_outlined),
-                  ),
-                  ButtonSegment(
-                    value: AppThemeMode.light,
-                    label: Text('Light'),
-                    icon: Icon(Icons.light_mode_outlined),
-                  ),
-                ],
-                selected: {widget.themeMode},
-                onSelectionChanged: (selection) =>
-                    widget.onThemeModeChanged(selection.first),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Tab order',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Drag tabs to change their order.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              ReorderableListView.builder(
-                shrinkWrap: true,
-                buildDefaultDragHandles: false,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _tabs.length,
-                onReorderItem: _reorderTabs,
-                itemBuilder: (context, index) {
-                  final tab = _tabs[index];
-                  return ListTile(
-                    key: ValueKey(tab),
-                    leading: Icon(tab.icon),
-                    title: Text(tab.label),
-                    trailing: ReorderableDragStartListener(
-                      index: index,
-                      child: const Icon(Icons.drag_handle),
+                Text('Settings', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 16),
+                Text(
+                  'Appearance',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<AppThemeMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: AppThemeMode.system,
+                      label: Text('System'),
+                      icon: Icon(Icons.settings_brightness_outlined),
                     ),
-                  );
-                },
-              ),
+                    ButtonSegment(
+                      value: AppThemeMode.dark,
+                      label: Text('Dark'),
+                      icon: Icon(Icons.dark_mode_outlined),
+                    ),
+                    ButtonSegment(
+                      value: AppThemeMode.light,
+                      label: Text('Light'),
+                      icon: Icon(Icons.light_mode_outlined),
+                    ),
+                  ],
+                  selected: {widget.themeMode},
+                  onSelectionChanged: (selection) =>
+                      widget.onThemeModeChanged(selection.first),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Tab order',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Drag tabs to change their order.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                ReorderableListView.builder(
+                  shrinkWrap: true,
+                  buildDefaultDragHandles: false,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _tabs.length,
+                  onReorderItem: _reorderTabs,
+                  itemBuilder: (context, index) {
+                    final tab = _tabs[index];
+                    return ListTile(
+                      key: ValueKey(tab),
+                      leading: Icon(tab.icon),
+                      title: Text(tab.label),
+                      trailing: ReorderableDragStartListener(
+                        index: index,
+                        child: const Icon(Icons.drag_handle),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -200,15 +200,18 @@ class _MainTabPageState extends State<MainTabPage>
     );
   }
 
+  // Each list is shared with its tab's records table and persistence handler.
+  final List<BusinessEntry> _people = [];
+  final List<BusinessEntry> _businesses = [];
+
   Widget _pageForTab(AppTab tab) => switch (tab) {
-    AppTab.equipment => EquipmentTab(businesses: _businesses),
-    AppTab.spareParts => SparePartsTab(businesses: _businesses),
-    AppTab.workOrder => WorkOrderTab(businesses: _businesses),
+    AppTab.equipment => const EquipmentTab(),
+    AppTab.spareParts => const SparePartsTab(),
+    AppTab.workOrder => const WorkOrderTab(),
     AppTab.people => BusinessTab(
       entries: _people,
       onAdd: (entry) => setState(() => _people.add(entry)),
       kind: BusinessTabKind.people,
-      businesses: _businesses,
     ),
     AppTab.business => BusinessTab(
       entries: _businesses,
@@ -216,15 +219,10 @@ class _MainTabPageState extends State<MainTabPage>
       kind: BusinessTabKind.business,
     ),
     AppTab.information => const InformationTabs(),
-    AppTab.message => MessageTab(people: _people, businesses: _businesses),
+    AppTab.message => const MessageTab(),
     AppTab.applicationDb => const ApplicationDbTab(),
     AppTab.help => const HelpTab(),
   };
-
-  // These shared lists connect records across tabs during this app session.
-  // Each management tab is also responsible for saving its records locally.
-  final List<BusinessEntry> _people = [];
-  final List<BusinessEntry> _businesses = [];
 
   @override
   void initState() {

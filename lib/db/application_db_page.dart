@@ -33,6 +33,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   final List<_AppRecord> _records = <_AppRecord>[];
   final Map<String, List<Map<String, dynamic>>> _managedRecords = {};
   String _selectedTable = 'Equipment';
+  final TextEditingController _selectedTableController = TextEditingController(
+    text: 'Equipment',
+  );
   bool _isLoading = true;
   String? _storageError;
 
@@ -40,6 +43,12 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   void initState() {
     super.initState();
     _loadRecords();
+  }
+
+  @override
+  void dispose() {
+    _selectedTableController.dispose();
+    super.dispose();
   }
 
   /// Loads custom records and the management collections exposed for CSV.
@@ -66,12 +75,13 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         if (entry.key == 'Equipment') {
           final equipment = _managedRecords[entry.key]!;
           if (equipment.isNotEmpty &&
-              !equipment.first.containsKey('businessName')) {
+              !equipment.first.containsKey('equipmentCategory')) {
             for (final record in equipment) {
-              record['businessName'] = '';
-              record['locationName'] = '';
-              record['maintenanceManual'] = '';
-              record['publisher'] = '';
+              record.putIfAbsent('equipmentCategory', () => '');
+              record.putIfAbsent('businessName', () => '');
+              record.putIfAbsent('locationName', () => '');
+              record.putIfAbsent('maintenanceManual', () => '');
+              record.putIfAbsent('publisher', () => '');
             }
             await LocalRecordStore.write(entry.value, equipment);
           }
@@ -143,6 +153,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   /// Defines the CSV field order for each supported management category.
   List<String> _columnsFor(String table) => switch (table) {
     'Equipment' => [
+      'equipmentCategory',
       'localName',
       'localNumber',
       'manufacturerName',
@@ -257,6 +268,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
 
   Future<void> _exportCsv(String table) async {
     try {
+      if (!_managedStores.containsKey(table)) {
+        throw FormatException('Unknown table: $table');
+      }
       final columns = _columnsFor(table);
       final records = _managedRecords[table] ?? const <Map<String, dynamic>>[];
       final csv = _encodeCsv(records, columns: columns);
@@ -269,6 +283,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
 
   Future<void> _importCsv(String table) async {
     try {
+      if (!_managedStores.containsKey(table)) {
+        throw FormatException('Unknown table: $table');
+      }
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
@@ -332,6 +349,10 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   }
 
   Future<void> _shareTemplate(String table, {required bool example}) async {
+    if (!_managedStores.containsKey(table)) {
+      _showMessage('Enter a valid table name.');
+      return;
+    }
     final columns = _columnsFor(table);
     final sample = <String, dynamic>{for (final column in columns) column: ''};
     if (example) {
@@ -477,52 +498,40 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              DropdownButton<String>(
-                value: _selectedTable,
-                items: [
-                  for (final table in _managedStores.keys)
-                    DropdownMenuItem(value: table, child: Text(table)),
-                ],
-                onChanged: (table) {
-                  if (table != null) setState(() => _selectedTable = table);
-                },
+              SizedBox(
+                width: 180,
+                child: TextField(
+                  controller: _selectedTableController,
+                  decoration: const InputDecoration(
+                    labelText: 'Table',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (table) {
+                    setState(() => _selectedTable = table.trim());
+                  },
+                ),
               ),
               const SizedBox(width: 8),
-              PopupMenuButton<String>(
-                tooltip: 'Import, export, and templates',
-                onSelected: (action) {
-                  switch (action) {
-                    case 'import':
-                      _importCsv(_selectedTable);
-                      break;
-                    case 'export':
-                      _exportCsv(_selectedTable);
-                      break;
-                    case 'template':
-                      _shareTemplate(_selectedTable, example: true);
-                      break;
-                    case 'blank-template':
-                      _shareTemplate(_selectedTable, example: false);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'import', child: Text('Import CSV')),
-                  PopupMenuItem(value: 'export', child: Text('Export CSV')),
-                  PopupMenuDivider(),
-                  PopupMenuItem(
-                    value: 'template',
-                    child: Text('Example CSV template'),
-                  ),
-                  PopupMenuItem(
-                    value: 'blank-template',
-                    child: Text('Blank CSV template'),
-                  ),
-                ],
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Icon(Icons.more_vert),
-                ),
+              IconButton(
+                tooltip: 'Import CSV',
+                onPressed: () => _importCsv(_selectedTable),
+                icon: const Icon(Icons.file_open_outlined),
+              ),
+              IconButton(
+                tooltip: 'Export CSV',
+                onPressed: () => _exportCsv(_selectedTable),
+                icon: const Icon(Icons.file_download_outlined),
+              ),
+              IconButton(
+                tooltip: 'Share example CSV template',
+                onPressed: () => _shareTemplate(_selectedTable, example: true),
+                icon: const Icon(Icons.description_outlined),
+              ),
+              IconButton(
+                tooltip: 'Share blank CSV template',
+                onPressed: () => _shareTemplate(_selectedTable, example: false),
+                icon: const Icon(Icons.note_add_outlined),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
@@ -556,22 +565,20 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                         title: Text(record.name),
                         subtitle: Text(record.value),
                         isThreeLine: record.value.contains('\n'),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (String action) {
-                            if (action == 'edit') _updateRecord(record);
-                            if (action == 'delete') _deleteRecord(record);
-                          },
-                          itemBuilder: (BuildContext context) =>
-                              const <PopupMenuEntry<String>>[
-                                PopupMenuItem<String>(
-                                  value: 'edit',
-                                  child: Text('Edit'),
-                                ),
-                                PopupMenuItem<String>(
-                                  value: 'delete',
-                                  child: Text('Delete'),
-                                ),
-                              ],
+                        trailing: Wrap(
+                          spacing: 4,
+                          children: [
+                            IconButton(
+                              tooltip: 'Edit record',
+                              onPressed: () => _updateRecord(record),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              tooltip: 'Delete record',
+                              onPressed: () => _deleteRecord(record),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
                         ),
                       ),
                     );

@@ -14,17 +14,17 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Equipment',
       icon: Icons.precision_manufacturing_outlined,
-      content: 'Choose or add an equipment category and equipment type, select a business and location, then enter the equipment details: local name and number, manufacturer, model, serial number, maintenance manual, and publisher. Add Equipment saves a row in the equipment list.',
+      content: 'Enter equipment category, equipment name, business, location, and equipment details: local name and number, manufacturer, model, serial number, maintenance manual, and publisher. Add Equipment saves a row in the equipment list.',
     ),
     _HelpSection(
       title: 'Spare Parts',
       icon: Icons.build_outlined,
-      content: 'Enter OEM and vendor part numbers and descriptions, serial number, stock quantity, and location. Vendor Name is selected from businesses whose type is Vendor. Add Spare Part adds the record to the list.',
+      content: 'Enter OEM and vendor part numbers and descriptions, vendor name, serial number, stock quantity, and location. Add Spare Part adds the record to the list.',
     ),
     _HelpSection(
       title: 'Work Order',
       icon: Icons.assignment_outlined,
-      content: 'Choose a Business Name, then choose one of its Location Names. The location address, direct phone number, and nearest airport are displayed. Tap Save Work Order to save the selected business and location details locally; saved records can be exported or imported from Application DB → Work Order.',
+      content: 'Enter a business name, location name, address, direct phone number, and nearest airport. Tap Save Work Order to save the details locally; saved records can be exported or imported from Application DB → Work Order.',
     ),
     _HelpSection(
       title: 'People and Business',
@@ -34,17 +34,17 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Message',
       icon: Icons.message_outlined,
-      content: 'Set sender name, sender email, and reply email, then select a business to filter contacts. Choose recipients for To and Cc, add a subject and message, and tap Send to add a row to the in-app Messages list and open the system share/email app with a mailto link. Message history is saved locally and is available for CSV import/export in Application DB → Messages. The sender fields are for reference and are not included in the mailto link; message delivery depends on the app you choose.'
+      content: 'Set sender name, sender email, and reply email, enter To and Cc recipients, add a subject and message, and tap Send to add a row to the in-app Messages list and open the system share/email app with a mailto link. Message history is saved locally and is available for CSV import/export in Application DB → Messages. The sender fields are for reference and are not included in the mailto link; message delivery depends on the app you choose.',
     ),
     _HelpSection(
       title: 'Saved data',
       icon: Icons.save_outlined,
-      content: 'Equipment, spare parts, people, businesses, saved work orders, message history, and Application DB records are stored locally on this device. Clearing app data or uninstalling may remove local records. Keep CSV exports as backups.'
+      content: 'Equipment, spare parts, people, businesses, saved work orders, message history, and Application DB records are stored locally on this device. Clearing app data or uninstalling may remove local records. Keep CSV exports as backups.',
     ),
     _HelpSection(
       title: 'Application DB and CSV',
       icon: Icons.table_view_outlined,
-      content: 'In Application DB, select Equipment, Spare Parts, People, Business, Work Order, or Messages before using the menu. Import CSV appends rows to that category; the file must use the matching template headers. Export CSV saves the selected category. Example and blank templates help prepare compatible files.'
+      content: 'In Application DB, enter a table name (Equipment, Spare Parts, People, Business, Work Order, or Messages) and use the import, export, or template buttons. Import CSV appends rows to that category; the file must use the matching template headers. Example and blank templates help prepare compatible files.',
     ),
     _HelpSection(
       title: 'Appearance and Information',

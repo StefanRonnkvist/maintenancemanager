@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/business_entry.dart';
 import '../services/local_record_store.dart';
 
-/// Work order page with business and location details selected from Business.
+/// Work order page with free-entry business and location details.
 class WorkOrderTab extends StatefulWidget {
-  const WorkOrderTab({required this.businesses, super.key});
-
-  final List<BusinessEntry> businesses;
+  const WorkOrderTab({super.key});
 
   @override
   State<WorkOrderTab> createState() => _WorkOrderTabState();
@@ -15,17 +12,12 @@ class WorkOrderTab extends StatefulWidget {
 
 class _WorkOrderTabState extends State<WorkOrderTab> {
   static const _storageKey = 'work_order_records_v1';
-  String? _selectedBusinessName;
-  String? _selectedLocationName;
+  final _businessNameController = TextEditingController();
+  final _locationNameController = TextEditingController();
+  final _locationAddressController = TextEditingController();
+  final _locationPhoneController = TextEditingController();
+  final _locationAirportController = TextEditingController();
   final List<Map<String, dynamic>> _records = [];
-
-  BusinessEntry? get _selectedBusiness => widget.businesses
-      .where((business) => business.name == _selectedBusinessName)
-      .firstOrNull;
-
-  BusinessLocation? get _selectedLocation => _selectedBusiness?.locations
-      .where((location) => location.name == _selectedLocationName)
-      .firstOrNull;
 
   @override
   void initState() {
@@ -43,21 +35,25 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     }
   }
 
-  Future<void> _saveCurrentWorkOrder() async {
-    final business = _selectedBusiness;
-    final location = _selectedLocation;
-    if (business == null || location == null) {
-      _showMessage('Select a business and location first.');
-      return;
-    }
+  @override
+  void dispose() {
+    _businessNameController.dispose();
+    _locationNameController.dispose();
+    _locationAddressController.dispose();
+    _locationPhoneController.dispose();
+    _locationAirportController.dispose();
+    super.dispose();
+  }
 
+  Future<void> _saveCurrentWorkOrder() async {
     final record = <String, dynamic>{
-      'businessName': business.name,
-      'locationName': location.name,
-      'locationAddress': location.address,
-      'locationDirectPhone': location.directPhone,
-      'locationAirport': location.nearestAirport,
+      'businessName': _businessNameController.text.trim(),
+      'locationName': _locationNameController.text.trim(),
+      'locationAddress': _locationAddressController.text.trim(),
+      'locationDirectPhone': _locationPhoneController.text.trim(),
+      'locationAirport': _locationAirportController.text.trim(),
     };
+    if (record.values.every((value) => (value as String).isEmpty)) return;
     final updated = [record, ..._records];
     try {
       await LocalRecordStore.write(_storageKey, updated);
@@ -74,14 +70,12 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final business = _selectedBusiness;
-    final location = _selectedLocation;
-
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -93,61 +87,50 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           children: [
             SizedBox(
               width: 280,
-              child: DropdownButtonFormField<String>(
-                initialValue: widget.businesses.any(
-                  (item) => item.name == _selectedBusinessName,
-                )
-                    ? _selectedBusinessName
-                    : null,
+              child: TextField(
+                controller: _businessNameController,
                 decoration: const InputDecoration(
                   labelText: 'Business Name',
                   border: OutlineInputBorder(),
                 ),
-                items: widget.businesses
-                    .map(
-                      (item) => DropdownMenuItem(
-                        value: item.name,
-                        child: Text(item.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (name) => setState(() {
-                  _selectedBusinessName = name;
-                  _selectedLocationName = null;
-                }),
               ),
             ),
             SizedBox(
               width: 280,
-              child: DropdownButtonFormField<String>(
-                initialValue: business?.locations.any(
-                  (item) => item.name == _selectedLocationName,
-                ) == true
-                    ? _selectedLocationName
-                    : null,
+              child: TextField(
+                controller: _locationNameController,
                 decoration: const InputDecoration(
                   labelText: 'Location Name',
                   border: OutlineInputBorder(),
                 ),
-                items: (business?.locations ?? const <BusinessLocation>[])
-                    .map(
-                      (item) => DropdownMenuItem(
-                        value: item.name,
-                        child: Text(item.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: business == null
-                    ? null
-                    : (name) => setState(() => _selectedLocationName = name),
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        _detailField('Location Address', location?.address),
-        _detailField('Location Direct Phone Number', location?.directPhone),
-        _detailField('Location Airports', location?.nearestAirport),
+        TextField(
+          controller: _locationAddressController,
+          decoration: const InputDecoration(
+            labelText: 'Location Address',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _locationPhoneController,
+          decoration: const InputDecoration(
+            labelText: 'Location Direct Phone Number',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _locationAirportController,
+          decoration: const InputDecoration(
+            labelText: 'Location Airports',
+            border: OutlineInputBorder(),
+          ),
+        ),
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
@@ -158,7 +141,10 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           ),
         ),
         const SizedBox(height: 24),
-        Text('Saved Work Orders', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Saved Work Orders',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 8),
         if (_records.isEmpty)
           const Text('No saved work orders yet.')
@@ -178,17 +164,4 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       ],
     );
   }
-
-  Widget _detailField(String label, String? value) => Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: TextFormField(
-      key: ValueKey('$label-${value ?? ''}'),
-      initialValue: value ?? '',
-      readOnly: true,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-    ),
-  );
 }

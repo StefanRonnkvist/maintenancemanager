@@ -13,7 +13,6 @@ class SparePartsForm extends StatelessWidget {
     required this.vendorName,
     required this.quantityInStock,
     required this.location,
-    required this.vendors,
     required this.onAdd,
     super.key,
   });
@@ -26,7 +25,6 @@ class SparePartsForm extends StatelessWidget {
   final TextEditingController vendorName;
   final TextEditingController quantityInStock;
   final TextEditingController location;
-  final List<String> vendors;
   final ValueChanged<SparePartRecord> onAdd;
 
   /// Builds a record from the controllers and ignores a completely blank form.
@@ -59,19 +57,7 @@ class SparePartsForm extends StatelessWidget {
       const SizedBox(height: 16),
       _field(serialNumber, 'Serial Number'),
       const SizedBox(height: 16),
-      DropdownButtonFormField<String>(
-        initialValue: vendors.contains(vendorName.text)
-            ? vendorName.text
-            : null,
-        decoration: const InputDecoration(
-          labelText: 'Vendor Name',
-          border: OutlineInputBorder(),
-        ),
-        items: vendors
-            .map((name) => DropdownMenuItem(value: name, child: Text(name)))
-            .toList(),
-        onChanged: (name) => vendorName.text = name ?? '',
-      ),
+      _field(vendorName, 'Vendor Name'),
       const SizedBox(height: 16),
       _field(
         quantityInStock,

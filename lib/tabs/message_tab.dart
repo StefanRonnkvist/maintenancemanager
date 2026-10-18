@@ -4,15 +4,11 @@ import 'package:share_plus/share_plus.dart';
 import '../services/local_record_store.dart';
 
 import '../models/app_tab.dart';
-import '../models/business_entry.dart';
 import '../widgets/management_tab_layout.dart';
 
-/// Builds a message composer from the shared people and business collections.
+/// Builds a message composer with free-entry recipients.
 class MessageTab extends StatefulWidget {
-  const MessageTab({required this.people, required this.businesses, super.key});
-
-  final List<BusinessEntry> people;
-  final List<BusinessEntry> businesses;
+  const MessageTab({super.key});
 
   @override
   State<MessageTab> createState() => _MessageTabState();
@@ -21,10 +17,8 @@ class MessageTab extends StatefulWidget {
 class _MessageTabState extends State<MessageTab> {
   static const _storageKey = 'message_records_v1';
 
-  // Recipient labels preserve both a display name and email until the mailto is built.
-  final Set<String> _selectedBusinessNames = {};
-  final Set<String> _selectedToEmails = {};
-  final Set<String> _selectedCcEmails = {};
+  final _toController = TextEditingController();
+  final _ccController = TextEditingController();
   final _senderNameController = TextEditingController();
   final _senderEmailController = TextEditingController();
   final _senderReplyEmailController = TextEditingController();
@@ -61,8 +55,8 @@ class _MessageTabState extends State<MessageTab> {
 
   /// Records the composed message locally in this tab and opens a mailto target.
   Future<void> _sendMessage() async {
-    final to = _selectedToEmails.map(_emailFromRecipient).join(', ');
-    final cc = _selectedCcEmails.map(_emailFromRecipient).join(', ');
+    final to = _toController.text.trim();
+    final cc = _ccController.text.trim();
     final subject = _subjectController.text.trim();
     final message = _messageController.text.trim();
 
@@ -109,16 +103,6 @@ class _MessageTabState extends State<MessageTab> {
     }
   }
 
-  /// Extracts an email address from a `Name <address>` recipient label.
-  String _emailFromRecipient(String recipient) {
-    final openingBracket = recipient.lastIndexOf('<');
-    final closingBracket = recipient.lastIndexOf('>');
-    if (openingBracket >= 0 && closingBracket > openingBracket) {
-      return recipient.substring(openingBracket + 1, closingBracket).trim();
-    }
-    return recipient.trim();
-  }
-
   /// Locks the sender fields, or restores the values captured when they were set.
   void _toggleSenderDetails() {
     setState(() {
@@ -138,20 +122,14 @@ class _MessageTabState extends State<MessageTab> {
 
   @override
   void dispose() {
+    _toController.dispose();
+    _ccController.dispose();
     _senderNameController.dispose();
     _senderEmailController.dispose();
     _senderReplyEmailController.dispose();
     _subjectController.dispose();
     _messageController.dispose();
     super.dispose();
-  }
-
-  /// Narrows the contact choices only when at least one business is selected.
-  List<BusinessEntry> get _filteredPeople {
-    if (_selectedBusinessNames.isEmpty) return widget.people;
-    return widget.people
-        .where((person) => _selectedBusinessNames.contains(person.businessName))
-        .toList();
   }
 
   Widget _emailFields() => Column(
@@ -250,50 +228,24 @@ class _MessageTabState extends State<MessageTab> {
               children: [
                 SizedBox(
                   width: 320,
-                  child: _MultiSelectField(
-                    label: 'Business',
-                    options: widget.businesses
-                        .map((business) => business.name)
-                        .where((name) => name.trim().isNotEmpty)
-                        .toSet(),
-                    selectedValues: _selectedBusinessNames,
-                    onChanged: (values) => setState(() {
-                      _selectedBusinessNames
-                        ..clear()
-                        ..addAll(values);
-                    }),
+                  child: TextField(
+                    controller: _toController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'To',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
                 SizedBox(
                   width: 320,
-                  child: _MultiSelectField(
-                    label: 'To',
-                    options: _filteredPeople
-                        .where((person) => person.email.trim().isNotEmpty)
-                        .map((person) => '${person.name} <${person.email}>')
-                        .toSet(),
-                    selectedValues: _selectedToEmails,
-                    onChanged: (values) => setState(() {
-                      _selectedToEmails
-                        ..clear()
-                        ..addAll(values);
-                    }),
-                  ),
-                ),
-                SizedBox(
-                  width: 320,
-                  child: _MultiSelectField(
-                    label: 'Cc',
-                    options: _filteredPeople
-                        .where((person) => person.email.trim().isNotEmpty)
-                        .map((person) => '${person.name} <${person.email}>')
-                        .toSet(),
-                    selectedValues: _selectedCcEmails,
-                    onChanged: (values) => setState(() {
-                      _selectedCcEmails
-                        ..clear()
-                        ..addAll(values);
-                    }),
+                  child: TextField(
+                    controller: _ccController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Cc',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
               ],
@@ -398,54 +350,5 @@ class _EmailMessage {
     cc: json['cc'] as String? ?? '',
     subject: json['subject'] as String? ?? '',
     message: json['message'] as String? ?? '',
-  );
-}
-
-class _MultiSelectField extends StatelessWidget {
-  const _MultiSelectField({
-    required this.label,
-    required this.options,
-    required this.selectedValues,
-    required this.onChanged,
-  });
-
-  final String label;
-  final Set<String> options;
-  final Set<String> selectedValues;
-  final ValueChanged<Set<String>> onChanged;
-
-  @override
-  Widget build(BuildContext context) => PopupMenuButton<String>(
-    tooltip: 'Select $label',
-    onSelected: (value) {
-      final updatedValues = Set<String>.from(selectedValues);
-      if (updatedValues.contains(value)) {
-        updatedValues.remove(value);
-      } else {
-        updatedValues.add(value);
-      }
-      onChanged(updatedValues);
-    },
-    itemBuilder: (context) => options
-        .map(
-          (option) => CheckedPopupMenuItem<String>(
-            value: option,
-            checked: selectedValues.contains(option),
-            child: Text(option),
-          ),
-        )
-        .toList(),
-    child: InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        suffixIcon: const Icon(Icons.arrow_drop_down),
-      ),
-      child: Text(
-        selectedValues.isEmpty ? 'Select $label' : selectedValues.join(', '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    ),
   );
 }

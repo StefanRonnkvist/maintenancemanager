@@ -1,74 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_tab.dart';
-import '../models/business_entry.dart';
 import '../models/equipment_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 
-/// Builds the equipment browser with the starter equipment taxonomy.
-class EquipmentTab extends StatelessWidget {
-  const EquipmentTab({required this.businesses, super.key});
-
-  final List<BusinessEntry> businesses;
-
-  // These defaults are copied into per-session state so users can add options.
-  static const Map<String, List<String>> _equipmentCategories = {
-    'Manufacturing and Production Machinery': [
-      'CNC machines',
-      'Lathes',
-      'Lasers',
-      'Milling machines',
-      'Stamping presses',
-      'Robotic welders',
-    ],
-    'Material Handling and Transport': [
-      'Conveyor systems',
-      'Forklifts',
-      'Cranes',
-      'Auger conveyors',
-      'Automation',
-    ],
-    'Heavy Construction and Earthmoving Equipment': [
-      'Bulldozers',
-      'Excavators',
-      'Articulated trucks',
-      'Compactors',
-    ],
-    'Facility and HVAC Systems': [
-      'Furnaces',
-      'Boilers',
-      'Heat exchangers',
-      'Industrial compressors',
-      'Large-scale water pumps',
-    ],
-    'Processing and Packaging Equipment': [
-      'Extrusion machines',
-      'Injection molds',
-      'Granulators',
-      'Bagging machinery',
-      'Shrink-wrapping machines',
-    ],
-  };
+/// Builds the equipment browser and its free-entry equipment form.
+class EquipmentTab extends StatefulWidget {
+  const EquipmentTab({super.key});
 
   @override
-  Widget build(BuildContext context) => _EquipmentBrowser(
-    categories: _equipmentCategories,
-    businesses: businesses,
-  );
+  State<EquipmentTab> createState() => _EquipmentTabState();
 }
 
-class _EquipmentBrowser extends StatefulWidget {
-  const _EquipmentBrowser({required this.categories, required this.businesses});
-
-  final Map<String, List<String>> categories;
-  final List<BusinessEntry> businesses;
-
-  @override
-  State<_EquipmentBrowser> createState() => _EquipmentBrowserState();
-}
-
-class _EquipmentBrowserState extends State<_EquipmentBrowser> {
+class _EquipmentTabState extends State<EquipmentTab> {
   static const _storageKey = 'equipment_records_v1';
   bool _isLoading = true;
   String? _storageError;
@@ -81,18 +26,10 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   final _serialNumberController = TextEditingController();
   final _maintenanceManualController = TextEditingController();
   final _publisherController = TextEditingController();
-  final _newCategoryController = TextEditingController();
-  final _newEquipmentController = TextEditingController();
-  String? _selectedCategory;
-  String? _selectedEquipment;
-  String? _selectedBusinessName;
-  String? _selectedLocationName;
+  final _categoryController = TextEditingController();
+  final _businessNameController = TextEditingController();
+  final _locationNameController = TextEditingController();
   final List<EquipmentRecord> _records = [];
-  // Copy nested lists to avoid mutating the immutable defaults above.
-  late final Map<String, List<String>> _categories = {
-    for (final entry in widget.categories.entries)
-      entry.key: List<String>.from(entry.value),
-  };
 
   @override
   void initState() {
@@ -136,8 +73,9 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     _serialNumberController.dispose();
     _maintenanceManualController.dispose();
     _publisherController.dispose();
-    _newCategoryController.dispose();
-    _newEquipmentController.dispose();
+    _categoryController.dispose();
+    _businessNameController.dispose();
+    _locationNameController.dispose();
     super.dispose();
   }
 
@@ -150,43 +88,16 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
         ),
       );
 
-  /// Adds a non-empty category locally and selects it for the next entry.
-  void _addCategory() {
-    final name = _newCategoryController.text.trim();
-    if (name.isEmpty || _categories.containsKey(name)) return;
-    setState(() {
-      _categories[name] = [];
-      _selectedCategory = name;
-      _selectedEquipment = null;
-      _newCategoryController.clear();
-    });
-  }
-
-  /// Adds a type to the currently selected category without duplicates.
-  void _addEquipmentOption() {
-    final category = _selectedCategory;
-    final name = _newEquipmentController.text.trim();
-    if (category == null || name.isEmpty) return;
-    final options = _categories[category]!;
-    if (options.contains(name)) return;
-    setState(() {
-      options.add(name);
-      _selectedEquipment = name;
-      _newEquipmentController.clear();
-    });
-  }
-
   /// Builds a record from the form, then appends and persists it.
   void _addEquipment() {
     final record = EquipmentRecord(
-      businessName: _selectedBusinessName ?? '',
-      locationName: _selectedLocationName ?? '',
+      businessName: _businessNameController.text.trim(),
+      locationName: _locationNameController.text.trim(),
+      equipmentCategory: _categoryController.text.trim(),
       localName: _localNameController.text.trim(),
       localNumber: _localNumberController.text.trim(),
       manufacturerName: _manufacturerNameController.text.trim(),
-      equipmentName: _equipmentNameController.text.trim().isNotEmpty
-          ? _equipmentNameController.text.trim()
-          : (_selectedEquipment ?? ''),
+      equipmentName: _equipmentNameController.text.trim(),
       equipmentModel: _equipmentModelController.text.trim(),
       serialNumber: _serialNumberController.text.trim(),
       maintenanceManual: _maintenanceManualController.text.trim(),
@@ -207,22 +118,15 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
       _serialNumberController.clear();
       _maintenanceManualController.clear();
       _publisherController.clear();
+      _categoryController.clear();
+      _businessNameController.clear();
+      _locationNameController.clear();
     });
     _persistRecords();
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = _categories.keys.toList();
-    final equipment = _selectedCategory == null
-        ? const <String>[]
-        : _categories[_selectedCategory] ?? const <String>[];
-    final selectedBusiness = widget.businesses
-        .where((business) => business.name == _selectedBusinessName)
-        .firstOrNull;
-    final locations = selectedBusiness?.locations ?? const <BusinessLocation>[];
-    final colors = Theme.of(context).colorScheme;
-
     return ManagementTabLayout(
       title: AppTab.equipment.label,
       icon: AppTab.equipment.icon,
@@ -259,153 +163,17 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: categories.contains(_selectedCategory)
-                          ? _selectedCategory
-                          : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Equipment category',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.category_outlined),
-                      ),
-                      items: categories
-                          .map(
-                            (category) => DropdownMenuItem(
-                              value: category,
-                              child: Text(category),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (category) => setState(() {
-                        _selectedCategory = category;
-                        _selectedEquipment = null;
-                      }),
-                    ),
+                    _textField('Equipment category', _categoryController),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _newCategoryController,
-                            decoration: const InputDecoration(
-                              labelText: 'New equipment category',
-                              border: OutlineInputBorder(),
-                            ),
-                            onSubmitted: (_) => _addCategory(),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton.filledTonal(
-                          tooltip: 'Add category',
-                          onPressed: _addCategory,
-                          icon: const Icon(Icons.add),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: equipment.contains(_selectedEquipment)
-                          ? _selectedEquipment
-                          : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Equipment',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(
-                          Icons.precision_manufacturing_outlined,
-                        ),
-                      ),
-                      items: equipment
-                          .map(
-                            (name) => DropdownMenuItem(
-                              value: name,
-                              child: Text(name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: equipment.isEmpty
-                          ? null
-                          : (name) => setState(() => _selectedEquipment = name),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _newEquipmentController,
-                            decoration: const InputDecoration(
-                              labelText: 'New equipment',
-                              border: OutlineInputBorder(),
-                            ),
-                            onSubmitted: (_) => _addEquipmentOption(),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton.filledTonal(
-                          tooltip: 'Add equipment',
-                          onPressed: _addEquipmentOption,
-                          icon: const Icon(Icons.add),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 24),
                     Text(
                       'Business and location',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue:
-                          widget.businesses.any(
-                            (business) =>
-                                business.name == _selectedBusinessName,
-                          )
-                          ? _selectedBusinessName
-                          : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Business Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.business_outlined),
-                      ),
-                      items: widget.businesses
-                          .map(
-                            (business) => DropdownMenuItem<String>(
-                              value: business.name,
-                              child: Text(business.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (name) => setState(() {
-                        _selectedBusinessName = name;
-                        _selectedLocationName = null;
-                      }),
-                    ),
+                    _textField('Business Name', _businessNameController),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue:
-                          locations.any(
-                            (location) =>
-                                location.name == _selectedLocationName,
-                          )
-                          ? _selectedLocationName
-                          : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Location Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on_outlined),
-                      ),
-                      items: locations
-                          .map(
-                            (location) => DropdownMenuItem<String>(
-                              value: location.name,
-                              child: Text(location.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: _selectedBusinessName == null
-                          ? null
-                          : (name) =>
-                                setState(() => _selectedLocationName = name),
-                    ),
+                    _textField('Location Name', _locationNameController),
                     const SizedBox(height: 24),
                     Text(
                       'Equipment details',
@@ -490,21 +258,6 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
                         label: const Text('Add Equipment'),
                       ),
                     ),
-                    if (_selectedEquipment != null) ...[
-                      const SizedBox(height: 20),
-                      ListTile(
-                        leading: Icon(
-                          Icons.check_circle_outline,
-                          color: colors.primary,
-                        ),
-                        title: Text(_selectedEquipment!),
-                        subtitle: Text(_selectedCategory!),
-                        tileColor: colors.surfaceContainerLow,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -544,6 +297,7 @@ class _EquipmentTable extends StatelessWidget {
       ),
       dataRowMinHeight: 52,
       columns: const [
+        DataColumn(label: Text('Equipment Category')),
         DataColumn(label: Text('Local Name')),
         DataColumn(label: Text('Local Number')),
         DataColumn(label: Text('Manufacturer Name')),
@@ -559,6 +313,7 @@ class _EquipmentTable extends StatelessWidget {
           .map(
             (record) => DataRow(
               cells: [
+                DataCell(Text(record.equipmentCategory)),
                 DataCell(Text(record.localName)),
                 DataCell(Text(record.localNumber)),
                 DataCell(Text(record.manufacturerName)),

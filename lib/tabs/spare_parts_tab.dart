@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_tab.dart';
-import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
@@ -10,9 +9,7 @@ import '../widgets/spare_parts_table.dart';
 
 /// Owns spare-part entry, local persistence, and the inventory table.
 class SparePartsTab extends StatefulWidget {
-  const SparePartsTab({required this.businesses, super.key});
-
-  final List<BusinessEntry> businesses;
+  const SparePartsTab({super.key});
 
   @override
   State<SparePartsTab> createState() => _SparePartsTabState();
@@ -121,10 +118,6 @@ class _SparePartsTabState extends State<SparePartsTab> {
                 vendorName: _vendorName,
                 quantityInStock: _quantityInStock,
                 location: _location,
-                vendors: widget.businesses
-                    .where((business) => business.businessType == 'Vendor')
-                    .map((business) => business.name)
-                    .toList(growable: false),
                 onAdd: _addSparePart,
               ),
             ),

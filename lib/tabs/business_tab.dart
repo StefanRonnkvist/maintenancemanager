@@ -12,14 +12,12 @@ class BusinessTab extends StatefulWidget {
     required this.entries,
     required this.onAdd,
     required this.kind,
-    this.businesses = const [],
     super.key,
   });
 
   final List<BusinessEntry> entries;
   final ValueChanged<BusinessEntry> onAdd;
   final BusinessTabKind kind;
-  final List<BusinessEntry> businesses;
 
   @override
   State<BusinessTab> createState() => _BusinessTabState();
@@ -100,11 +98,7 @@ class _BusinessTabState extends State<BusinessTab> {
             if (_formExpanded)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: BusinessForm(
-                  kind: widget.kind,
-                  businesses: widget.businesses,
-                  onSubmit: _addEntry,
-                ),
+                child: BusinessForm(kind: widget.kind, onSubmit: _addEntry),
               ),
           ],
         ),

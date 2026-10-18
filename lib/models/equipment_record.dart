@@ -3,6 +3,7 @@ class EquipmentRecord {
   const EquipmentRecord({
     required this.businessName,
     required this.locationName,
+    required this.equipmentCategory,
     required this.localName,
     required this.localNumber,
     required this.manufacturerName,
@@ -15,6 +16,7 @@ class EquipmentRecord {
 
   final String businessName;
   final String locationName;
+  final String equipmentCategory;
   final String localName;
   final String localNumber;
   final String manufacturerName;
@@ -28,6 +30,7 @@ class EquipmentRecord {
   Map<String, Object> toJson() => {
     'businessName': businessName,
     'locationName': locationName,
+    'equipmentCategory': equipmentCategory,
     'localName': localName,
     'localNumber': localNumber,
     'manufacturerName': manufacturerName,
@@ -43,6 +46,7 @@ class EquipmentRecord {
       EquipmentRecord(
         businessName: json['businessName'] as String? ?? '',
         locationName: json['locationName'] as String? ?? '',
+        equipmentCategory: json['equipmentCategory'] as String? ?? '',
         localName: json['localName'] as String? ?? '',
         localNumber: json['localNumber'] as String? ?? '',
         manufacturerName: json['manufacturerName'] as String? ?? '',
