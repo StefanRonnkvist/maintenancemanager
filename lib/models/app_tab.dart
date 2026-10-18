@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 enum AppTab {
   equipment,
   spareParts,
+  workOrder,
   people,
   business,
   information,
@@ -17,6 +18,7 @@ extension AppTabPresentation on AppTab {
   String get label => switch (this) {
     AppTab.equipment => 'Equipment',
     AppTab.spareParts => 'Spare Parts',
+    AppTab.workOrder => 'Work Order',
     AppTab.people => 'People',
     AppTab.business => 'Business',
     AppTab.information => 'Information',
@@ -28,6 +30,7 @@ extension AppTabPresentation on AppTab {
   IconData get icon => switch (this) {
     AppTab.equipment => Icons.precision_manufacturing_outlined,
     AppTab.spareParts => Icons.build_outlined,
+    AppTab.workOrder => Icons.assignment_outlined,
     AppTab.people => Icons.people_outline,
     AppTab.business => Icons.business_outlined,
     AppTab.information => Icons.contact_support_outlined,

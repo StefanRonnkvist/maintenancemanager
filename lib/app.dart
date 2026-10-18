@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/app_tab.dart';
 import 'models/business_entry.dart';
@@ -9,6 +10,7 @@ import 'tabs/equipment_tab.dart';
 import 'tabs/spare_parts_tab.dart';
 import 'tabs/application_db_tab.dart';
 import 'tabs/message_tab.dart';
+import 'tabs/work_order_tab.dart';
 import 'widgets/app_tab_item.dart';
 
 /// Appearance choices exposed in the Settings bottom sheet.
@@ -150,10 +152,35 @@ class _MainTabPageState extends State<MainTabPage>
   }
 
   // Page construction is keyed by tab so changing order keeps each page paired
-  // with its label and icon.
+  // with its label and icon. The same order is stored in shared preferences.
+  static const String _tabOrderStorageKey = 'main_tab_order';
   final List<AppTab> _tabs = List.of(AppTab.values);
 
   late final TabController _controller;
+  bool _tabOrderLoaded = false;
+
+  Future<void> _loadTabOrder() async {
+    final preferences = await SharedPreferences.getInstance();
+    final storedOrder = preferences.getStringList(_tabOrderStorageKey);
+    if (!mounted) return;
+
+    if (storedOrder != null) {
+      final byName = {for (final tab in AppTab.values) tab.name: tab};
+      final restored = <AppTab>[];
+      for (final name in storedOrder) {
+        final tab = byName[name];
+        if (tab != null && !restored.contains(tab)) restored.add(tab);
+      }
+      for (final tab in AppTab.values) {
+        if (!restored.contains(tab)) restored.add(tab);
+      }
+      _tabs
+        ..clear()
+        ..addAll(restored);
+    }
+
+    setState(() => _tabOrderLoaded = true);
+  }
 
   void _reorderTabs(int oldIndex, int newIndex) {
     final selectedTab = _tabs[_controller.index];
@@ -162,11 +189,21 @@ class _MainTabPageState extends State<MainTabPage>
       _tabs.insert(newIndex, tab);
       _controller.index = _tabs.indexOf(selectedTab);
     });
+    _saveTabOrder();
+  }
+
+  Future<void> _saveTabOrder() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(
+      _tabOrderStorageKey,
+      _tabs.map((tab) => tab.name).toList(),
+    );
   }
 
   Widget _pageForTab(AppTab tab) => switch (tab) {
     AppTab.equipment => EquipmentTab(businesses: _businesses),
     AppTab.spareParts => SparePartsTab(businesses: _businesses),
+    AppTab.workOrder => WorkOrderTab(businesses: _businesses),
     AppTab.people => BusinessTab(
       entries: _people,
       onAdd: (entry) => setState(() => _people.add(entry)),
@@ -194,6 +231,7 @@ class _MainTabPageState extends State<MainTabPage>
     super.initState();
     // The ticker provider drives the animation shared by TabBar and TabBarView.
     _controller = TabController(length: _tabs.length, vsync: this);
+    _loadTabOrder();
   }
 
   @override
@@ -218,9 +256,11 @@ class _MainTabPageState extends State<MainTabPage>
         tabs: _tabs.map((tab) => AppTabItem(tab: tab)).toList(),
       ),
     ),
-    body: TabBarView(
-      controller: _controller,
-      children: _tabs.map(_pageForTab).toList(),
-    ),
+    body: _tabOrderLoaded
+        ? TabBarView(
+            controller: _controller,
+            children: _tabs.map(_pageForTab).toList(),
+          )
+        : const Center(child: CircularProgressIndicator()),
   );
 }

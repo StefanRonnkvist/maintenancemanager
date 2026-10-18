@@ -4,13 +4,15 @@ Create records, then review them in clear lists:
 
 - **Equipment** — track categories and equipment, business and work location, local name and number, manufacturer, model, serial number, manual, and publisher. Add custom categories and equipment types.
 - **Spare Parts** — record OEM and vendor part numbers and descriptions, serial number, stock quantity, and location. Select vendors from businesses marked Vendor.
+- **Work Order** — select a business and location to review the location name, address, direct phone number, and nearest airport. Work order creation and saving are not currently available.
 - **People** — keep names, phone numbers, email, business and work location, remote-work status, and nearest airport together.
 - **Business** — organize Customer, Vendor, and Principle contacts, airports, and business locations.
 - **Message** — prepare an email using people from your contact list. Filter recipients by business, select To and Cc contacts, and open your email app to send.
 - **Information** — contact support with a question and view available responses in Submissions.
 - **Application DB** — create, edit, and delete key/value records. Import and export CSV for Equipment, Spare Parts, People, or Business, and use example or blank templates to prepare files.
 - **Help** — find in-app guidance for forms, records, CSV, and appearance settings.
+- Reorder tabs in Settings by dragging them; your preferred order is saved on your device and restored when you reopen the app or rotate the device.
 
-Choose System, Dark, or Light appearance in Settings. Management records and Application DB records are saved locally on your device and reload when you reopen the app. CSV exports are useful backups; clearing app data or uninstalling may remove local records.
+Reorder tabs in Settings by dragging them; your preferred order is saved on your device and restored when you reopen the app or rotate the device. Choose System, Dark, or Light appearance in Settings. Management records and Application DB records are saved locally on your device and reload when you reopen the app. CSV exports are useful backups; clearing app data or uninstalling may remove local records.
 
 Contact submissions send the details you enter, your question, and basic app/device diagnostics to the configured support service. Review your message before sending.

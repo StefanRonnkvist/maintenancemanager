@@ -9,7 +9,7 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Getting started',
       icon: Icons.start_outlined,
-      content: 'Use the tabs along the top to move between Equipment, Spare Parts, People, Business, Information, Message, Application DB, and Help. Add forms are collapsed by default; tap the form heading to expand it.',
+      content: 'Use the tabs along the top to move between Equipment, Spare Parts, Work Order, People, Business, Information, Message, Application DB, and Help. Add forms are collapsed by default; tap the form heading to expand it. Open Settings and drag items in Tab order to customize navigation; your order is saved on this device and restored after restart or rotation.',
     ),
     _HelpSection(
       title: 'Equipment',
@@ -20,6 +20,11 @@ class HelpTab extends StatelessWidget {
       title: 'Spare Parts',
       icon: Icons.build_outlined,
       content: 'Enter OEM and vendor part numbers and descriptions, serial number, stock quantity, and location. Vendor Name is selected from businesses whose type is Vendor. Add Spare Part adds the record to the list.',
+    ),
+    _HelpSection(
+      title: 'Work Order',
+      icon: Icons.assignment_outlined,
+      content: 'Choose a Business Name, then choose one of its Location Names. The location address, direct phone number, and nearest airport are displayed for reference. Add businesses and locations in the Business tab first. This tab currently selects and displays location information; it does not create or save work order records.',
     ),
     _HelpSection(
       title: 'People and Business',
