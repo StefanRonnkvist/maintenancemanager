@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
 
+/// Displays people and their linked businesses, work locations, and contacts.
 class PeopleTable extends StatelessWidget {
   const PeopleTable({required this.entries, super.key});
   final List<BusinessEntry> entries;
@@ -92,6 +93,7 @@ class PeopleTable extends StatelessWidget {
   }
 }
 
+/// Displays businesses, expanding one row per location when locations exist.
 class BusinessTable extends StatelessWidget {
   const BusinessTable({required this.entries, super.key});
   final List<BusinessEntry> entries;
@@ -159,6 +161,7 @@ class BusinessTable extends StatelessWidget {
                 ],
               )
             else
+              // Keep business-wide values on the first row; subsequent rows show locations.
               for (var index = 0; index < business.locations.length; index++)
                 DataRow(
                   cells: [
@@ -227,6 +230,7 @@ class BusinessTable extends StatelessWidget {
   }
 }
 
+/// Allows wide data tables to scroll horizontally on narrow screens.
 class _ScrollableTable extends StatelessWidget {
   const _ScrollableTable({required this.child});
   final Widget child;

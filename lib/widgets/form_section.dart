@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Styled grouping container used to organize related form controls.
 class FormSection extends StatelessWidget {
   const FormSection({
     required this.title,

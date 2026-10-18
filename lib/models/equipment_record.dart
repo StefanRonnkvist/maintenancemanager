@@ -1,3 +1,4 @@
+/// Values captured for one equipment row and persisted by EquipmentTab.
 class EquipmentRecord {
   const EquipmentRecord({
     required this.businessName,
@@ -23,6 +24,7 @@ class EquipmentRecord {
   final String maintenanceManual;
   final String publisher;
 
+  /// Converts the record to the key/value shape used by local storage and CSV.
   Map<String, Object> toJson() => {
     'businessName': businessName,
     'locationName': locationName,
@@ -36,6 +38,7 @@ class EquipmentRecord {
     'publisher': publisher,
   };
 
+  /// Rebuilds a record and defaults absent fields for backward compatibility.
   factory EquipmentRecord.fromJson(Map<String, dynamic> json) =>
       EquipmentRecord(
         businessName: json['businessName'] as String? ?? '',

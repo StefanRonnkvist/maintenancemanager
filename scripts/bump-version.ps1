@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Bump the Dart/Android build number and keep the MSIX version synchronized.
 $root = Split-Path -Parent $PSScriptRoot
 $pubspecPath = Join-Path $root 'pubspec.yaml'
 
@@ -21,6 +22,7 @@ $patch = 0
 $build = 0
 $newPatch = 0
 
+# Update both version declarations while preserving unrelated pubspec lines.
 for ($i = 0; $i -lt $lines.Count; $i++) {
     $line = $lines[$i]
 
@@ -56,6 +58,7 @@ if (-not $msixUpdated) {
 
 Set-Content -Path $pubspecPath -Value ($lines -join [Environment]::NewLine)
 
+# Flutter may cache Android version values here; update them when the file exists.
 $androidPropsPath = Join-Path $root 'android/local.properties'
 if (Test-Path $androidPropsPath) {
     $androidLines = Get-Content -Path $androidPropsPath
@@ -93,6 +96,7 @@ Write-Host "Android versionName: $androidVersionName"
 Write-Host "Android versionCode: $androidVersionCode"
 Write-Host "MSIX version: $msixVersion"
 
+# Optionally commit only the version files changed by this script.
 if (-not $NoGit) {
     $gitRoot = git -C $root rev-parse --show-toplevel 2>$null
     if ($LASTEXITCODE -eq 0 -and $gitRoot) {

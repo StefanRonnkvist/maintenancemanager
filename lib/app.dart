@@ -11,8 +11,10 @@ import 'tabs/application_db_tab.dart';
 import 'tabs/message_tab.dart';
 import 'widgets/app_tab_item.dart';
 
+/// Appearance choices exposed in the Settings bottom sheet.
 enum AppThemeMode { system, dark, light }
 
+/// Configures the app themes and owns the selected appearance mode.
 class MaintenanceManagerApp extends StatefulWidget {
   const MaintenanceManagerApp({super.key});
 
@@ -21,6 +23,7 @@ class MaintenanceManagerApp extends StatefulWidget {
 }
 
 class _MaintenanceManagerAppState extends State<MaintenanceManagerApp> {
+  // Start in dark mode; Settings can switch to system or light appearance.
   AppThemeMode _themeMode = AppThemeMode.dark;
 
   void _setThemeMode(AppThemeMode mode) => setState(() => _themeMode = mode);
@@ -49,6 +52,7 @@ class _MaintenanceManagerAppState extends State<MaintenanceManagerApp> {
   );
 }
 
+/// Hosts the primary navigation and shares the people/business lists between tabs.
 class MainTabPage extends StatefulWidget {
   const MainTabPage({
     required this.themeMode,
@@ -65,6 +69,7 @@ class MainTabPage extends StatefulWidget {
 
 class _MainTabPageState extends State<MainTabPage>
     with SingleTickerProviderStateMixin {
+  // Settings updates the app-level theme selection through the parent callback.
   void _openSettings() {
     showModalBottomSheet<void>(
       context: context,
@@ -111,15 +116,20 @@ class _MainTabPageState extends State<MainTabPage>
     );
   }
 
+  // Keep tab labels, icons, and page order driven by the same enum sequence.
   static const List<AppTab> _tabs = AppTab.values;
 
   late final TabController _controller;
+
+  // These shared lists connect records across tabs during this app session.
+  // Each management tab is also responsible for saving its records locally.
   final List<BusinessEntry> _people = [];
   final List<BusinessEntry> _businesses = [];
 
   @override
   void initState() {
     super.initState();
+    // The ticker provider drives the animation shared by TabBar and TabBarView.
     _controller = TabController(length: _tabs.length, vsync: this);
   }
 
@@ -147,6 +157,7 @@ class _MainTabPageState extends State<MainTabPage>
     ),
     body: TabBarView(
       controller: _controller,
+      // Keep these pages in the same order as AppTab.values above.
       children: [
         EquipmentTab(businesses: _businesses),
         SparePartsTab(businesses: _businesses),

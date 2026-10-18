@@ -5,6 +5,7 @@ import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../widgets/management_tab_layout.dart';
 
+/// Builds a message composer from the shared people and business collections.
 class MessageTab extends StatefulWidget {
   const MessageTab({required this.people, required this.businesses, super.key});
 
@@ -16,6 +17,7 @@ class MessageTab extends StatefulWidget {
 }
 
 class _MessageTabState extends State<MessageTab> {
+  // Recipient labels preserve both a display name and email until the mailto is built.
   final Set<String> _selectedBusinessNames = {};
   final Set<String> _selectedToEmails = {};
   final Set<String> _selectedCcEmails = {};
@@ -30,6 +32,7 @@ class _MessageTabState extends State<MessageTab> {
   final _messageController = TextEditingController();
   final List<_EmailMessage> _messages = [];
 
+  /// Records the composed message locally in this tab and opens a mailto target.
   Future<void> _sendMessage() async {
     final to = _selectedToEmails.map(_emailFromRecipient).join(', ');
     final cc = _selectedCcEmails.map(_emailFromRecipient).join(', ');
@@ -70,6 +73,7 @@ class _MessageTabState extends State<MessageTab> {
     }
   }
 
+  /// Extracts an email address from a `Name <address>` recipient label.
   String _emailFromRecipient(String recipient) {
     final openingBracket = recipient.lastIndexOf('<');
     final closingBracket = recipient.lastIndexOf('>');
@@ -79,6 +83,7 @@ class _MessageTabState extends State<MessageTab> {
     return recipient.trim();
   }
 
+  /// Locks the sender fields, or restores the values captured when they were set.
   void _toggleSenderDetails() {
     setState(() {
       if (_senderDetailsSet) {
@@ -105,6 +110,7 @@ class _MessageTabState extends State<MessageTab> {
     super.dispose();
   }
 
+  /// Narrows the contact choices only when at least one business is selected.
   List<BusinessEntry> get _filteredPeople {
     if (_selectedBusinessNames.isEmpty) return widget.people;
     return widget.people
@@ -290,6 +296,7 @@ class _MessageTabState extends State<MessageTab> {
     ],
   );
 
+  /// Shows messages composed during this screen's current lifetime.
   Widget _messageTable(BuildContext context) => SingleChildScrollView(
     scrollDirection: Axis.horizontal,
     child: DataTable(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../db/application_db_page.dart';
 
+/// Navigation wrapper that exposes the local key/value and CSV tools.
 class ApplicationDbTab extends StatelessWidget {
   const ApplicationDbTab({super.key});
 

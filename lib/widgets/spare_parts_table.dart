@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../models/spare_part_record.dart';
 
+/// Horizontal inventory table with fields aligned to [SparePartRecord.values].
 class SparePartsTable extends StatelessWidget {
   const SparePartsTable({required this.records, super.key});
 
   final List<SparePartRecord> records;
 
+  // Column order must match the order returned by SparePartRecord.values.
   static const _columns = [
     'OEM Part Number',
     'OEM Description',

@@ -1,7 +1,8 @@
 name: maintenancemanager
-description: "A new Flutter project."
+# Private Flutter app for organizing maintenance inventory and contacts.
+description: "Maintenance records for equipment, spare parts, people, and businesses."
 publish_to: 'none'
-version: 0.1.17+18
+version: 0.1.21+22
 
 environment:
   sdk: ^3.13.4
@@ -9,19 +10,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Select CSV files and choose paths for database exports/templates.
   file_picker: ^10.3.3
+  # Submit support questions and retrieve the submissions CSV.
   http: ^1.5.0
+  # Build/install a Windows MSIX package.
   msix: ^3.18.0
+  # Read package and version metadata for support requests and submissions.
   package_info_plus: ^9.0.0
+  # Persist app records as JSON in local device preferences.
   shared_preferences: ^2.5.3
+  # Open email/share targets for composed message links and templates.
   share_plus: ^12.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-
 flutter:
   uses-material-design: true
 msix_config:
-  msix_version: 0.1.17.18
+  msix_version: 0.1.21.22

@@ -1,3 +1,4 @@
+/// Values captured for a single spare-part inventory row.
 class SparePartRecord {
   const SparePartRecord({
     required this.oemPartNumber,
@@ -19,6 +20,7 @@ class SparePartRecord {
   final String quantityInStock;
   final String location;
 
+  /// Keeps table values in the same order as [SparePartsTable]'s columns.
   List<String> get values => [
     oemPartNumber,
     oemDescription,
@@ -30,6 +32,7 @@ class SparePartRecord {
     location,
   ];
 
+  /// Converts this record to the map persisted by SparePartsTab.
   Map<String, Object?> toJson() => {
     'oemPartNumber': oemPartNumber,
     'oemDescription': oemDescription,
@@ -41,6 +44,7 @@ class SparePartRecord {
     'location': location,
   };
 
+  /// Restores a record, defaulting missing fields for older saved entries.
   factory SparePartRecord.fromJson(Map<String, dynamic> json) =>
       SparePartRecord(
         oemPartNumber: json['oemPartNumber'] as String? ?? '',

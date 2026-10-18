@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Common responsive frame for a management form and its records section.
 class ManagementTabLayout extends StatelessWidget {
   const ManagementTabLayout({
     required this.title,
@@ -19,6 +20,7 @@ class ManagementTabLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      // Keep wide desktop layouts readable while still using narrow screens fully.
       final width = constraints.maxWidth < 1100 ? constraints.maxWidth : 1100.0;
       return SingleChildScrollView(
         padding: const EdgeInsets.all(20),

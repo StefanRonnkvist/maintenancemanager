@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
-/// Downloads submissions and displays those belonging to the current package.
+/// Downloads support submissions and displays entries for this app package.
 class SubmissionsCsvCardsView extends StatefulWidget {
   const SubmissionsCsvCardsView({
     super.key,
@@ -27,6 +27,7 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
   static const int _visibleFieldStartIndex = 2;
   static const int _appColumnIndex = 2;
 
+  // Column indices and labels follow the support endpoint's published CSV layout.
   static const List<String> _fixedHeaders = <String>[
     'Name',
     'eMail',
@@ -45,7 +46,7 @@ class _SubmissionsCsvCardsViewState extends State<SubmissionsCsvCardsView> {
     _tableFuture = _loadCsv();
   }
 
-  /// Fetches, normalizes, and package-filters the remote CSV rows.
+  /// Fetches and normalizes the remote CSV, then filters its rows to this app.
   Future<_CsvTableData> _loadCsv() async {
     final Uri uri = Uri.parse(widget.csvUrl);
     final http.Response response = await http

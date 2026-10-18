@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/spare_part_record.dart';
 
+/// Form for entering a spare part and emitting a complete record on submit.
 class SparePartsForm extends StatelessWidget {
   const SparePartsForm({
     required this.oemPartNumber,
@@ -28,6 +29,7 @@ class SparePartsForm extends StatelessWidget {
   final List<String> vendors;
   final ValueChanged<SparePartRecord> onAdd;
 
+  /// Builds a record from the controllers and ignores a completely blank form.
   void _submit() {
     final record = SparePartRecord(
       oemPartNumber: oemPartNumber.text.trim(),
@@ -90,6 +92,7 @@ class SparePartsForm extends StatelessWidget {
     ],
   );
 
+  /// Consistent labelled text field used for the free-entry part attributes.
   Widget _field(
     TextEditingController controller,
     String label, {

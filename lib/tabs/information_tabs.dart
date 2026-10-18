@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../contact/contact_page.dart';
 import '../contact/submissions_csv_page.dart';
 
+/// Groups support contact and app-specific submission responses under Information.
 class InformationTabs extends StatelessWidget {
   const InformationTabs({super.key});
 
@@ -20,6 +21,7 @@ class InformationTabs extends StatelessWidget {
             ],
           ),
         ),
+        // The nested views share this controller created by DefaultTabController.
         Expanded(
           child: TabBarView(
             children: [

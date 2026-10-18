@@ -6,11 +6,13 @@ import '../models/equipment_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 
+/// Builds the equipment browser with the starter equipment taxonomy.
 class EquipmentTab extends StatelessWidget {
   const EquipmentTab({required this.businesses, super.key});
 
   final List<BusinessEntry> businesses;
 
+  // These defaults are copied into per-session state so users can add options.
   static const Map<String, List<String>> _equipmentCategories = {
     'Manufacturing and Production Machinery': [
       'CNC machines',
@@ -86,6 +88,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
   String? _selectedBusinessName;
   String? _selectedLocationName;
   final List<EquipmentRecord> _records = [];
+  // Copy nested lists to avoid mutating the immutable defaults above.
   late final Map<String, List<String>> _categories = {
     for (final entry in widget.categories.entries)
       entry.key: List<String>.from(entry.value),
@@ -97,6 +100,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     _loadRecords();
   }
 
+  /// Restores persisted equipment rows before the table is shown.
   Future<void> _loadRecords() async {
     try {
       final rows = await LocalRecordStore.read(_storageKey);
@@ -107,6 +111,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     if (mounted) setState(() => _isLoading = false);
   }
 
+  /// Saves the current equipment list and exposes failures in the tab UI.
   Future<void> _persistRecords() async {
     try {
       await LocalRecordStore.write(
@@ -145,6 +150,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
         ),
       );
 
+  /// Adds a non-empty category locally and selects it for the next entry.
   void _addCategory() {
     final name = _newCategoryController.text.trim();
     if (name.isEmpty || _categories.containsKey(name)) return;
@@ -156,6 +162,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     });
   }
 
+  /// Adds a type to the currently selected category without duplicates.
   void _addEquipmentOption() {
     final category = _selectedCategory;
     final name = _newEquipmentController.text.trim();
@@ -169,6 +176,7 @@ class _EquipmentBrowserState extends State<_EquipmentBrowser> {
     });
   }
 
+  /// Builds a record from the form, then appends and persists it.
   void _addEquipment() {
     final record = EquipmentRecord(
       businessName: _selectedBusinessName ?? '',

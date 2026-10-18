@@ -17,7 +17,10 @@ class ApplicationDbPage extends StatefulWidget {
 }
 
 class _ApplicationDbPageState extends State<ApplicationDbPage> {
+  // Separate key for flexible user-created name/value records.
   static const String _storageKey = 'application_db_records_v1';
+
+  // CSV actions in this page operate on these existing management collections.
   static const Map<String, String> _managedStores = {
     'Equipment': 'equipment_records_v1',
     'Spare Parts': 'spare_parts_records_v1',
@@ -37,6 +40,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     _loadRecords();
   }
 
+  /// Loads custom records and the management collections exposed for CSV.
   Future<void> _loadRecords() async {
     try {
       final SharedPreferences preferences =
@@ -56,6 +60,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       }
       for (final entry in _managedStores.entries) {
         _managedRecords[entry.key] = await LocalRecordStore.read(entry.value);
+        // Backfill fields introduced after older equipment records were saved.
         if (entry.key == 'Equipment') {
           final equipment = _managedRecords[entry.key]!;
           if (equipment.isNotEmpty &&
@@ -78,6 +83,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     }
   }
 
+  /// Saves only the page's editable key/value records.
   Future<void> _persistRecords() async {
     try {
       final SharedPreferences preferences =
@@ -116,6 +122,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     await _persistRecords();
   }
 
+  /// Builds a header row and properly quoted data rows for the selected table.
   String _encodeCsv(
     List<Map<String, dynamic>> records, {
     required List<String> columns,
@@ -131,6 +138,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     return rows.map((row) => row.map(_escapeCsv).join(',')).join('\r\n');
   }
 
+  /// Defines the CSV field order for each supported management category.
   List<String> _columnsFor(String table) => switch (table) {
     'Equipment' => [
       'localName',

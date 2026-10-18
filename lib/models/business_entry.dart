@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+/// A named physical location belonging to a business.
 class BusinessLocation {
   const BusinessLocation({
     required this.name,
@@ -13,6 +14,7 @@ class BusinessLocation {
   final String directPhone;
   final String nearestAirport;
 
+  /// Encodes the location fields for local JSON storage.
   Map<String, String> toJson() => {
     'name': name,
     'address': address,
@@ -20,6 +22,7 @@ class BusinessLocation {
     'nearestAirport': nearestAirport,
   };
 
+  /// Restores a location from a decoded JSON map.
   factory BusinessLocation.fromJson(Map<String, dynamic> json) =>
       BusinessLocation(
         name: json['name'] as String? ?? '',
@@ -29,6 +32,7 @@ class BusinessLocation {
       );
 }
 
+/// Shared data model for both business records and person/contact records.
 class BusinessEntry {
   const BusinessEntry({
     required this.name,
@@ -58,6 +62,7 @@ class BusinessEntry {
   final List<BusinessLocation> locations;
   final List<String> airports;
 
+  /// Serializes nested lists as JSON strings for preferences-based storage.
   Map<String, Object?> toJson() => {
     'name': name,
     'address': address,
@@ -75,6 +80,7 @@ class BusinessEntry {
     'airports': jsonEncode(airports),
   };
 
+  /// Decodes the model while tolerating older rows with missing optional fields.
   factory BusinessEntry.fromJson(Map<String, dynamic> json) => BusinessEntry(
     name: json['name'] as String? ?? '',
     address: json['address'] as String? ?? '',
@@ -90,6 +96,7 @@ class BusinessEntry {
     airports: _decodeAirports(json['airports']),
   );
 
+  // Older stored values may contain a JSON string or a decoded list.
   static List<BusinessLocation> _decodeLocations(Object? value) {
     Object? decoded = value;
     if (decoded is String) {
@@ -108,6 +115,7 @@ class BusinessEntry {
         .toList(growable: false);
   }
 
+  // Accept either the encoded string used by storage or an already-decoded list.
   static List<String> _decodeAirports(Object? value) {
     Object? decoded = value;
     if (decoded is String) {

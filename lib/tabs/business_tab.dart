@@ -6,6 +6,7 @@ import '../widgets/business_form.dart';
 import '../widgets/business_table.dart';
 import '../widgets/management_tab_layout.dart';
 
+/// Displays either People or Business records using the shared form and table.
 class BusinessTab extends StatefulWidget {
   const BusinessTab({
     required this.entries,
@@ -37,6 +38,7 @@ class _BusinessTabState extends State<BusinessTab> {
     _loadEntries();
   }
 
+  /// Loads the storage collection selected by this tab's [kind].
   Future<void> _loadEntries() async {
     try {
       final key = widget.kind == BusinessTabKind.people
@@ -53,6 +55,7 @@ class _BusinessTabState extends State<BusinessTab> {
     if (mounted) setState(() => _isLoading = false);
   }
 
+  /// Writes the current people or business list back to local preferences.
   Future<void> _persistEntries() async {
     try {
       final key = widget.kind == BusinessTabKind.people
@@ -70,6 +73,7 @@ class _BusinessTabState extends State<BusinessTab> {
     }
   }
 
+  /// Updates the shared in-memory list, then persists the newly added entry.
   void _addEntry(BusinessEntry entry) {
     setState(() => widget.onAdd(entry));
     _persistEntries();

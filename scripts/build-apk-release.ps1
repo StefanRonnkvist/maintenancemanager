@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
+# This is an opt-in cleanup because it force-stops matching processes globally.
 if ($KillFlutterProcesses) {
   $names = @('java', 'dart', 'flutter', 'gradle', 'adb')
   foreach ($name in $names) {
@@ -15,6 +16,7 @@ if ($KillFlutterProcesses) {
   }
 }
 
+# Clear only known generated paths that can become stale or locked during builds.
 $pathsToReset = @(
   'ios/Flutter/ephemeral/Packages',
   'macos/Flutter/ephemeral/Packages',
@@ -35,6 +37,7 @@ foreach ($path in $pathsToReset) {
   }
 }
 
+# Refresh plugin metadata before compiling the release APK.
 Write-Host 'Running: flutter pub get'
 flutter pub get
 if ($LASTEXITCODE -ne 0) {

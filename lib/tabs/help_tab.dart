@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// In-app reference guide; each topic is expandable to keep the page compact.
 class HelpTab extends StatelessWidget {
   const HelpTab({super.key});
 
+  // Keep guidance aligned with the current tab features and data flow.
   static const _sections = <_HelpSection>[
     _HelpSection(
       title: 'Getting started',

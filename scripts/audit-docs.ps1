@@ -2,6 +2,7 @@ param(
     [switch]$OpenReport
 )
 
+# Compares README/store copy with source facts and writes a build/docs-audit.txt report.
 # Audits the user-facing documentation against the app it describes:
 #   store_listing/google_play_short_description.txt
 #   store_listing/google_play_full_description.txt

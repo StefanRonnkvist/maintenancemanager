@@ -8,6 +8,7 @@ import '../widgets/management_tab_layout.dart';
 import '../widgets/spare_parts_form.dart';
 import '../widgets/spare_parts_table.dart';
 
+/// Owns spare-part entry, local persistence, and the inventory table.
 class SparePartsTab extends StatefulWidget {
   const SparePartsTab({required this.businesses, super.key});
 
@@ -38,6 +39,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
     _loadRecords();
   }
 
+  /// Restores saved parts and reports storage errors alongside the table.
   Future<void> _loadRecords() async {
     try {
       final rows = await LocalRecordStore.read(_storageKey);
@@ -48,6 +50,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
     if (mounted) setState(() => _isLoading = false);
   }
 
+  /// Persists the full parts list after changes.
   Future<void> _persistRecords() async {
     try {
       await LocalRecordStore.write(
@@ -75,6 +78,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
     super.dispose();
   }
 
+  /// Appends a part, clears the form controllers, and saves the result.
   void _addSparePart(SparePartRecord record) {
     setState(() {
       _records.add(record);

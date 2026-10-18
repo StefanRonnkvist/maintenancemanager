@@ -4,6 +4,7 @@ import '../models/business_entry.dart';
 import '../tabs/business_tab.dart';
 import 'form_section.dart';
 
+/// Collects either a person/contact or business, depending on [kind].
 class BusinessForm extends StatefulWidget {
   const BusinessForm({
     required this.kind,
@@ -40,6 +41,7 @@ class _BusinessFormState extends State<BusinessForm> {
   String? _businessType;
   bool _remoteWork = false;
 
+  // Both form variants reuse these controllers; kind determines which fields show.
   bool get _isPeople => widget.kind == BusinessTabKind.people;
 
   @override
@@ -122,6 +124,7 @@ class _BusinessFormState extends State<BusinessForm> {
     ],
   );
 
+  /// Adds a unique airport entry and selects it for the current record/location.
   void _addAirport() {
     final airport = _airportController.text.trim();
     if (airport.isEmpty || _airports.contains(airport)) return;
@@ -132,6 +135,7 @@ class _BusinessFormState extends State<BusinessForm> {
     _airportController.clear();
   }
 
+  /// Adds a business location only after its required details are present.
   void _addLocation() {
     final name = _locationNameController.text.trim();
     final address = _locationAddressController.text.trim();
@@ -153,6 +157,7 @@ class _BusinessFormState extends State<BusinessForm> {
     _locationPhoneController.clear();
   }
 
+  /// Validates fields, emits the model, then resets the form for another entry.
   void _submit() {
     if (_formKey.currentState?.validate() != true) return;
     widget.onSubmit(
@@ -188,6 +193,7 @@ class _BusinessFormState extends State<BusinessForm> {
     });
   }
 
+  /// Person-specific details, work association, and contact information.
   Widget _peopleFields() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
@@ -344,6 +350,7 @@ class _BusinessFormState extends State<BusinessForm> {
     ],
   );
 
+  /// Business classification, main contact, airports, and location editor.
   Widget _businessFields() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
