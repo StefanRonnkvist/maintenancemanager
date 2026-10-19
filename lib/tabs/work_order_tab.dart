@@ -21,11 +21,38 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   final _locationAddressController = TextEditingController();
   final _locationPhoneController = TextEditingController();
   final _locationAirportController = TextEditingController();
+  final _notesController = TextEditingController();
+  final List<TextEditingController> _contactNameControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _contactEmailControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _contactPhoneControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _assignedNameControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _assignedEmailControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _assignedPhoneControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
   final List<Map<String, dynamic>> _records = [];
   Map<String, List<String>> _componentOptions = const {};
   String? _selectedComponentCategory;
   String? _selectedComponent;
   bool _formExpanded = false;
+  final List<bool> _contactExpanded = List.filled(4, false);
+  final List<bool> _assignedExpanded = List.filled(4, false);
 
   @override
   void initState() {
@@ -70,6 +97,17 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     _locationAddressController.dispose();
     _locationPhoneController.dispose();
     _locationAirportController.dispose();
+    _notesController.dispose();
+    for (final controller in [
+      ..._contactNameControllers,
+      ..._contactEmailControllers,
+      ..._contactPhoneControllers,
+      ..._assignedNameControllers,
+      ..._assignedEmailControllers,
+      ..._assignedPhoneControllers,
+    ]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -80,6 +118,17 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'locationAddress': _locationAddressController.text.trim(),
       'locationDirectPhone': _locationPhoneController.text.trim(),
       'locationAirport': _locationAirportController.text.trim(),
+      'notes': _notesController.text.trim(),
+      for (var index = 0; index < 4; index++) ...{
+        'contact${index + 1}Name': _contactNameControllers[index].text.trim(),
+        'contact${index + 1}Email': _contactEmailControllers[index].text.trim(),
+        'contact${index + 1}Phone': _contactPhoneControllers[index].text.trim(),
+        'assigned${index + 1}Name': _assignedNameControllers[index].text.trim(),
+        'assigned${index + 1}Email': _assignedEmailControllers[index].text
+            .trim(),
+        'assigned${index + 1}Phone': _assignedPhoneControllers[index].text
+            .trim(),
+      },
       'componentCategory': _selectedComponentCategory ?? '',
       'component': _selectedComponent ?? '',
     };
@@ -174,6 +223,179 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                         controller: _locationAirportController,
                         decoration: const InputDecoration(
                           labelText: 'Location Airports',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      for (
+                        var assignedIndex = 0;
+                        assignedIndex < 4;
+                        assignedIndex++
+                      ) ...[
+                        const SizedBox(height: 12),
+                        Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            children: [
+                              ListTile(
+                                title: Text('Assigned ${assignedIndex + 1}'),
+                                trailing: Icon(
+                                  _assignedExpanded[assignedIndex]
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                ),
+                                onTap: () => setState(() {
+                                  _assignedExpanded[assignedIndex] =
+                                      !_assignedExpanded[assignedIndex];
+                                }),
+                              ),
+                              if (_assignedExpanded[assignedIndex])
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    16,
+                                  ),
+                                  child: Wrap(
+                                    spacing: 16,
+                                    runSpacing: 16,
+                                    children: [
+                                      SizedBox(
+                                        width: 280,
+                                        child: TextField(
+                                          controller:
+                                              _assignedNameControllers[assignedIndex],
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Assigned ${assignedIndex + 1} Name',
+                                            border: const OutlineInputBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 280,
+                                        child: TextField(
+                                          controller:
+                                              _assignedEmailControllers[assignedIndex],
+                                          keyboardType:
+                                              TextInputType.emailAddress,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Assigned ${assignedIndex + 1} Email',
+                                            border: const OutlineInputBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 280,
+                                        child: TextField(
+                                          controller:
+                                              _assignedPhoneControllers[assignedIndex],
+                                          keyboardType: TextInputType.phone,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Assigned ${assignedIndex + 1} Phone',
+                                            border: const OutlineInputBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      for (
+                        var contactIndex = 0;
+                        contactIndex < 4;
+                        contactIndex++
+                      ) ...[
+                        const SizedBox(height: 12),
+                        Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            children: [
+                              ListTile(
+                                title: Text('Contact ${contactIndex + 1}'),
+                                trailing: Icon(
+                                  _contactExpanded[contactIndex]
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                ),
+                                onTap: () => setState(() {
+                                  _contactExpanded[contactIndex] =
+                                      !_contactExpanded[contactIndex];
+                                }),
+                              ),
+                              if (_contactExpanded[contactIndex])
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    16,
+                                  ),
+                                  child: Wrap(
+                                    spacing: 16,
+                                    runSpacing: 16,
+                                    children: [
+                                      SizedBox(
+                                        width: 280,
+                                        child: TextField(
+                                          controller:
+                                              _contactNameControllers[contactIndex],
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Contact ${contactIndex + 1} Name',
+                                            border: const OutlineInputBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 280,
+                                        child: TextField(
+                                          controller:
+                                              _contactEmailControllers[contactIndex],
+                                          keyboardType:
+                                              TextInputType.emailAddress,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Contact ${contactIndex + 1} Email',
+                                            border: const OutlineInputBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 280,
+                                        child: TextField(
+                                          controller:
+                                              _contactPhoneControllers[contactIndex],
+                                          keyboardType: TextInputType.phone,
+                                          decoration: InputDecoration(
+                                            labelText:
+                                                'Contact ${contactIndex + 1} Phone',
+                                            border: const OutlineInputBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      TextField(
+                        controller: _notesController,
+                        minLines: 4,
+                        maxLines: 8,
+                        keyboardType: TextInputType.multiline,
+                        decoration: const InputDecoration(
+                          labelText: 'Notes',
+                          alignLabelWithHint: true,
                           border: OutlineInputBorder(),
                         ),
                       ),

@@ -24,14 +24,27 @@ class _BusinessFormState extends State<BusinessForm> {
   final _phoneExtensionController = TextEditingController();
   final _cellPhoneController = TextEditingController();
   final _emailController = TextEditingController();
-  final _locationNameController = TextEditingController();
-  final _locationAddressController = TextEditingController();
-  final _locationPhoneController = TextEditingController();
   final _nearestAirportController = TextEditingController();
-  final _locationAirportController = TextEditingController();
+  final List<TextEditingController> _locationNameControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _locationAddressControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _locationPhoneControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
+  final List<TextEditingController> _locationAirportControllers = List.generate(
+    4,
+    (_) => TextEditingController(),
+  );
   final _businessAssociationController = TextEditingController();
   final _personLocationController = TextEditingController();
   final List<BusinessLocation> _locations = [];
+  final List<bool> _locationExpanded = List.filled(4, false);
   String? _businessType;
   bool _remoteWork = false;
 
@@ -47,11 +60,15 @@ class _BusinessFormState extends State<BusinessForm> {
     _phoneExtensionController.dispose();
     _cellPhoneController.dispose();
     _emailController.dispose();
-    _locationNameController.dispose();
-    _locationAddressController.dispose();
-    _locationPhoneController.dispose();
     _nearestAirportController.dispose();
-    _locationAirportController.dispose();
+    for (final controller in [
+      ..._locationNameControllers,
+      ..._locationAddressControllers,
+      ..._locationPhoneControllers,
+      ..._locationAirportControllers,
+    ]) {
+      controller.dispose();
+    }
     _businessAssociationController.dispose();
     _personLocationController.dispose();
     super.dispose();
@@ -79,28 +96,6 @@ class _BusinessFormState extends State<BusinessForm> {
     ),
   );
 
-  /// Adds a business location only after its required details are present.
-  void _addLocation() {
-    final name = _locationNameController.text.trim();
-    final address = _locationAddressController.text.trim();
-    final phone = _locationPhoneController.text.trim();
-    if (name.isEmpty || address.isEmpty || phone.isEmpty) return;
-
-    final location = BusinessLocation(
-      name: name,
-      address: address,
-      directPhone: phone,
-      nearestAirport: _locationAirportController.text.trim(),
-    );
-    setState(() {
-      _locations.add(location);
-      _locationAirportController.clear();
-    });
-    _locationNameController.clear();
-    _locationAddressController.clear();
-    _locationPhoneController.clear();
-  }
-
   /// Validates fields, emits the model, then resets the form for another entry.
   void _submit() {
     if (_formKey.currentState?.validate() != true) return;
@@ -123,7 +118,20 @@ class _BusinessFormState extends State<BusinessForm> {
                   : _personLocationController.text.trim())
             : '',
         nearestAirport: _nearestAirportController.text.trim(),
-        locations: List.unmodifiable(_locations),
+        locations: List.unmodifiable([
+          ..._locations,
+          for (var index = 0; index < 4; index++)
+            if (_locationNameControllers[index].text.trim().isNotEmpty ||
+                _locationAddressControllers[index].text.trim().isNotEmpty ||
+                _locationPhoneControllers[index].text.trim().isNotEmpty ||
+                _locationAirportControllers[index].text.trim().isNotEmpty)
+              BusinessLocation(
+                name: _locationNameControllers[index].text.trim(),
+                address: _locationAddressControllers[index].text.trim(),
+                directPhone: _locationPhoneControllers[index].text.trim(),
+                nearestAirport: _locationAirportControllers[index].text.trim(),
+              ),
+        ]),
         airports: _isPeople || _nearestAirportController.text.trim().isEmpty
             ? const []
             : [_nearestAirportController.text.trim()],
@@ -136,6 +144,14 @@ class _BusinessFormState extends State<BusinessForm> {
     _cellPhoneController.clear();
     _emailController.clear();
     _nearestAirportController.clear();
+    for (final controller in [
+      ..._locationNameControllers,
+      ..._locationAddressControllers,
+      ..._locationPhoneControllers,
+      ..._locationAirportControllers,
+    ]) {
+      controller.clear();
+    }
     _businessAssociationController.clear();
     _personLocationController.clear();
     setState(() {
@@ -312,49 +328,54 @@ class _BusinessFormState extends State<BusinessForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _field(
-                  controller: _locationNameController,
-                  label: 'Location Name',
-                ),
-                _field(
-                  controller: _locationAddressController,
-                  label: 'Location Address',
-                  width: 300,
-                ),
-                _field(
-                  controller: _locationPhoneController,
-                  label: 'Location Direct Phone',
-                  keyboardType: TextInputType.phone,
-                ),
-                _field(
-                  controller: _locationAirportController,
-                  label: 'Nearest Airport',
-                ),
-                FilledButton.icon(
-                  onPressed: _addLocation,
-                  icon: const Icon(Icons.add_location_alt_outlined),
-                  label: const Text('Add Location'),
-                ),
-              ],
-            ),
-            if (_locations.isNotEmpty) ...[
+            for (var index = 0; index < 4; index++) ...[
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _locations
-                    .map(
-                      (location) => Chip(
-                        avatar: const Icon(Icons.place_outlined, size: 18),
-                        label: Text(location.name),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    ListTile(
+                      title: Text('Location ${index + 1}'),
+                      trailing: Icon(
+                        _locationExpanded[index]
+                            ? Icons.expand_less
+                            : Icons.expand_more,
                       ),
-                    )
-                    .toList(),
+                      onTap: () => setState(() {
+                        _locationExpanded[index] = !_locationExpanded[index];
+                      }),
+                    ),
+                    if (_locationExpanded[index])
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 16,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _field(
+                              controller: _locationNameControllers[index],
+                              label: 'Location ${index + 1} Name',
+                            ),
+                            _field(
+                              controller: _locationAddressControllers[index],
+                              label: 'Location ${index + 1} Address',
+                              width: 300,
+                            ),
+                            _field(
+                              controller: _locationPhoneControllers[index],
+                              label: 'Location ${index + 1} Direct Phone',
+                              keyboardType: TextInputType.phone,
+                            ),
+                            _field(
+                              controller: _locationAirportControllers[index],
+                              label: 'Location ${index + 1} Nearest Airport',
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ],

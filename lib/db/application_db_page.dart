@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/business_entry.dart';
 import '../services/local_record_store.dart';
 
 /// A lightweight persisted local database for application records.
@@ -33,9 +34,6 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   final List<_AppRecord> _records = <_AppRecord>[];
   final Map<String, List<Map<String, dynamic>>> _managedRecords = {};
   String _selectedTable = 'Equipment';
-  final TextEditingController _selectedTableController = TextEditingController(
-    text: 'Equipment',
-  );
   bool _isLoading = true;
   String? _storageError;
 
@@ -47,7 +45,6 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
 
   @override
   void dispose() {
-    _selectedTableController.dispose();
     super.dispose();
   }
 
@@ -71,19 +68,20 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       }
       for (final entry in _managedStores.entries) {
         _managedRecords[entry.key] = await LocalRecordStore.read(entry.value);
-        // Backfill fields introduced after older equipment records were saved.
-        if (entry.key == 'Equipment') {
-          final equipment = _managedRecords[entry.key]!;
-          if (equipment.isNotEmpty &&
-              !equipment.first.containsKey('equipmentCategory')) {
-            for (final record in equipment) {
-              record.putIfAbsent('equipmentCategory', () => '');
-              record.putIfAbsent('businessName', () => '');
-              record.putIfAbsent('locationName', () => '');
-              record.putIfAbsent('maintenanceManual', () => '');
-              record.putIfAbsent('publisher', () => '');
+        // Backfill columns so older records export with the current schema.
+        if (entry.key == 'Equipment' || entry.key == 'Work Order') {
+          final storedRecords = _managedRecords[entry.key]!;
+          var changed = false;
+          for (final record in storedRecords) {
+            for (final field in _columnsFor(entry.key)) {
+              if (!record.containsKey(field)) {
+                record[field] = '';
+                changed = true;
+              }
             }
-            await LocalRecordStore.write(entry.value, equipment);
+          }
+          if (changed) {
+            await LocalRecordStore.write(entry.value, storedRecords);
           }
         }
       }
@@ -138,12 +136,42 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   String _encodeCsv(
     List<Map<String, dynamic>> records, {
     required List<String> columns,
+    required String table,
   }) {
     final rows = <List<String>>[
       columns,
       for (final record in records)
         columns.map((column) {
           final value = record[column];
+          if (table == 'Business' && column.startsWith('location')) {
+            final match = RegExp(r'^location(\d+)([A-Z].*)$')
+                .firstMatch(column);
+            if (match != null) {
+              final locationIndex = int.parse(match.group(1)!);
+              final suffix = match.group(2)!;
+              final locations = BusinessEntry.decodeLocationList(
+                record['locations'],
+              );
+              final location = locationIndex <= locations.length
+                  ? locations[locationIndex - 1]
+                  : null;
+              final key = switch (suffix) {
+                'Name' => 'name',
+                'Address' => 'address',
+                'DirectPhone' => 'directPhone',
+                'NearestAirport' => 'nearestAirport',
+                _ => '',
+              };
+              if (location != null && key.isNotEmpty) {
+                return location[key] as String? ?? '';
+              }
+              return '';
+            }
+          }
+          if ((table == 'Business' || table == 'People') &&
+              (column == 'locations' || column == 'airports')) {
+            return value is String ? value : jsonEncode(value ?? []);
+          }
           return value is String ? value : jsonEncode(value ?? '');
         }).toList(),
     ];
@@ -162,6 +190,16 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'serialNumber',
       'maintenanceManual',
       'publisher',
+      for (var subsection = 1; subsection <= 4; subsection++) ...[
+        'subsection${subsection}LocalName',
+        'subsection${subsection}LocalNumber',
+        'subsection${subsection}ManufacturerName',
+        'subsection${subsection}EquipmentName',
+        'subsection${subsection}EquipmentModel',
+        'subsection${subsection}SerialNumber',
+        'subsection${subsection}MaintenanceManual',
+        'subsection${subsection}Publisher',
+      ],
       'businessName',
       'locationName',
     ],
@@ -195,7 +233,12 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'address',
       'directPhone',
       'nearestAirport',
-      'locations',
+      for (var location = 1; location <= 4; location++) ...[
+        'location${location}Name',
+        'location${location}Address',
+        'location${location}DirectPhone',
+        'location${location}NearestAirport',
+      ],
       'airports',
     ],
     'Work Order' => [
@@ -204,6 +247,17 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locationAddress',
       'locationDirectPhone',
       'locationAirport',
+      'notes',
+      for (var contact = 1; contact <= 4; contact++) ...[
+        'contact${contact}Name',
+        'contact${contact}Email',
+        'contact${contact}Phone',
+      ],
+      for (var assigned = 1; assigned <= 4; assigned++) ...[
+        'assigned${assigned}Name',
+        'assigned${assigned}Email',
+        'assigned${assigned}Phone',
+      ],
       'componentCategory',
       'component',
     ],
@@ -270,7 +324,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       }
       final columns = _columnsFor(table);
       final records = _managedRecords[table] ?? const <Map<String, dynamic>>[];
-      final csv = _encodeCsv(records, columns: columns);
+      final csv = _encodeCsv(records, columns: columns, table: table);
       final safeName = table.toLowerCase().replaceAll(' ', '_');
       await _saveCsv('${safeName}_records.csv', csv);
     } catch (error) {
@@ -300,21 +354,47 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       final expected = _columnsFor(table);
       if (rows.isEmpty) throw const FormatException('CSV is empty.');
       final headers = rows.first.map((value) => value.trim()).toList();
-      if (headers.length != expected.length ||
-          !headers.toSet().containsAll(expected)) {
+      final legacyBusinessHeaders =
+          table == 'Business' &&
+          headers.length == 7 &&
+          headers.toSet().containsAll([
+            'name',
+            'businessType',
+            'address',
+            'directPhone',
+            'nearestAirport',
+            'locations',
+            'airports',
+          ]);
+      if (!legacyBusinessHeaders &&
+          (headers.length != expected.length ||
+              !headers.toSet().containsAll(expected))) {
         throw FormatException('CSV headers do not match the $table template.');
       }
-      final indexes = [for (final column in expected) headers.indexOf(column)];
+      final importColumns = legacyBusinessHeaders
+          ? const [
+              'name',
+              'businessType',
+              'address',
+              'directPhone',
+              'nearestAirport',
+              'locations',
+              'airports',
+            ]
+          : expected;
+      final indexes = [
+        for (final column in importColumns) headers.indexOf(column),
+      ];
       final imported = <Map<String, dynamic>>[];
       for (final row in rows.skip(1)) {
         if (row.length < headers.length) continue;
         final mapped = <String, dynamic>{};
         for (
           var columnIndex = 0;
-          columnIndex < expected.length;
+          columnIndex < importColumns.length;
           columnIndex++
         ) {
-          final name = expected[columnIndex];
+          final name = importColumns[columnIndex];
           final value = row[indexes[columnIndex]];
           if ((table == 'People' || table == 'Business') &&
               (name == 'airports' || name == 'locations')) {
@@ -325,6 +405,43 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
             }
           } else {
             mapped[name] = value;
+          }
+        }
+        if (table == 'Business') {
+          final businessLocations = <Map<String, String>>[];
+          if (legacyBusinessHeaders) {
+            final legacyLocations = mapped['locations'];
+            if (legacyLocations is List) {
+              businessLocations.addAll(
+                legacyLocations.whereType<Map>().map(
+                  (location) => Map<String, String>.from(location),
+                ),
+              );
+            }
+          } else {
+            for (var location = 1; location <= 4; location++) {
+              final locationFields = {
+                'name':
+                    mapped.remove('location${location}Name') as String? ?? '',
+                'address':
+                    mapped.remove('location${location}Address') as String? ??
+                    '',
+                'directPhone':
+                    mapped.remove('location${location}DirectPhone')
+                        as String? ??
+                    '',
+                'nearestAirport':
+                    mapped.remove('location${location}NearestAirport')
+                        as String? ??
+                    '',
+              };
+              if (locationFields.values.any((value) => value.isNotEmpty)) {
+                businessLocations.add(locationFields);
+              }
+            }
+          }
+          if (businessLocations.isNotEmpty) {
+            mapped['locations'] = businessLocations;
           }
         }
         if (mapped.values.any((value) => '$value'.isNotEmpty)) {
@@ -353,14 +470,31 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     final columns = _columnsFor(table);
     final sample = <String, dynamic>{for (final column in columns) column: ''};
     if (example) {
-      if (table == 'Equipment') sample['equipmentName'] = 'Example equipment';
+      if (table == 'Equipment') {
+        sample['equipmentName'] = 'Example equipment';
+        for (var subsection = 1; subsection <= 4; subsection++) {
+          sample['subsection${subsection}LocalName'] =
+              'Subsection $subsection local item';
+        }
+      }
       if (table == 'Spare Parts') sample['oemPartNumber'] = 'PART-001';
       if (table == 'People' || table == 'Business') sample['name'] = 'Example';
+      if (table == 'Business') {
+        for (var location = 1; location <= 4; location++) {
+          sample['location${location}Name'] = 'Location $location';
+          sample['location${location}Address'] = '$location Example Street';
+          sample['location${location}DirectPhone'] = '555-010$location';
+          sample['location${location}NearestAirport'] = 'ABC';
+        }
+      }
       if (table == 'Work Order') {
         sample['businessName'] = 'Example Business';
         sample['locationName'] = 'Example Location';
         sample['componentCategory'] = 'Electrical Components';
         sample['component'] = 'Power Supply';
+        sample['notes'] = 'Example work order notes';
+        sample['contact1Name'] = 'Example Contact';
+        sample['assigned1Name'] = 'Example Assignee';
       }
       if (table == 'Messages') sample['subject'] = 'Example message';
     }
@@ -369,7 +503,11 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         sample[field] = '[]';
       }
     }
-    final csv = _encodeCsv(example ? [sample] : [], columns: columns);
+    final csv = _encodeCsv(
+      example ? [sample] : [],
+      columns: columns,
+      table: table,
+    );
     try {
       final filename =
           '${table.toLowerCase().replaceAll(' ', '_')}_template.csv';
@@ -499,15 +637,24 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               ),
               SizedBox(
                 width: 180,
-                child: TextField(
-                  controller: _selectedTableController,
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedTable,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Table',
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
+                  items: _managedStores.keys
+                      .map(
+                        (table) => DropdownMenuItem<String>(
+                          value: table,
+                          child: Text(table, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (table) {
-                    setState(() => _selectedTable = table.trim());
+                    if (table != null) setState(() => _selectedTable = table);
                   },
                 ),
               ),

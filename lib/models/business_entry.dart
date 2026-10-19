@@ -109,6 +109,9 @@ class BusinessEntry {
   );
 
   // Older stored values may contain a JSON string or a decoded list.
+  static List<Map<String, dynamic>> decodeLocationList(Object? value) =>
+      _decodeLocations(value).map((location) => location.toJson()).toList();
+
   static List<BusinessLocation> _decodeLocations(Object? value) {
     Object? decoded = value;
     if (decoded is String) {

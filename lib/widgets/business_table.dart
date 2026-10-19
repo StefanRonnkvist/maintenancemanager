@@ -57,10 +57,22 @@ class PeopleTable extends StatelessWidget {
   }
 }
 
-/// Displays businesses, expanding one row per location when locations exist.
+/// Displays businesses with their company-wide and four location fields.
 class BusinessTable extends StatelessWidget {
   const BusinessTable({required this.entries, super.key});
   final List<BusinessEntry> entries;
+
+  String _locationValue(BusinessEntry business, int index, String field) {
+    if (index >= business.locations.length) return '';
+    final location = business.locations[index];
+    return switch (field) {
+      'name' => location.name,
+      'address' => location.address,
+      'directPhone' => location.directPhone,
+      'nearestAirport' => location.nearestAirport,
+      _ => '',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,32 +87,45 @@ class BusinessTable extends StatelessWidget {
           DataColumn(label: Text('Business Type')),
           DataColumn(label: Text('Business Address')),
           DataColumn(label: Text('Business Direct Phone')),
-          DataColumn(label: Text('Nearest Airport')),
+          DataColumn(label: Text('Business Nearest Airport')),
+          DataColumn(label: Text('Location 1 Name')),
+          DataColumn(label: Text('Location 1 Address')),
+          DataColumn(label: Text('Location 1 Direct Phone')),
+          DataColumn(label: Text('Location 1 Nearest Airport')),
+          DataColumn(label: Text('Location 2 Name')),
+          DataColumn(label: Text('Location 2 Address')),
+          DataColumn(label: Text('Location 2 Direct Phone')),
+          DataColumn(label: Text('Location 2 Nearest Airport')),
+          DataColumn(label: Text('Location 3 Name')),
+          DataColumn(label: Text('Location 3 Address')),
+          DataColumn(label: Text('Location 3 Direct Phone')),
+          DataColumn(label: Text('Location 3 Nearest Airport')),
+          DataColumn(label: Text('Location 4 Name')),
+          DataColumn(label: Text('Location 4 Address')),
+          DataColumn(label: Text('Location 4 Direct Phone')),
+          DataColumn(label: Text('Location 4 Nearest Airport')),
         ],
         rows: [
           for (final business in entries)
-            if (business.locations.isEmpty)
-              DataRow(
-                cells: [
-                  DataCell(Text(business.name)),
-                  DataCell(Text(business.businessType)),
-                  DataCell(Text(business.address)),
-                  DataCell(Text(business.directPhone)),
-                  DataCell(Text(business.nearestAirport)),
+            DataRow(
+              cells: [
+                DataCell(Text(business.name)),
+                DataCell(Text(business.businessType)),
+                DataCell(Text(business.address)),
+                DataCell(Text(business.directPhone)),
+                DataCell(Text(business.nearestAirport)),
+                for (var index = 0; index < 4; index++) ...[
+                  DataCell(Text(_locationValue(business, index, 'name'))),
+                  DataCell(Text(_locationValue(business, index, 'address'))),
+                  DataCell(
+                    Text(_locationValue(business, index, 'directPhone')),
+                  ),
+                  DataCell(
+                    Text(_locationValue(business, index, 'nearestAirport')),
+                  ),
                 ],
-              )
-            else
-              // Keep business-wide values on the first row; subsequent rows show locations.
-              for (var index = 0; index < business.locations.length; index++)
-                DataRow(
-                  cells: [
-                    DataCell(Text(index == 0 ? business.name : '')),
-                    DataCell(Text(index == 0 ? business.businessType : '')),
-                    DataCell(Text(index == 0 ? business.address : '')),
-                    DataCell(Text(index == 0 ? business.directPhone : '')),
-                    DataCell(Text(index == 0 ? business.nearestAirport : '')),
-                  ],
-                ),
+              ],
+            ),
         ],
       ),
     );
