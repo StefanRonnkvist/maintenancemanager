@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/local_record_store.dart';
+import '../widgets/work_order_table.dart';
 
 /// Work order page with free-entry business and location details.
 class WorkOrderTab extends StatefulWidget {
@@ -24,6 +25,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   Map<String, List<String>> _componentOptions = const {};
   String? _selectedComponentCategory;
   String? _selectedComponent;
+  bool _formExpanded = false;
 
   @override
   void initState() {
@@ -109,134 +111,157 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       children: [
         Text('Work Order', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 24),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            SizedBox(
-              width: 280,
-              child: TextField(
-                controller: _businessNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Business Name',
-                  border: OutlineInputBorder(),
+        Card(
+          child: Column(
+            children: [
+              ListTile(
+                title: const Text('Work order details'),
+                trailing: Icon(
+                  _formExpanded ? Icons.expand_less : Icons.expand_more,
                 ),
+                onTap: () => setState(() => _formExpanded = !_formExpanded),
               ),
-            ),
-            SizedBox(
-              width: 280,
-              child: TextField(
-                controller: _locationNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Location Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _locationAddressController,
-          decoration: const InputDecoration(
-            labelText: 'Location Address',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _locationPhoneController,
-          decoration: const InputDecoration(
-            labelText: 'Location Direct Phone Number',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _locationAirportController,
-          decoration: const InputDecoration(
-            labelText: 'Location Airports',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            SizedBox(
-              width: 280,
-              child: DropdownButtonFormField<String>(
-                key: ValueKey(_selectedComponentCategory),
-                initialValue: _selectedComponentCategory,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Component Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: _componentOptions.keys
-                    .map(
-                      (category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(
-                          category,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _componentOptions.isEmpty
-                    ? null
-                    : (category) => setState(() {
-                        _selectedComponentCategory = category;
-                        _selectedComponent = null;
-                      }),
-              ),
-            ),
-            SizedBox(
-              width: 280,
-              child: DropdownButtonFormField<String>(
-                key: ValueKey(
-                  '${_selectedComponentCategory}_$_selectedComponent',
-                ),
-                initialValue: _selectedComponent,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Component',
-                  border: OutlineInputBorder(),
-                ),
-                items:
-                    (_selectedComponentCategory == null
-                            ? const <String>[]
-                            : _componentOptions[_selectedComponentCategory] ??
-                                  const <String>[])
-                        .map(
-                          (component) => DropdownMenuItem(
-                            value: component,
-                            child: Text(
-                              component,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+              if (_formExpanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: [
+                          SizedBox(
+                            width: 280,
+                            child: TextField(
+                              controller: _businessNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Business Name',
+                                border: OutlineInputBorder(),
+                              ),
                             ),
                           ),
-                        )
-                        .toList(),
-                onChanged: _selectedComponentCategory == null
-                    ? null
-                    : (component) =>
-                          setState(() => _selectedComponent = component),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: _saveCurrentWorkOrder,
-            icon: const Icon(Icons.save_outlined),
-            label: const Text('Save Work Order'),
+                          SizedBox(
+                            width: 280,
+                            child: TextField(
+                              controller: _locationNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Location Name',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _locationAddressController,
+                        decoration: const InputDecoration(
+                          labelText: 'Location Address',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _locationPhoneController,
+                        decoration: const InputDecoration(
+                          labelText: 'Location Direct Phone Number',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _locationAirportController,
+                        decoration: const InputDecoration(
+                          labelText: 'Location Airports',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: [
+                          SizedBox(
+                            width: 280,
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_selectedComponentCategory),
+                              initialValue: _selectedComponentCategory,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Component Category',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: _componentOptions.keys
+                                  .map(
+                                    (category) => DropdownMenuItem(
+                                      value: category,
+                                      child: Text(
+                                        category,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: _componentOptions.isEmpty
+                                  ? null
+                                  : (category) => setState(() {
+                                      _selectedComponentCategory = category;
+                                      _selectedComponent = null;
+                                    }),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 280,
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(
+                                '${_selectedComponentCategory}_$_selectedComponent',
+                              ),
+                              initialValue: _selectedComponent,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Component',
+                                border: OutlineInputBorder(),
+                              ),
+                              items:
+                                  (_selectedComponentCategory == null
+                                          ? const <String>[]
+                                          : _componentOptions[_selectedComponentCategory] ??
+                                                const <String>[])
+                                      .map(
+                                        (component) => DropdownMenuItem(
+                                          value: component,
+                                          child: Text(
+                                            component,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: _selectedComponentCategory == null
+                                  ? null
+                                  : (component) => setState(
+                                      () => _selectedComponent = component,
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton.icon(
+                          onPressed: _saveCurrentWorkOrder,
+                          icon: const Icon(Icons.save_outlined),
+                          label: const Text('Save Work Order'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
@@ -245,44 +270,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        if (_records.isEmpty)
-          const Text('No saved work orders yet.')
-        else
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Business Name')),
-                DataColumn(label: Text('Location Name')),
-                DataColumn(label: Text('Location Address')),
-                DataColumn(label: Text('Location Direct Phone Number')),
-                DataColumn(label: Text('Location Airports')),
-                DataColumn(label: Text('Component Category')),
-                DataColumn(label: Text('Component')),
-              ],
-              rows: _records
-                  .map(
-                    (record) => DataRow(
-                      cells: [
-                        DataCell(Text(record['businessName'] as String? ?? '')),
-                        DataCell(Text(record['locationName'] as String? ?? '')),
-                        DataCell(
-                          Text(record['locationAddress'] as String? ?? ''),
-                        ),
-                        DataCell(
-                          Text(record['locationDirectPhone'] as String? ?? ''),
-                        ),
-                        DataCell(Text(record['locationAirport'] as String? ?? '')),
-                        DataCell(
-                          Text(record['componentCategory'] as String? ?? ''),
-                        ),
-                        DataCell(Text(record['component'] as String? ?? '')),
-                      ],
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
+        WorkOrderTable(records: _records),
       ],
     );
   }

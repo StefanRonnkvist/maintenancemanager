@@ -178,29 +178,22 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     'People' => [
       'name',
       'title',
-      'address',
-      'directPhone',
-      'directPhoneExtension',
-      'businessType',
-      'cellPhone',
-      'email',
       'businessName',
       'locationName',
+      'directPhone',
+      'directPhoneExtension',
+      'cellPhone',
+      'email',
+      'address',
       'nearestAirport',
       'locations',
       'airports',
     ],
     'Business' => [
       'name',
-      'title',
+      'businessType',
       'address',
       'directPhone',
-      'directPhoneExtension',
-      'businessType',
-      'cellPhone',
-      'email',
-      'businessName',
-      'locationName',
       'nearestAirport',
       'locations',
       'airports',
@@ -211,6 +204,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locationAddress',
       'locationDirectPhone',
       'locationAirport',
+      'componentCategory',
+      'component',
     ],
     'Messages' => ['to', 'cc', 'subject', 'message'],
     _ => const ['name', 'value', 'updatedAt'],
@@ -364,6 +359,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       if (table == 'Work Order') {
         sample['businessName'] = 'Example Business';
         sample['locationName'] = 'Example Location';
+        sample['componentCategory'] = 'Electrical Components';
+        sample['component'] = 'Power Supply';
       }
       if (table == 'Messages') sample['subject'] = 'Example message';
     }
