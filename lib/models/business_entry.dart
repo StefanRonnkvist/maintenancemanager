@@ -7,12 +7,16 @@ class BusinessLocation {
     required this.address,
     required this.directPhone,
     this.nearestAirport = '',
+    this.componentCategory = '',
+    this.component = '',
   });
 
   final String name;
   final String address;
   final String directPhone;
   final String nearestAirport;
+  final String componentCategory;
+  final String component;
 
   /// Encodes the location fields for local JSON storage.
   Map<String, String> toJson() => {
@@ -20,6 +24,8 @@ class BusinessLocation {
     'address': address,
     'directPhone': directPhone,
     'nearestAirport': nearestAirport,
+    'componentCategory': componentCategory,
+    'component': component,
   };
 
   /// Restores a location from a decoded JSON map.
@@ -29,6 +35,8 @@ class BusinessLocation {
         address: json['address'] as String? ?? '',
         directPhone: json['directPhone'] as String? ?? '',
         nearestAirport: json['nearestAirport'] as String? ?? '',
+        componentCategory: json['componentCategory'] as String? ?? '',
+        component: json['component'] as String? ?? '',
       );
 }
 
@@ -36,6 +44,7 @@ class BusinessLocation {
 class BusinessEntry {
   const BusinessEntry({
     required this.name,
+    this.title = '',
     required this.address,
     required this.directPhone,
     this.directPhoneExtension = '',
@@ -52,6 +61,7 @@ class BusinessEntry {
   final String name;
   final String address;
   final String directPhone;
+  final String title;
   final String directPhoneExtension;
   final String businessType;
   final String cellPhone;
@@ -65,6 +75,7 @@ class BusinessEntry {
   /// Serializes nested lists as JSON strings for preferences-based storage.
   Map<String, Object?> toJson() => {
     'name': name,
+    'title': title,
     'address': address,
     'directPhone': directPhone,
     'directPhoneExtension': directPhoneExtension,
@@ -83,6 +94,7 @@ class BusinessEntry {
   /// Decodes the model while tolerating older rows with missing optional fields.
   factory BusinessEntry.fromJson(Map<String, dynamic> json) => BusinessEntry(
     name: json['name'] as String? ?? '',
+    title: json['title'] as String? ?? '',
     address: json['address'] as String? ?? '',
     directPhone: json['directPhone'] as String? ?? '',
     directPhoneExtension: json['directPhoneExtension'] as String? ?? '',

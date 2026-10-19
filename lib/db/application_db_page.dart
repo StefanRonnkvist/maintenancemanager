@@ -177,6 +177,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     ],
     'People' => [
       'name',
+      'title',
       'address',
       'directPhone',
       'directPhoneExtension',
@@ -191,6 +192,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     ],
     'Business' => [
       'name',
+      'title',
       'address',
       'directPhone',
       'directPhoneExtension',

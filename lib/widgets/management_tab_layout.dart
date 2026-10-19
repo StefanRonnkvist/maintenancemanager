@@ -20,19 +20,27 @@ class ManagementTabLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      // Keep wide desktop layouts readable while still using narrow screens fully.
-      final width = constraints.maxWidth < 1100 ? constraints.maxWidth : 1100.0;
+      final availableWidth = constraints.maxWidth;
+      final isPhone = availableWidth < 600;
+      final isTablet = availableWidth >= 600 && availableWidth < 1100;
+      final horizontalPadding = isPhone ? 12.0 : (isTablet ? 20.0 : 28.0);
+      final contentWidth = availableWidth < 1100 ? availableWidth : 1100.0;
+      final cardPadding = isPhone ? 16.0 : (isTablet ? 20.0 : 24.0);
+
       return SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: isPhone ? 12 : 20,
+        ),
         child: Center(
           child: SizedBox(
-            width: width,
+            width: contentWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(cardPadding),
                     child: form,
                   ),
                 ),

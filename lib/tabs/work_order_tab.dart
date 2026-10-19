@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/local_record_store.dart';
 
@@ -18,11 +21,34 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   final _locationPhoneController = TextEditingController();
   final _locationAirportController = TextEditingController();
   final List<Map<String, dynamic>> _records = [];
+  Map<String, List<String>> _componentOptions = const {};
+  String? _selectedComponentCategory;
+  String? _selectedComponent;
 
   @override
   void initState() {
     super.initState();
     _loadRecords();
+    _loadComponentOptions();
+  }
+
+  Future<void> _loadComponentOptions() async {
+    try {
+      final csv = await rootBundle.loadString('assets/components.csv');
+      final options = <String, List<String>>{};
+      for (final line in const LineSplitter().convert(csv).skip(1)) {
+        final columns = line.split(',');
+        if (columns.length < 2) continue;
+        final category = columns[0].trim();
+        final component = columns[1].trim();
+        if (category.isEmpty || component.isEmpty) continue;
+        options.putIfAbsent(category, () => <String>[]).add(component);
+      }
+      if (!mounted) return;
+      setState(() => _componentOptions = options);
+    } catch (_) {
+      // Keep work order entry available if the optional CSV asset fails.
+    }
   }
 
   Future<void> _loadRecords() async {
@@ -52,6 +78,8 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'locationAddress': _locationAddressController.text.trim(),
       'locationDirectPhone': _locationPhoneController.text.trim(),
       'locationAirport': _locationAirportController.text.trim(),
+      'componentCategory': _selectedComponentCategory ?? '',
+      'component': _selectedComponent ?? '',
     };
     if (record.values.every((value) => (value as String).isEmpty)) return;
     final updated = [record, ..._records];
@@ -131,6 +159,77 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
             border: OutlineInputBorder(),
           ),
         ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            SizedBox(
+              width: 280,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(_selectedComponentCategory),
+                initialValue: _selectedComponentCategory,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Component Category',
+                  border: OutlineInputBorder(),
+                ),
+                items: _componentOptions.keys
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(
+                          category,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _componentOptions.isEmpty
+                    ? null
+                    : (category) => setState(() {
+                        _selectedComponentCategory = category;
+                        _selectedComponent = null;
+                      }),
+              ),
+            ),
+            SizedBox(
+              width: 280,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(
+                  '${_selectedComponentCategory}_$_selectedComponent',
+                ),
+                initialValue: _selectedComponent,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Component',
+                  border: OutlineInputBorder(),
+                ),
+                items:
+                    (_selectedComponentCategory == null
+                            ? const <String>[]
+                            : _componentOptions[_selectedComponentCategory] ??
+                                  const <String>[])
+                        .map(
+                          (component) => DropdownMenuItem(
+                            value: component,
+                            child: Text(
+                              component,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                onChanged: _selectedComponentCategory == null
+                    ? null
+                    : (component) =>
+                          setState(() => _selectedComponent = component),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
@@ -149,18 +248,41 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         if (_records.isEmpty)
           const Text('No saved work orders yet.')
         else
-          for (final record in _records)
-            Card(
-              child: ListTile(
-                title: Text(record['businessName'] as String? ?? ''),
-                subtitle: Text(
-                  '${record['locationName'] ?? ''} · '
-                  '${record['locationAddress'] ?? ''} · '
-                  '${record['locationDirectPhone'] ?? ''} · '
-                  '${record['locationAirport'] ?? ''}',
-                ),
-              ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('Business Name')),
+                DataColumn(label: Text('Location Name')),
+                DataColumn(label: Text('Location Address')),
+                DataColumn(label: Text('Location Direct Phone Number')),
+                DataColumn(label: Text('Location Airports')),
+                DataColumn(label: Text('Component Category')),
+                DataColumn(label: Text('Component')),
+              ],
+              rows: _records
+                  .map(
+                    (record) => DataRow(
+                      cells: [
+                        DataCell(Text(record['businessName'] as String? ?? '')),
+                        DataCell(Text(record['locationName'] as String? ?? '')),
+                        DataCell(
+                          Text(record['locationAddress'] as String? ?? ''),
+                        ),
+                        DataCell(
+                          Text(record['locationDirectPhone'] as String? ?? ''),
+                        ),
+                        DataCell(Text(record['locationAirport'] as String? ?? '')),
+                        DataCell(
+                          Text(record['componentCategory'] as String? ?? ''),
+                        ),
+                        DataCell(Text(record['component'] as String? ?? '')),
+                      ],
+                    ),
+                  )
+                  .toList(),
             ),
+          ),
       ],
     );
   }

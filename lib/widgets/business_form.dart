@@ -18,6 +18,7 @@ class BusinessForm extends StatefulWidget {
 class _BusinessFormState extends State<BusinessForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _titleController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _phoneExtensionController = TextEditingController();
@@ -40,6 +41,7 @@ class _BusinessFormState extends State<BusinessForm> {
   @override
   void dispose() {
     _nameController.dispose();
+    _titleController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
     _phoneExtensionController.dispose();
@@ -105,6 +107,7 @@ class _BusinessFormState extends State<BusinessForm> {
     widget.onSubmit(
       BusinessEntry(
         name: _nameController.text.trim(),
+        title: _isPeople ? _titleController.text.trim() : '',
         address: _addressController.text.trim(),
         directPhone: _phoneController.text.trim(),
         directPhoneExtension: _phoneExtensionController.text.trim(),
@@ -127,6 +130,7 @@ class _BusinessFormState extends State<BusinessForm> {
       ),
     );
     _nameController.clear();
+    _titleController.clear();
     _addressController.clear();
     _phoneController.clear();
     _cellPhoneController.clear();
@@ -141,12 +145,12 @@ class _BusinessFormState extends State<BusinessForm> {
     });
   }
 
-  /// Person-specific details, work association, and contact information.
+  /// Person details and contact information, followed by work location.
   Widget _peopleFields() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       FormSection(
-        title: 'Personal details',
+        title: 'Personal and contact details',
         icon: Icons.person_outline,
         child: Wrap(
           spacing: 16,
@@ -158,6 +162,7 @@ class _BusinessFormState extends State<BusinessForm> {
               label: 'Name',
               validator: (value) => _required(value, 'a name'),
             ),
+            _field(controller: _titleController, label: 'Title'),
             _field(
               controller: _phoneController,
               label: 'Direct Phone',
@@ -177,6 +182,16 @@ class _BusinessFormState extends State<BusinessForm> {
               controller: _emailController,
               label: 'eMail',
               keyboardType: TextInputType.emailAddress,
+            ),
+            _field(
+              controller: _addressController,
+              label: 'Address',
+              width: 300,
+              validator: (value) => _required(value, 'an address'),
+            ),
+            _field(
+              controller: _nearestAirportController,
+              label: 'Nearest Airport',
             ),
           ],
         ),
@@ -210,34 +225,6 @@ class _BusinessFormState extends State<BusinessForm> {
                 controller: _personLocationController,
                 label: 'Location Name',
               ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 16),
-      FormSection(
-        title: 'Contact details',
-        icon: Icons.contact_phone_outlined,
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            _field(
-              controller: _addressController,
-              label: 'Address',
-              width: 300,
-              validator: (value) => _required(value, 'an address'),
-            ),
-            _field(
-              controller: _phoneController,
-              label: 'Direct phone',
-              keyboardType: TextInputType.phone,
-              validator: (value) => _required(value, 'a direct phone number'),
-            ),
-            _field(
-              controller: _nearestAirportController,
-              label: 'Nearest Airport',
-            ),
           ],
         ),
       ),
