@@ -249,11 +249,6 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locationDirectPhone',
       'locationAirport',
       'notes',
-      for (var contact = 1; contact <= 4; contact++) ...[
-        'contact${contact}Name',
-        'contact${contact}Email',
-        'contact${contact}Phone',
-      ],
       for (var assigned = 1; assigned <= 4; assigned++) ...[
         'assigned${assigned}Name',
         'assigned${assigned}Email',
@@ -491,7 +486,6 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         sample['componentCategory'] = 'Electrical Components';
         sample['component'] = 'Power Supply';
         sample['notes'] = 'Example work order notes';
-        sample['contact1Name'] = 'Example Contact';
         sample['assigned1Name'] = 'Example Assignee';
       }
       if (table == 'Messages') sample['subject'] = 'Example message';

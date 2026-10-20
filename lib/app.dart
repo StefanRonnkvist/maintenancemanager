@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/app_tab.dart';
 import 'models/business_entry.dart';
+import 'services/local_record_store.dart';
 import 'tabs/business_tab.dart';
 import 'tabs/information_tabs.dart';
 import 'tabs/help_tab.dart';
@@ -201,13 +202,37 @@ class _MainTabPageState extends State<MainTabPage>
   }
 
   // Each list is shared with its tab's records table and persistence handler.
+  static const _peopleStorageKey = 'people_records_v1';
+  static const _businessStorageKey = 'business_records_v1';
   final List<BusinessEntry> _people = [];
   final List<BusinessEntry> _businesses = [];
+
+  Future<void> _loadSharedEntries() async {
+    try {
+      final rows = await Future.wait([
+        LocalRecordStore.read(_peopleStorageKey),
+        LocalRecordStore.read(_businessStorageKey),
+      ]);
+      if (!mounted) return;
+      _people
+        ..clear()
+        ..addAll(rows[0].map(BusinessEntry.fromJson));
+      _businesses
+        ..clear()
+        ..addAll(rows[1].map(BusinessEntry.fromJson));
+    } catch (_) {
+      // The management tabs report storage errors when they load their records.
+    }
+    if (mounted) setState(() {});
+  }
 
   Widget _pageForTab(AppTab tab) => switch (tab) {
     AppTab.equipment => EquipmentTab(businessEntries: _businesses),
     AppTab.spareParts => const SparePartsTab(),
-    AppTab.workOrder => WorkOrderTab(businessEntries: _businesses),
+    AppTab.workOrder => WorkOrderTab(
+      businessEntries: _businesses,
+      peopleEntries: _people,
+    ),
     AppTab.people => BusinessTab(
       entries: _people,
       businessEntries: _businesses,
@@ -232,6 +257,7 @@ class _MainTabPageState extends State<MainTabPage>
     // The ticker provider drives the animation shared by TabBar and TabBarView.
     _controller = TabController(length: _tabs.length, vsync: this);
     _loadTabOrder();
+    _loadSharedEntries();
   }
 
   @override

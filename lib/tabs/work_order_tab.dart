@@ -9,9 +9,14 @@ import '../widgets/work_order_table.dart';
 
 /// Work order page with free-entry business and location details.
 class WorkOrderTab extends StatefulWidget {
-  const WorkOrderTab({required this.businessEntries, super.key});
+  const WorkOrderTab({
+    required this.businessEntries,
+    required this.peopleEntries,
+    super.key,
+  });
 
   final List<BusinessEntry> businessEntries;
+  final List<BusinessEntry> peopleEntries;
 
   @override
   State<WorkOrderTab> createState() => _WorkOrderTabState();
@@ -25,18 +30,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   final _locationPhoneController = TextEditingController();
   final _locationAirportController = TextEditingController();
   final _notesController = TextEditingController();
-  final List<TextEditingController> _contactNameControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<TextEditingController> _contactEmailControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<TextEditingController> _contactPhoneControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
   final List<TextEditingController> _assignedNameControllers = List.generate(
     4,
     (_) => TextEditingController(),
@@ -57,25 +50,52 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   String? _selectedLocationName;
   bool _formExpanded = false;
 
-  List<String> get _businessOptions => widget.businessEntries
-      .map((entry) => entry.name.trim())
-      .where((name) => name.isNotEmpty)
-      .toSet()
-      .toList()
-    ..sort();
+  List<String> get _businessOptions =>
+      widget.businessEntries
+          .map((entry) => entry.name.trim())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
 
   BusinessEntry? get _selectedBusiness => widget.businessEntries
       .where((entry) => entry.name.trim() == _selectedBusinessName)
       .firstOrNull;
 
-  List<String> get _locationOptions => _selectedBusiness?.locations
-      .map((location) => location.name.trim())
-      .where((name) => name.isNotEmpty)
-      .toSet()
-      .toList() ?? const [];
+  @override
+  void didUpdateWidget(covariant WorkOrderTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_selectedBusinessName != null &&
+        !_businessOptions.contains(_selectedBusinessName)) {
+      _selectedBusinessName = null;
+      _selectedLocationName = null;
+      _businessNameController.clear();
+      _locationNameController.clear();
+    }
+  }
 
-  final List<bool> _contactExpanded = List.filled(4, false);
+  List<String> get _locationOptions =>
+      _selectedBusiness?.locations
+          .map((location) => location.name.trim())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList() ??
+      const [];
+
   final List<bool> _assignedExpanded = List.filled(4, false);
+
+  List<BusinessEntry> get _matchingPeople {
+    final businessName = _selectedBusinessName?.trim() ?? '';
+    final locationName = _selectedLocationName?.trim() ?? '';
+    if (businessName.isEmpty || locationName.isEmpty) return const [];
+    return widget.peopleEntries
+        .where(
+          (entry) =>
+              entry.businessName.trim() == businessName &&
+              entry.locationName.trim() == locationName,
+        )
+        .toList(growable: false);
+  }
 
   @override
   void initState() {
@@ -122,9 +142,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     _locationAirportController.dispose();
     _notesController.dispose();
     for (final controller in [
-      ..._contactNameControllers,
-      ..._contactEmailControllers,
-      ..._contactPhoneControllers,
       ..._assignedNameControllers,
       ..._assignedEmailControllers,
       ..._assignedPhoneControllers,
@@ -143,9 +160,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'locationAirport': _locationAirportController.text.trim(),
       'notes': _notesController.text.trim(),
       for (var index = 0; index < 4; index++) ...{
-        'contact${index + 1}Name': _contactNameControllers[index].text.trim(),
-        'contact${index + 1}Email': _contactEmailControllers[index].text.trim(),
-        'contact${index + 1}Phone': _contactPhoneControllers[index].text.trim(),
         'assigned${index + 1}Name': _assignedNameControllers[index].text.trim(),
         'assigned${index + 1}Email': _assignedEmailControllers[index].text
             .trim(),
@@ -232,7 +246,8 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                               onChanged: (businessName) => setState(() {
                                 _selectedBusinessName = businessName;
                                 _selectedLocationName = null;
-                                _businessNameController.text = businessName ?? '';
+                                _businessNameController.text =
+                                    businessName ?? '';
                                 _locationNameController.clear();
                                 _locationAddressController.clear();
                                 _locationPhoneController.clear();
@@ -262,7 +277,8 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                                   .toList(),
                               onChanged: (locationName) => setState(() {
                                 _selectedLocationName = locationName;
-                                _locationNameController.text = locationName ?? '';
+                                _locationNameController.text =
+                                    locationName ?? '';
                                 final location = _selectedBusiness?.locations
                                     .where((item) => item.name == locationName)
                                     .firstOrNull;
@@ -305,6 +321,8 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      _MatchingPeopleTable(people: _matchingPeople),
+                      const SizedBox(height: 12),
                       for (
                         var assignedIndex = 0;
                         assignedIndex < 4;
@@ -374,86 +392,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                                           decoration: InputDecoration(
                                             labelText:
                                                 'Assigned ${assignedIndex + 1} Phone',
-                                            border: const OutlineInputBorder(),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      for (
-                        var contactIndex = 0;
-                        contactIndex < 4;
-                        contactIndex++
-                      ) ...[
-                        const SizedBox(height: 12),
-                        Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            children: [
-                              ListTile(
-                                title: Text('Contact ${contactIndex + 1}'),
-                                trailing: Icon(
-                                  _contactExpanded[contactIndex]
-                                      ? Icons.expand_less
-                                      : Icons.expand_more,
-                                ),
-                                onTap: () => setState(() {
-                                  _contactExpanded[contactIndex] =
-                                      !_contactExpanded[contactIndex];
-                                }),
-                              ),
-                              if (_contactExpanded[contactIndex])
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    0,
-                                    16,
-                                    16,
-                                  ),
-                                  child: Wrap(
-                                    spacing: 16,
-                                    runSpacing: 16,
-                                    children: [
-                                      SizedBox(
-                                        width: 280,
-                                        child: TextField(
-                                          controller:
-                                              _contactNameControllers[contactIndex],
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Contact ${contactIndex + 1} Name',
-                                            border: const OutlineInputBorder(),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 280,
-                                        child: TextField(
-                                          controller:
-                                              _contactEmailControllers[contactIndex],
-                                          keyboardType:
-                                              TextInputType.emailAddress,
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Contact ${contactIndex + 1} Email',
-                                            border: const OutlineInputBorder(),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 280,
-                                        child: TextField(
-                                          controller:
-                                              _contactPhoneControllers[contactIndex],
-                                          keyboardType: TextInputType.phone,
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Contact ${contactIndex + 1} Phone',
                                             border: const OutlineInputBorder(),
                                           ),
                                         ),
@@ -571,6 +509,56 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         ),
         const SizedBox(height: 8),
         WorkOrderTable(records: _records),
+      ],
+    );
+  }
+}
+
+class _MatchingPeopleTable extends StatelessWidget {
+  const _MatchingPeopleTable({required this.people});
+
+  final List<BusinessEntry> people;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'People at this business and location',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        if (people.isEmpty)
+          const Text('No people match the selected business and location.')
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: WidgetStatePropertyAll(
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
+              columns: const [
+                DataColumn(label: Text('Name')),
+                DataColumn(label: Text('Title')),
+                DataColumn(label: Text('Email')),
+                DataColumn(label: Text('Direct Phone')),
+                DataColumn(label: Text('Cell Phone')),
+              ],
+              rows: [
+                for (final person in people)
+                  DataRow(
+                    cells: [
+                      DataCell(Text(person.name)),
+                      DataCell(Text(person.title)),
+                      DataCell(Text(person.email)),
+                      DataCell(Text(person.directPhone)),
+                      DataCell(Text(person.cellPhone)),
+                    ],
+                  ),
+              ],
+            ),
+          ),
       ],
     );
   }
