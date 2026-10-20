@@ -3,12 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/business_entry.dart';
 import '../services/local_record_store.dart';
 import '../widgets/work_order_table.dart';
 
 /// Work order page with free-entry business and location details.
 class WorkOrderTab extends StatefulWidget {
-  const WorkOrderTab({super.key});
+  const WorkOrderTab({required this.businessEntries, super.key});
+
+  final List<BusinessEntry> businessEntries;
 
   @override
   State<WorkOrderTab> createState() => _WorkOrderTabState();
@@ -50,7 +53,27 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   Map<String, List<String>> _componentOptions = const {};
   String? _selectedComponentCategory;
   String? _selectedComponent;
+  String? _selectedBusinessName;
+  String? _selectedLocationName;
   bool _formExpanded = false;
+
+  List<String> get _businessOptions => widget.businessEntries
+      .map((entry) => entry.name.trim())
+      .where((name) => name.isNotEmpty)
+      .toSet()
+      .toList()
+    ..sort();
+
+  BusinessEntry? get _selectedBusiness => widget.businessEntries
+      .where((entry) => entry.name.trim() == _selectedBusinessName)
+      .firstOrNull;
+
+  List<String> get _locationOptions => _selectedBusiness?.locations
+      .map((location) => location.name.trim())
+      .where((name) => name.isNotEmpty)
+      .toSet()
+      .toList() ?? const [];
+
   final List<bool> _contactExpanded = List.filled(4, false);
   final List<bool> _assignedExpanded = List.filled(4, false);
 
@@ -141,7 +164,15 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         _records
           ..clear()
           ..addAll(updated);
+        _selectedBusinessName = null;
+        _selectedLocationName = null;
       });
+      _businessNameController.clear();
+      _locationNameController.clear();
+      _locationAddressController.clear();
+      _locationPhoneController.clear();
+      _locationAirportController.clear();
+      _notesController.clear();
       _showMessage('Work order saved.');
     } catch (error) {
       _showMessage('Could not save work order: $error');
@@ -182,22 +213,66 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                         children: [
                           SizedBox(
                             width: 280,
-                            child: TextField(
-                              controller: _businessNameController,
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(_selectedBusinessName),
+                              initialValue: _selectedBusinessName,
+                              isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Business Name',
                                 border: OutlineInputBorder(),
                               ),
+                              items: _businessOptions
+                                  .map(
+                                    (businessName) => DropdownMenuItem(
+                                      value: businessName,
+                                      child: Text(businessName),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (businessName) => setState(() {
+                                _selectedBusinessName = businessName;
+                                _selectedLocationName = null;
+                                _businessNameController.text = businessName ?? '';
+                                _locationNameController.clear();
+                                _locationAddressController.clear();
+                                _locationPhoneController.clear();
+                                _locationAirportController.clear();
+                              }),
                             ),
                           ),
                           SizedBox(
                             width: 280,
-                            child: TextField(
-                              controller: _locationNameController,
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey(
+                                '${_selectedBusinessName}_$_selectedLocationName',
+                              ),
+                              initialValue: _selectedLocationName,
+                              isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Location Name',
                                 border: OutlineInputBorder(),
                               ),
+                              items: _locationOptions
+                                  .map(
+                                    (locationName) => DropdownMenuItem(
+                                      value: locationName,
+                                      child: Text(locationName),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (locationName) => setState(() {
+                                _selectedLocationName = locationName;
+                                _locationNameController.text = locationName ?? '';
+                                final location = _selectedBusiness?.locations
+                                    .where((item) => item.name == locationName)
+                                    .firstOrNull;
+                                _locationAddressController.text =
+                                    location?.address ?? '';
+                                _locationPhoneController.text =
+                                    location?.directPhone ?? '';
+                                _locationAirportController.text =
+                                    location?.nearestAirport ?? '';
+                              }),
                             ),
                           ),
                         ],
@@ -205,6 +280,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _locationAddressController,
+                        readOnly: true,
                         decoration: const InputDecoration(
                           labelText: 'Location Address',
                           border: OutlineInputBorder(),
@@ -213,6 +289,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _locationPhoneController,
+                        readOnly: true,
                         decoration: const InputDecoration(
                           labelText: 'Location Direct Phone Number',
                           border: OutlineInputBorder(),
@@ -221,6 +298,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _locationAirportController,
+                        readOnly: true,
                         decoration: const InputDecoration(
                           labelText: 'Location Airports',
                           border: OutlineInputBorder(),

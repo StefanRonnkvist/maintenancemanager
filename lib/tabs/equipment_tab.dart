@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/app_tab.dart';
+import '../models/business_entry.dart';
 import '../models/equipment_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 
 /// Builds the equipment browser and its free-entry equipment form.
 class EquipmentTab extends StatefulWidget {
-  const EquipmentTab({super.key});
+  const EquipmentTab({required this.businessEntries, super.key});
+
+  final List<BusinessEntry> businessEntries;
 
   @override
   State<EquipmentTab> createState() => _EquipmentTabState();
@@ -21,6 +24,7 @@ class _EquipmentTabState extends State<EquipmentTab> {
   bool _isLoading = true;
   String? _storageError;
   bool _formExpanded = false;
+  EquipmentRecord? _selectedRecord;
   final List<bool> _subsectionExpanded = List.filled(4, false);
   final _localNameController = TextEditingController();
   final _localNumberController = TextEditingController();
@@ -38,6 +42,8 @@ class _EquipmentTabState extends State<EquipmentTab> {
     (_) => List.generate(8, (_) => TextEditingController()),
   );
   final List<EquipmentRecord> _records = [];
+  String? _selectedBusinessName;
+  String? _selectedLocationName;
   List<String> _componentOptions = const [];
   bool _componentsLoaded = false;
 
@@ -47,6 +53,26 @@ class _EquipmentTabState extends State<EquipmentTab> {
     _loadRecords();
     _loadComponentOptions();
   }
+
+  List<String> get _businessOptions =>
+      widget.businessEntries
+          .map((entry) => entry.name.trim())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+
+  BusinessEntry? get _selectedBusiness => widget.businessEntries
+      .where((entry) => entry.name.trim() == _selectedBusinessName)
+      .firstOrNull;
+
+  List<String> get _locationOptions =>
+      _selectedBusiness?.locations
+          .map((location) => location.name.trim())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList() ??
+      const [];
 
   Future<void> _loadComponentOptions() async {
     try {
@@ -150,6 +176,81 @@ class _EquipmentTabState extends State<EquipmentTab> {
     );
   }
 
+  void _selectEquipment(EquipmentRecord record) {
+    setState(() {
+      _selectedRecord = record;
+      _formExpanded = true;
+      _selectedBusinessName = _businessOptions.contains(record.businessName)
+          ? record.businessName
+          : null;
+      _selectedLocationName = _locationOptions.contains(record.locationName)
+          ? record.locationName
+          : null;
+      _businessNameController.text = record.businessName;
+      _locationNameController.text = record.locationName;
+      _categoryController.text = record.equipmentCategory;
+      _localNameController.text = record.localName;
+      _localNumberController.text = record.localNumber;
+      _manufacturerNameController.text = record.manufacturerName;
+      _equipmentNameController.text = record.equipmentName;
+      _equipmentModelController.text = record.equipmentModel;
+      _serialNumberController.text = record.serialNumber;
+      _maintenanceManualController.text = record.maintenanceManual;
+      _publisherController.text = record.publisher;
+      final subsectionValues = [
+        [
+          record.subsection1LocalName,
+          record.subsection1LocalNumber,
+          record.subsection1ManufacturerName,
+          record.subsection1EquipmentName,
+          record.subsection1EquipmentModel,
+          record.subsection1SerialNumber,
+          record.subsection1MaintenanceManual,
+          record.subsection1Publisher,
+        ],
+        [
+          record.subsection2LocalName,
+          record.subsection2LocalNumber,
+          record.subsection2ManufacturerName,
+          record.subsection2EquipmentName,
+          record.subsection2EquipmentModel,
+          record.subsection2SerialNumber,
+          record.subsection2MaintenanceManual,
+          record.subsection2Publisher,
+        ],
+        [
+          record.subsection3LocalName,
+          record.subsection3LocalNumber,
+          record.subsection3ManufacturerName,
+          record.subsection3EquipmentName,
+          record.subsection3EquipmentModel,
+          record.subsection3SerialNumber,
+          record.subsection3MaintenanceManual,
+          record.subsection3Publisher,
+        ],
+        [
+          record.subsection4LocalName,
+          record.subsection4LocalNumber,
+          record.subsection4ManufacturerName,
+          record.subsection4EquipmentName,
+          record.subsection4EquipmentModel,
+          record.subsection4SerialNumber,
+          record.subsection4MaintenanceManual,
+          record.subsection4Publisher,
+        ],
+      ];
+      for (var section = 0; section < 4; section++) {
+        for (var field = 0; field < 8; field++) {
+          _subsectionControllers[section][field].text =
+              subsectionValues[section][field];
+        }
+        _subsectionExpanded[section] = subsectionValues[section].any(
+          (value) => value.isNotEmpty,
+        );
+      }
+    });
+  }
+
   /// Builds a record from the form, then appends and persists it.
   void _addEquipment() {
     final record = EquipmentRecord(
@@ -203,7 +304,15 @@ class _EquipmentTabState extends State<EquipmentTab> {
     }
 
     setState(() {
-      _records.add(record);
+      if (_selectedRecord == null) {
+        _records.add(record);
+      } else {
+        final index = _records.indexOf(_selectedRecord!);
+        if (index >= 0) _records[index] = record;
+      }
+      _selectedRecord = null;
+      _selectedBusinessName = null;
+      _selectedLocationName = null;
       _localNameController.clear();
       _localNumberController.clear();
       _manufacturerNameController.clear();
@@ -242,7 +351,16 @@ class _EquipmentTabState extends State<EquipmentTab> {
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                _EquipmentTable(records: _records),
+                LayoutBuilder(
+                  builder: (context, constraints) => SizedBox(
+                    width: constraints.maxWidth,
+                    child: _EquipmentTable(
+                      records: _records,
+                      onRowTap: _selectEquipment,
+                      selectedRecord: _selectedRecord,
+                    ),
+                  ),
+                ),
               ],
             ),
       form: Card(
@@ -250,7 +368,9 @@ class _EquipmentTabState extends State<EquipmentTab> {
         child: Column(
           children: [
             ListTile(
-              title: const Text('Add equipment'),
+              title: Text(
+                _selectedRecord == null ? 'Add equipment' : 'Update equipment',
+              ),
               trailing: Icon(
                 _formExpanded ? Icons.expand_less : Icons.expand_more,
               ),
@@ -272,9 +392,53 @@ class _EquipmentTabState extends State<EquipmentTab> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    _textField('Business Name', _businessNameController),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(_selectedBusinessName),
+                      initialValue: _selectedBusinessName,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Business Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _businessOptions
+                          .map(
+                            (name) => DropdownMenuItem(
+                              value: name,
+                              child: Text(name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (name) => setState(() {
+                        _selectedBusinessName = name;
+                        _selectedLocationName = null;
+                        _businessNameController.text = name ?? '';
+                        _locationNameController.clear();
+                      }),
+                    ),
                     const SizedBox(height: 16),
-                    _textField('Location Name', _locationNameController),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        '${_selectedBusinessName}_$_selectedLocationName',
+                      ),
+                      initialValue: _selectedLocationName,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Location Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _locationOptions
+                          .map(
+                            (name) => DropdownMenuItem(
+                              value: name,
+                              child: Text(name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (name) => setState(() {
+                        _selectedLocationName = name;
+                        _locationNameController.text = name ?? '';
+                      }),
+                    ),
                     const SizedBox(height: 24),
                     Text(
                       'Equipment details',
@@ -427,8 +591,14 @@ class _EquipmentTabState extends State<EquipmentTab> {
                       alignment: Alignment.centerRight,
                       child: FilledButton.icon(
                         onPressed: _addEquipment,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Equipment'),
+                        icon: Icon(
+                          _selectedRecord == null ? Icons.add : Icons.save,
+                        ),
+                        label: Text(
+                          _selectedRecord == null
+                              ? 'Add Equipment'
+                              : 'Update Equipment',
+                        ),
                       ),
                     ),
                   ],
@@ -442,9 +612,15 @@ class _EquipmentTabState extends State<EquipmentTab> {
 }
 
 class _EquipmentTable extends StatelessWidget {
-  const _EquipmentTable({required this.records});
+  const _EquipmentTable({
+    required this.records,
+    required this.onRowTap,
+    required this.selectedRecord,
+  });
 
   final List<EquipmentRecord> records;
+  final ValueChanged<EquipmentRecord> onRowTap;
+  final EquipmentRecord? selectedRecord;
 
   @override
   Widget build(BuildContext context) {
@@ -465,10 +641,11 @@ class _EquipmentTable extends StatelessWidget {
   Widget _buildTable(BuildContext context) => SingleChildScrollView(
     scrollDirection: Axis.horizontal,
     child: DataTable(
+      showCheckboxColumn: false,
       headingRowColor: WidgetStatePropertyAll(
         Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      dataRowMinHeight: 52,
+      dataRowMinHeight: 48,
       columns: const [
         DataColumn(label: Text('Equipment Category')),
         DataColumn(label: Text('Local Name')),
@@ -517,6 +694,8 @@ class _EquipmentTable extends StatelessWidget {
       rows: records
           .map(
             (record) => DataRow(
+              selected: identical(record, selectedRecord),
+              onSelectChanged: (_) => onRowTap(record),
               cells: [
                 DataCell(Text(record.equipmentCategory)),
                 DataCell(Text(record.localName)),

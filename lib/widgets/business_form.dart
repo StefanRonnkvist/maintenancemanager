@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/business_entry.dart';
 import '../tabs/business_tab.dart';
@@ -6,10 +7,20 @@ import 'form_section.dart';
 
 /// Collects either a person/contact or business, depending on [kind].
 class BusinessForm extends StatefulWidget {
-  const BusinessForm({required this.kind, required this.onSubmit, super.key});
+  const BusinessForm({
+    required this.kind,
+    required this.onSubmit,
+    this.initialEntry,
+    this.businessNames = const [],
+    this.businessLocations = const [],
+    super.key,
+  });
 
   final BusinessTabKind kind;
   final ValueChanged<BusinessEntry> onSubmit;
+  final BusinessEntry? initialEntry;
+  final List<String> businessNames;
+  final List<String> businessLocations;
 
   @override
   State<BusinessForm> createState() => _BusinessFormState();
@@ -47,9 +58,107 @@ class _BusinessFormState extends State<BusinessForm> {
   final List<bool> _locationExpanded = List.filled(4, false);
   String? _businessType;
   bool _remoteWork = false;
+  List<String> _airportOptions = const [];
+
+  double _airportFieldWidth(TextEditingController controller) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: controller.text.isEmpty ? 'Nearest Airport' : controller.text,
+        style: const TextStyle(fontSize: 16),
+      ),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    // Allow long airport names to expand instead of clipping at a fixed max width.
+    return (textPainter.width + 80).clamp(260.0, double.infinity);
+  }
+
+  Widget _airportAutocomplete({
+    required TextEditingController controller,
+    required String label,
+  }) => SizedBox(
+    width: _airportFieldWidth(controller),
+    child: Autocomplete<String>(
+      initialValue: TextEditingValue(text: controller.text),
+      optionsBuilder: (textEditingValue) {
+        final query = textEditingValue.text.trim().toLowerCase();
+        if (query.isEmpty) return const Iterable<String>.empty();
+        return _airportOptions.where(
+          (airport) => airport.toLowerCase().contains(query),
+        );
+      },
+      onSelected: (airport) => controller.text = airport,
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onFieldSubmitted) {
+            textEditingController.addListener(() {
+              controller.text = textEditingController.text;
+            });
+            return TextFormField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                labelText: label,
+                border: const OutlineInputBorder(),
+              ),
+            );
+          },
+    ),
+  );
 
   // Both form variants reuse these controllers; kind determines which fields show.
   bool get _isPeople => widget.kind == BusinessTabKind.people;
+
+  @override
+  void initState() {
+    super.initState();
+    _populateFromEntry(widget.initialEntry);
+    _loadAirports();
+  }
+
+  void _populateFromEntry(BusinessEntry? entry) {
+    if (entry == null) return;
+    _nameController.text = entry.name;
+    _titleController.text = entry.title;
+    _addressController.text = entry.address;
+    _phoneController.text = entry.directPhone;
+    _phoneExtensionController.text = entry.directPhoneExtension;
+    _cellPhoneController.text = entry.cellPhone;
+    _emailController.text = entry.email;
+    _nearestAirportController.text = entry.nearestAirport;
+    _businessAssociationController.text = entry.businessName;
+    _personLocationController.text = entry.locationName;
+    _businessType = entry.businessType.isEmpty ? null : entry.businessType;
+    _remoteWork = entry.locationName == 'Remote Work';
+    for (var index = 0; index < entry.locations.length && index < 4; index++) {
+      final location = entry.locations[index];
+      _locationNameControllers[index].text = location.name;
+      _locationAddressControllers[index].text = location.address;
+      _locationPhoneControllers[index].text = location.directPhone;
+      _locationAirportControllers[index].text = location.nearestAirport;
+      _locationExpanded[index] = true;
+    }
+  }
+
+  Future<void> _loadAirports() async {
+    final csv = await rootBundle.loadString('assets/airports.csv');
+    final airports =
+        csv
+            .split(RegExp(r'\r?\n'))
+            .skip(1)
+            .map((row) {
+              final columns = row.split(',');
+              if (columns.length < 3) return null;
+              final name = columns[0].trim();
+              final code = columns[2].trim();
+              return name.isEmpty || code.isEmpty ? null : '$name ($code)';
+            })
+            .whereType<String>()
+            .toSet()
+            .toList()
+          ..sort();
+    if (mounted) setState(() => _airportOptions = airports);
+  }
 
   @override
   void dispose() {
@@ -205,7 +314,7 @@ class _BusinessFormState extends State<BusinessForm> {
               width: 300,
               validator: (value) => _required(value, 'an address'),
             ),
-            _field(
+            _airportAutocomplete(
               controller: _nearestAirportController,
               label: 'Nearest Airport',
             ),
@@ -221,9 +330,31 @@ class _BusinessFormState extends State<BusinessForm> {
           runSpacing: 16,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _field(
-              controller: _businessAssociationController,
-              label: 'Business Name',
+            SizedBox(
+              width: 260,
+              child: DropdownButtonFormField<String>(
+                initialValue:
+                    widget.businessNames.contains(
+                      _businessAssociationController.text,
+                    )
+                    ? _businessAssociationController.text
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Business Name',
+                  border: OutlineInputBorder(),
+                ),
+                isExpanded: true,
+                items: [
+                  for (final businessName in widget.businessNames)
+                    DropdownMenuItem(
+                      value: businessName,
+                      child: Text(businessName),
+                    ),
+                ],
+                onChanged: (businessName) {
+                  _businessAssociationController.text = businessName ?? '';
+                },
+              ),
             ),
             SizedBox(
               width: 220,
@@ -237,9 +368,31 @@ class _BusinessFormState extends State<BusinessForm> {
               ),
             ),
             if (!_remoteWork)
-              _field(
-                controller: _personLocationController,
-                label: 'Location Name',
+              SizedBox(
+                width: 260,
+                child: DropdownButtonFormField<String>(
+                  initialValue:
+                      widget.businessLocations.contains(
+                        _personLocationController.text,
+                      )
+                      ? _personLocationController.text
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Location Name',
+                    border: OutlineInputBorder(),
+                  ),
+                  isExpanded: true,
+                  items: [
+                    for (final locationName in widget.businessLocations)
+                      DropdownMenuItem(
+                        value: locationName,
+                        child: Text(locationName),
+                      ),
+                  ],
+                  onChanged: (locationName) {
+                    _personLocationController.text = locationName ?? '';
+                  },
+                ),
               ),
           ],
         ),
@@ -312,7 +465,7 @@ class _BusinessFormState extends State<BusinessForm> {
                   validator: (value) =>
                       _required(value, 'a direct phone number'),
                 ),
-                _field(
+                _airportAutocomplete(
                   controller: _nearestAirportController,
                   label: 'Nearest Airport',
                 ),
@@ -367,7 +520,7 @@ class _BusinessFormState extends State<BusinessForm> {
                               label: 'Location ${index + 1} Direct Phone',
                               keyboardType: TextInputType.phone,
                             ),
-                            _field(
+                            _airportAutocomplete(
                               controller: _locationAirportControllers[index],
                               label: 'Location ${index + 1} Nearest Airport',
                             ),
@@ -405,8 +558,12 @@ class _BusinessFormState extends State<BusinessForm> {
             alignment: Alignment.centerRight,
             child: FilledButton.icon(
               onPressed: _submit,
-              icon: const Icon(Icons.add),
-              label: Text(_isPeople ? 'Add Person' : 'Add Business'),
+              icon: Icon(widget.initialEntry == null ? Icons.add : Icons.save),
+              label: Text(
+                widget.initialEntry == null
+                    ? (_isPeople ? 'Add Person' : 'Add Business')
+                    : (_isPeople ? 'Update Person' : 'Update Business'),
+              ),
             ),
           ),
         ],

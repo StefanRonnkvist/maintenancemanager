@@ -205,21 +205,23 @@ class _MainTabPageState extends State<MainTabPage>
   final List<BusinessEntry> _businesses = [];
 
   Widget _pageForTab(AppTab tab) => switch (tab) {
-    AppTab.equipment => const EquipmentTab(),
+    AppTab.equipment => EquipmentTab(businessEntries: _businesses),
     AppTab.spareParts => const SparePartsTab(),
-    AppTab.workOrder => const WorkOrderTab(),
+    AppTab.workOrder => WorkOrderTab(businessEntries: _businesses),
     AppTab.people => BusinessTab(
       entries: _people,
+      businessEntries: _businesses,
       onAdd: (entry) => setState(() => _people.add(entry)),
       kind: BusinessTabKind.people,
     ),
     AppTab.business => BusinessTab(
       entries: _businesses,
+      businessEntries: _businesses,
       onAdd: (entry) => setState(() => _businesses.add(entry)),
       kind: BusinessTabKind.business,
     ),
     AppTab.information => const InformationTabs(),
-    AppTab.message => const MessageTab(),
+    AppTab.message => MessageTab(people: _people),
     AppTab.applicationDb => const ApplicationDbTab(),
     AppTab.help => const HelpTab(),
   };

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../services/local_record_store.dart';
-
 import '../models/app_tab.dart';
+import '../models/business_entry.dart';
+import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 
 /// Builds a message composer with free-entry recipients.
 class MessageTab extends StatefulWidget {
-  const MessageTab({super.key});
+  const MessageTab({required this.people, super.key});
+
+  final List<BusinessEntry> people;
 
   @override
   State<MessageTab> createState() => _MessageTabState();
@@ -19,6 +21,13 @@ class _MessageTabState extends State<MessageTab> {
 
   final _toController = TextEditingController();
   final _ccController = TextEditingController();
+  String? _selectedTo;
+  String? _selectedCc;
+
+  List<BusinessEntry> get _peopleOptions => widget.people
+      .where((person) => person.name.trim().isNotEmpty && person.email.trim().isNotEmpty)
+      .toList()
+    ..sort((first, second) => first.name.compareTo(second.name));
   final _senderNameController = TextEditingController();
   final _senderEmailController = TextEditingController();
   final _senderReplyEmailController = TextEditingController();
@@ -228,24 +237,46 @@ class _MessageTabState extends State<MessageTab> {
               children: [
                 SizedBox(
                   width: 320,
-                  child: TextField(
-                    controller: _toController,
-                    keyboardType: TextInputType.emailAddress,
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey('to-$_selectedTo'),
+                    initialValue: _selectedTo,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'To',
                       border: OutlineInputBorder(),
                     ),
+                    items: _peopleOptions
+                        .map((person) => DropdownMenuItem(
+                              value: person.email,
+                              child: Text(person.name),
+                            ))
+                        .toList(),
+                    onChanged: (email) => setState(() {
+                      _selectedTo = email;
+                      _toController.text = email ?? '';
+                    }),
                   ),
                 ),
                 SizedBox(
                   width: 320,
-                  child: TextField(
-                    controller: _ccController,
-                    keyboardType: TextInputType.emailAddress,
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey('cc-$_selectedCc'),
+                    initialValue: _selectedCc,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Cc',
                       border: OutlineInputBorder(),
                     ),
+                    items: _peopleOptions
+                        .map((person) => DropdownMenuItem(
+                              value: person.email,
+                              child: Text(person.name),
+                            ))
+                        .toList(),
+                    onChanged: (email) => setState(() {
+                      _selectedCc = email;
+                      _ccController.text = email ?? '';
+                    }),
                   ),
                 ),
               ],

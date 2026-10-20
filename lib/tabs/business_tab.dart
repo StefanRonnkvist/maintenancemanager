@@ -12,12 +12,14 @@ class BusinessTab extends StatefulWidget {
     required this.entries,
     required this.onAdd,
     required this.kind,
+    required this.businessEntries,
     super.key,
   });
 
   final List<BusinessEntry> entries;
   final ValueChanged<BusinessEntry> onAdd;
   final BusinessTabKind kind;
+  final List<BusinessEntry> businessEntries;
 
   @override
   State<BusinessTab> createState() => _BusinessTabState();
@@ -27,6 +29,7 @@ class _BusinessTabState extends State<BusinessTab> {
   static const _peopleStorageKey = 'people_records_v1';
   static const _businessStorageKey = 'business_records_v1';
   bool _formExpanded = false;
+  BusinessEntry? _selectedEntry;
   bool _isLoading = true;
   String? _storageError;
 
@@ -71,9 +74,27 @@ class _BusinessTabState extends State<BusinessTab> {
     }
   }
 
-  /// Updates the shared in-memory list, then persists the newly added entry.
-  void _addEntry(BusinessEntry entry) {
-    setState(() => widget.onAdd(entry));
+  /// Selects a row and opens the form populated with its values.
+  void _selectEntry(BusinessEntry entry) {
+    setState(() {
+      _selectedEntry = entry;
+      _formExpanded = true;
+    });
+  }
+
+  /// Adds a new entry or replaces the currently selected table row.
+  void _saveEntry(BusinessEntry entry) {
+    setState(() {
+      if (_selectedEntry == null) {
+        widget.onAdd(entry);
+      } else {
+        final index = widget.entries.indexOf(_selectedEntry!);
+        if (index >= 0) {
+          widget.entries[index] = entry;
+        }
+      }
+      _selectedEntry = null;
+    });
     _persistEntries();
   }
 
@@ -89,7 +110,11 @@ class _BusinessTabState extends State<BusinessTab> {
         child: Column(
           children: [
             ListTile(
-              title: Text(isPeople ? 'Add person' : 'Add business'),
+              title: Text(
+                _selectedEntry == null
+                    ? (isPeople ? 'Add person' : 'Add business')
+                    : (isPeople ? 'Update person' : 'Update business'),
+              ),
               trailing: Icon(
                 _formExpanded ? Icons.expand_less : Icons.expand_more,
               ),
@@ -98,7 +123,27 @@ class _BusinessTabState extends State<BusinessTab> {
             if (_formExpanded)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: BusinessForm(kind: widget.kind, onSubmit: _addEntry),
+                child: BusinessForm(
+                  key: ValueKey(_selectedEntry),
+                  kind: widget.kind,
+                  initialEntry: _selectedEntry,
+                  onSubmit: _saveEntry,
+                  businessNames:
+                      widget.businessEntries
+                          .map((entry) => entry.name.trim())
+                          .where((name) => name.isNotEmpty)
+                          .toSet()
+                          .toList()
+                        ..sort(),
+                  businessLocations:
+                      widget.businessEntries
+                          .expand((entry) => entry.locations)
+                          .map((location) => location.name.trim())
+                          .where((name) => name.isNotEmpty)
+                          .toSet()
+                          .toList()
+                        ..sort(),
+                ),
               ),
           ],
         ),
@@ -116,11 +161,17 @@ class _BusinessTabState extends State<BusinessTab> {
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                Center(
-                  child: isPeople
-                      ? PeopleTable(entries: widget.entries)
-                      : BusinessTable(entries: widget.entries),
-                ),
+                isPeople
+                    ? PeopleTable(
+                        entries: widget.entries,
+                        onRowTap: _selectEntry,
+                        selectedEntry: _selectedEntry,
+                      )
+                    : BusinessTable(
+                        entries: widget.entries,
+                        onRowTap: _selectEntry,
+                        selectedEntry: _selectedEntry,
+                      ),
               ],
             ),
     );

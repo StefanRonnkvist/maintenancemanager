@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -265,10 +266,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     _ => const ['name', 'value', 'updatedAt'],
   };
 
-  String _escapeCsv(String value) {
-    final escaped = value.replaceAll('"', '"');
-    return '"$escaped"';
-  }
+  String _escapeCsv(String value) => '"${value.replaceAll('"', '"')}"';
 
   List<List<String>> _parseCsv(String source) {
     final rows = <List<String>>[];
@@ -323,7 +321,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         throw FormatException('Unknown table: $table');
       }
       final columns = _columnsFor(table);
-      final records = _managedRecords[table] ?? const <Map<String, dynamic>>[];
+      final records = await LocalRecordStore.read(_managedStores[table]!);
       final csv = _encodeCsv(records, columns: columns, table: table);
       final safeName = table.toLowerCase().replaceAll(' ', '_');
       await _saveCsv('${safeName}_records.csv', csv);
@@ -527,6 +525,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
           subject: filename,
         ),
       );
+      if (mounted) _showMessage('CSV export ready to save or share.');
       return;
     }
 
@@ -537,7 +536,19 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       allowedExtensions: ['csv'],
       bytes: bytes,
     );
-    if (outputPath == null) return;
+    if (outputPath == null) {
+      final shared = await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile.fromData(bytes, mimeType: 'text/csv')],
+          fileNameOverrides: [filename],
+          subject: filename,
+        ),
+      );
+      if (mounted && shared.status != ShareResultStatus.unavailable) {
+        _showMessage('CSV export ready to save or share.');
+      }
+      return;
+    }
     if (mounted) _showMessage('Saved CSV: $outputPath');
   }
 

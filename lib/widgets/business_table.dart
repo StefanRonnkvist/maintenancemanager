@@ -4,17 +4,25 @@ import '../models/business_entry.dart';
 
 /// Displays people and their linked businesses, work locations, and contacts.
 class PeopleTable extends StatelessWidget {
-  const PeopleTable({required this.entries, super.key});
+  const PeopleTable({
+    required this.entries,
+    required this.onRowTap,
+    required this.selectedEntry,
+    super.key,
+  });
   final List<BusinessEntry> entries;
+  final ValueChanged<BusinessEntry> onRowTap;
+  final BusinessEntry? selectedEntry;
 
   @override
   Widget build(BuildContext context) {
     final table = _ScrollableTable(
       child: DataTable(
+        showCheckboxColumn: false,
         headingRowColor: WidgetStatePropertyAll(
           Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
-        dataRowMinHeight: 52,
+        dataRowMinHeight: 48,
         columns: const [
           DataColumn(label: Text('Name')),
           DataColumn(label: Text('Title')),
@@ -28,6 +36,8 @@ class PeopleTable extends StatelessWidget {
         rows: entries
             .map(
               (entry) => DataRow(
+                selected: identical(entry, selectedEntry),
+                onSelectChanged: (_) => onRowTap(entry),
                 cells: [
                   DataCell(Text(entry.name)),
                   DataCell(Text(entry.title)),
@@ -59,8 +69,15 @@ class PeopleTable extends StatelessWidget {
 
 /// Displays businesses with their company-wide and four location fields.
 class BusinessTable extends StatelessWidget {
-  const BusinessTable({required this.entries, super.key});
+  const BusinessTable({
+    required this.entries,
+    required this.onRowTap,
+    required this.selectedEntry,
+    super.key,
+  });
   final List<BusinessEntry> entries;
+  final ValueChanged<BusinessEntry> onRowTap;
+  final BusinessEntry? selectedEntry;
 
   String _locationValue(BusinessEntry business, int index, String field) {
     if (index >= business.locations.length) return '';
@@ -78,10 +95,11 @@ class BusinessTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final table = _ScrollableTable(
       child: DataTable(
+        showCheckboxColumn: false,
         headingRowColor: WidgetStatePropertyAll(
           Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
-        dataRowMinHeight: 52,
+        dataRowMinHeight: 48,
         columns: const [
           DataColumn(label: Text('Business Name')),
           DataColumn(label: Text('Business Type')),
@@ -108,6 +126,8 @@ class BusinessTable extends StatelessWidget {
         rows: [
           for (final business in entries)
             DataRow(
+              selected: identical(business, selectedEntry),
+              onSelectChanged: (_) => onRowTap(business),
               cells: [
                 DataCell(Text(business.name)),
                 DataCell(Text(business.businessType)),
