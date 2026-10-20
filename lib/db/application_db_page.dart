@@ -133,6 +133,63 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     await _persistRecords();
   }
 
+  Future<bool> _confirmDeleteAll(String collectionName) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete all records?'),
+          content: Text(
+            'This will permanently delete all records in $collectionName. '
+            'This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete all'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  Future<void> _deleteAllApplicationRecords() async {
+    if (_records.isEmpty ||
+        !await _confirmDeleteAll('the application records')) {
+      return;
+    }
+    setState(_records.clear);
+    await _persistRecords();
+  }
+
+  Future<void> _deleteAllSelectedTableRecords() async {
+    final records = _managedRecords[_selectedTable] ?? const [];
+    if (records.isEmpty ||
+        !await _confirmDeleteAll('the $_selectedTable table')) {
+      return;
+    }
+    try {
+      await LocalRecordStore.write(_managedStores[_selectedTable]!, []);
+      if (mounted) {
+        setState(() {
+          _managedRecords[_selectedTable] = [];
+          _storageError = null;
+        });
+        _showMessage('Deleted all $_selectedTable records.');
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _storageError = 'Could not delete records: $error');
+      }
+    }
+  }
+
   /// Builds a header row and properly quoted data rows for the selected table.
   String _encodeCsv(
     List<Map<String, dynamic>> records, {
@@ -223,10 +280,6 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'directPhoneExtension',
       'cellPhone',
       'email',
-      'address',
-      'nearestAirport',
-      'locations',
-      'airports',
     ],
     'Business' => [
       'name',
@@ -240,7 +293,6 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         'location${location}DirectPhone',
         'location${location}NearestAirport',
       ],
-      'airports',
     ],
     'Work Order' => [
       'businessName',
@@ -249,11 +301,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locationDirectPhone',
       'locationAirport',
       'notes',
-      for (var assigned = 1; assigned <= 4; assigned++) ...[
-        'assigned${assigned}Name',
-        'assigned${assigned}Email',
-        'assigned${assigned}Phone',
-      ],
+      'principlePeople',
       'componentCategory',
       'component',
     ],
@@ -347,6 +395,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       final expected = _columnsFor(table);
       if (rows.isEmpty) throw const FormatException('CSV is empty.');
       final headers = rows.first.map((value) => value.trim()).toList();
+      if (headers.toSet().length != headers.length) {
+        throw const FormatException('CSV headers must not contain duplicates.');
+      }
       final legacyBusinessHeaders =
           table == 'Business' &&
           headers.length == 7 &&
@@ -379,8 +430,14 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         for (final column in importColumns) headers.indexOf(column),
       ];
       final imported = <Map<String, dynamic>>[];
-      for (final row in rows.skip(1)) {
-        if (row.length < headers.length) continue;
+      for (var rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+        final row = rows[rowIndex];
+        if (row.length != headers.length) {
+          throw FormatException(
+            'CSV row ${rowIndex + 1} has ${row.length} fields; '
+            'expected ${headers.length}.',
+          );
+        }
         final mapped = <String, dynamic>{};
         for (
           var columnIndex = 0;
@@ -393,8 +450,34 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               (name == 'airports' || name == 'locations')) {
             try {
               mapped[name] = jsonDecode(value);
-            } catch (_) {
-              mapped[name] = <dynamic>[];
+            } on FormatException catch (error) {
+              throw FormatException(
+                'Invalid JSON in CSV row ${rowIndex + 1}, column "$name": '
+                '${error.message}',
+              );
+            }
+            if (mapped[name] is! List) {
+              throw FormatException(
+                'CSV row ${rowIndex + 1}, column "$name" must contain a JSON list.',
+              );
+            }
+          } else if (table == 'Work Order' && name == 'principlePeople') {
+            try {
+              final decoded = jsonDecode(value);
+              if (decoded is! List || decoded.any((person) => person is! Map)) {
+                throw const FormatException('Expected a JSON list of people.');
+              }
+              mapped[name] = jsonEncode(
+                decoded
+                    .whereType<Map>()
+                    .map((person) => Map<String, dynamic>.from(person))
+                    .toList(),
+              );
+            } on FormatException catch (error) {
+              throw FormatException(
+                'Invalid JSON in CSV row ${rowIndex + 1}, column "$name": '
+                '${error.message}',
+              );
             }
           } else {
             mapped[name] = value;
@@ -433,7 +516,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               }
             }
           }
-          if (businessLocations.isNotEmpty) {
+          if (businessLocations.isNotEmpty || mapped.containsKey('locations')) {
             mapped['locations'] = businessLocations;
           }
         }
@@ -486,7 +569,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         sample['componentCategory'] = 'Electrical Components';
         sample['component'] = 'Power Supply';
         sample['notes'] = 'Example work order notes';
-        sample['assigned1Name'] = 'Example Assignee';
+        sample['principlePeople'] = '[{"name":"Example Person","businessName":"Example Principle","locationName":"Example Location"}]';
       }
       if (table == 'Messages') sample['subject'] = 'Example message';
     }
@@ -530,20 +613,15 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       allowedExtensions: ['csv'],
       bytes: bytes,
     );
-    if (outputPath == null) {
-      final shared = await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile.fromData(bytes, mimeType: 'text/csv')],
-          fileNameOverrides: [filename],
-          subject: filename,
-        ),
-      );
-      if (mounted && shared.status != ShareResultStatus.unavailable) {
-        _showMessage('CSV export ready to save or share.');
-      }
+    if (!mounted) return;
+    if (outputPath != null) {
+      _showMessage('Saved CSV: $outputPath');
       return;
     }
-    if (mounted) _showMessage('Saved CSV: $outputPath');
+
+    // A null path means the user canceled the save dialog; do not silently
+    // switch to a share sheet, which can make the export appear unsuccessful.
+    _showMessage('CSV export canceled.');
   }
 
   void _showMessage(String message) {
@@ -689,6 +767,23 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                 onPressed: _createRecord,
                 icon: const Icon(Icons.add),
                 label: const Text('Add'),
+              ),
+              IconButton(
+                tooltip: 'Delete all records in selected table',
+                onPressed:
+                    (_managedRecords[_selectedTable]?.isNotEmpty ?? false)
+                    ? _deleteAllSelectedTableRecords
+                    : null,
+                color: Theme.of(context).colorScheme.error,
+                icon: const Icon(Icons.delete_sweep_outlined),
+              ),
+              IconButton(
+                tooltip: 'Delete all application records',
+                onPressed: _records.isNotEmpty
+                    ? _deleteAllApplicationRecords
+                    : null,
+                color: Theme.of(context).colorScheme.error,
+                icon: const Icon(Icons.delete_forever_outlined),
               ),
             ],
           ),

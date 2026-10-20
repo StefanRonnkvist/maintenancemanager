@@ -56,6 +56,7 @@ class _BusinessFormState extends State<BusinessForm> {
   final _personLocationController = TextEditingController();
   final List<BusinessLocation> _locations = [];
   final List<bool> _locationExpanded = List.filled(4, false);
+  static const _businessTypes = ['Customer', 'Vendor', 'Principle'];
   String? _businessType;
   bool _remoteWork = false;
   List<String> _airportOptions = const [];
@@ -128,7 +129,8 @@ class _BusinessFormState extends State<BusinessForm> {
     _nearestAirportController.text = entry.nearestAirport;
     _businessAssociationController.text = entry.businessName;
     _personLocationController.text = entry.locationName;
-    _businessType = entry.businessType.isEmpty ? null : entry.businessType;
+    final businessType = entry.businessType.trim();
+    _businessType = _businessTypes.contains(businessType) ? businessType : null;
     _remoteWork = entry.locationName == 'Remote Work';
     for (var index = 0; index < entry.locations.length && index < 4; index++) {
       final location = entry.locations[index];
@@ -215,7 +217,7 @@ class _BusinessFormState extends State<BusinessForm> {
         address: _addressController.text.trim(),
         directPhone: _phoneController.text.trim(),
         directPhoneExtension: _phoneExtensionController.text.trim(),
-        businessType: _isPeople ? '' : (_businessType ?? ''),
+        businessType: _isPeople ? '' : 'Customer',
         cellPhone: _cellPhoneController.text.trim(),
         email: _emailController.text.trim(),
         businessName: _isPeople
@@ -410,34 +412,22 @@ class _BusinessFormState extends State<BusinessForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text('Business Type'),
             RadioGroup<String>(
               groupValue: _businessType,
               onChanged: (value) => setState(() => _businessType = value),
-              child: const Wrap(
+              child: Wrap(
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<String>(value: 'Customer'),
-                      Text('Customer'),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<String>(value: 'Vendor'),
-                      Text('Vendor'),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<String>(value: 'Principle'),
-                      Text('Principle'),
-                    ],
-                  ),
+                  for (final businessType in _businessTypes)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<String>(value: businessType),
+                        Text(businessType),
+                      ],
+                    ),
                 ],
               ),
             ),

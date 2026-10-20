@@ -30,18 +30,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   final _locationPhoneController = TextEditingController();
   final _locationAirportController = TextEditingController();
   final _notesController = TextEditingController();
-  final List<TextEditingController> _assignedNameControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<TextEditingController> _assignedEmailControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
-  final List<TextEditingController> _assignedPhoneControllers = List.generate(
-    4,
-    (_) => TextEditingController(),
-  );
   final List<Map<String, dynamic>> _records = [];
   Map<String, List<String>> _componentOptions = const {};
   String? _selectedComponentCategory;
@@ -82,8 +70,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           .toList() ??
       const [];
 
-  final List<bool> _assignedExpanded = List.filled(4, false);
-
   List<BusinessEntry> get _matchingPeople {
     final businessName = _selectedBusinessName?.trim() ?? '';
     final locationName = _selectedLocationName?.trim() ?? '';
@@ -93,6 +79,21 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           (entry) =>
               entry.businessName.trim() == businessName &&
               entry.locationName.trim() == locationName,
+        )
+        .toList(growable: false);
+  }
+
+  List<BusinessEntry> get _principlePeople {
+    final principleBusinessNames = widget.businessEntries
+        .where((business) => business.businessType.trim() == 'Principle')
+        .map((business) => business.name.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    return widget.peopleEntries
+        .where(
+          (person) =>
+              person.name.trim().isNotEmpty &&
+              principleBusinessNames.contains(person.businessName.trim()),
         )
         .toList(growable: false);
   }
@@ -141,13 +142,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     _locationPhoneController.dispose();
     _locationAirportController.dispose();
     _notesController.dispose();
-    for (final controller in [
-      ..._assignedNameControllers,
-      ..._assignedEmailControllers,
-      ..._assignedPhoneControllers,
-    ]) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
@@ -159,17 +153,22 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'locationDirectPhone': _locationPhoneController.text.trim(),
       'locationAirport': _locationAirportController.text.trim(),
       'notes': _notesController.text.trim(),
-      for (var index = 0; index < 4; index++) ...{
-        'assigned${index + 1}Name': _assignedNameControllers[index].text.trim(),
-        'assigned${index + 1}Email': _assignedEmailControllers[index].text
-            .trim(),
-        'assigned${index + 1}Phone': _assignedPhoneControllers[index].text
-            .trim(),
-      },
+      'principlePeople': jsonEncode([
+        for (final person in _principlePeople)
+          {
+            'name': person.name,
+            'businessName': person.businessName,
+            'locationName': person.locationName,
+          },
+      ]),
       'componentCategory': _selectedComponentCategory ?? '',
       'component': _selectedComponent ?? '',
     };
-    if (record.values.every((value) => (value as String).isEmpty)) return;
+    if (record.values.every(
+      (value) => value == null || (value is String && value.isEmpty),
+    )) {
+      return;
+    }
     final updated = [record, ..._records];
     try {
       await LocalRecordStore.write(_storageKey, updated);
@@ -322,87 +321,8 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                       ),
                       const SizedBox(height: 24),
                       _MatchingPeopleTable(people: _matchingPeople),
-                      const SizedBox(height: 12),
-                      for (
-                        var assignedIndex = 0;
-                        assignedIndex < 4;
-                        assignedIndex++
-                      ) ...[
-                        const SizedBox(height: 12),
-                        Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            children: [
-                              ListTile(
-                                title: Text('Assigned ${assignedIndex + 1}'),
-                                trailing: Icon(
-                                  _assignedExpanded[assignedIndex]
-                                      ? Icons.expand_less
-                                      : Icons.expand_more,
-                                ),
-                                onTap: () => setState(() {
-                                  _assignedExpanded[assignedIndex] =
-                                      !_assignedExpanded[assignedIndex];
-                                }),
-                              ),
-                              if (_assignedExpanded[assignedIndex])
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    0,
-                                    16,
-                                    16,
-                                  ),
-                                  child: Wrap(
-                                    spacing: 16,
-                                    runSpacing: 16,
-                                    children: [
-                                      SizedBox(
-                                        width: 280,
-                                        child: TextField(
-                                          controller:
-                                              _assignedNameControllers[assignedIndex],
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Assigned ${assignedIndex + 1} Name',
-                                            border: const OutlineInputBorder(),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 280,
-                                        child: TextField(
-                                          controller:
-                                              _assignedEmailControllers[assignedIndex],
-                                          keyboardType:
-                                              TextInputType.emailAddress,
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Assigned ${assignedIndex + 1} Email',
-                                            border: const OutlineInputBorder(),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 280,
-                                        child: TextField(
-                                          controller:
-                                              _assignedPhoneControllers[assignedIndex],
-                                          keyboardType: TextInputType.phone,
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                'Assigned ${assignedIndex + 1} Phone',
-                                            border: const OutlineInputBorder(),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      const SizedBox(height: 24),
+                      _PrinciplePeopleTable(people: _principlePeople),
                       const SizedBox(height: 24),
                       TextField(
                         controller: _notesController,
@@ -541,9 +461,12 @@ class _MatchingPeopleTable extends StatelessWidget {
               columns: const [
                 DataColumn(label: Text('Name')),
                 DataColumn(label: Text('Title')),
-                DataColumn(label: Text('Email')),
+                DataColumn(label: Text('Business Name')),
+                DataColumn(label: Text('Location Name')),
                 DataColumn(label: Text('Direct Phone')),
+                DataColumn(label: Text('Extension')),
                 DataColumn(label: Text('Cell Phone')),
+                DataColumn(label: Text('eMail')),
               ],
               rows: [
                 for (final person in people)
@@ -551,9 +474,58 @@ class _MatchingPeopleTable extends StatelessWidget {
                     cells: [
                       DataCell(Text(person.name)),
                       DataCell(Text(person.title)),
-                      DataCell(Text(person.email)),
+                      DataCell(Text(person.businessName)),
+                      DataCell(Text(person.locationName)),
                       DataCell(Text(person.directPhone)),
+                      DataCell(Text(person.directPhoneExtension)),
                       DataCell(Text(person.cellPhone)),
+                      DataCell(Text(person.email)),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _PrinciplePeopleTable extends StatelessWidget {
+  const _PrinciplePeopleTable({required this.people});
+
+  final List<BusinessEntry> people;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'People at Principle businesses',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        if (people.isEmpty)
+          const Text('No people are associated with a Principle business.')
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor: WidgetStatePropertyAll(
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
+              columns: const [
+                DataColumn(label: Text('Name')),
+                DataColumn(label: Text('Business Name')),
+                DataColumn(label: Text('Business Location')),
+              ],
+              rows: [
+                for (final person in people)
+                  DataRow(
+                    cells: [
+                      DataCell(Text(person.name)),
+                      DataCell(Text(person.businessName)),
+                      DataCell(Text(person.locationName)),
                     ],
                   ),
               ],

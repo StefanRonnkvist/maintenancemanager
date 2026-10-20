@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 /// Displays saved work orders using the same scrollable DataTable style as
@@ -14,21 +16,38 @@ class WorkOrderTable extends StatelessWidget {
     ('Location Direct Phone Number', 'locationDirectPhone'),
     ('Location Airports', 'locationAirport'),
     ('Notes', 'notes'),
-    ('Assigned 1 Name', 'assigned1Name'),
-    ('Assigned 1 Email', 'assigned1Email'),
-    ('Assigned 1 Phone', 'assigned1Phone'),
-    ('Assigned 2 Name', 'assigned2Name'),
-    ('Assigned 2 Email', 'assigned2Email'),
-    ('Assigned 2 Phone', 'assigned2Phone'),
-    ('Assigned 3 Name', 'assigned3Name'),
-    ('Assigned 3 Email', 'assigned3Email'),
-    ('Assigned 3 Phone', 'assigned3Phone'),
-    ('Assigned 4 Name', 'assigned4Name'),
-    ('Assigned 4 Email', 'assigned4Email'),
-    ('Assigned 4 Phone', 'assigned4Phone'),
+    ('Principle People', 'principlePeople'),
     ('Component Category', 'componentCategory'),
     ('Component', 'component'),
   ];
+
+  String _formatCell(Object? value) {
+    if (value == null) return '';
+    Object? decodedValue = value;
+    if (value is String) {
+      try {
+        decodedValue = jsonDecode(value);
+      } on FormatException {
+        return value;
+      }
+    }
+    if (decodedValue is List) {
+      return decodedValue
+          .whereType<Map>()
+          .map((person) {
+            final name = person['name']?.toString() ?? '';
+            final business = person['businessName']?.toString() ?? '';
+            final location = person['locationName']?.toString() ?? '';
+            final details = [
+              business,
+              location,
+            ].where((part) => part.isNotEmpty).join(' — ');
+            return details.isEmpty ? name : '$name ($details)';
+          })
+          .join('; ');
+    }
+    return decodedValue.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +66,7 @@ class WorkOrderTable extends StatelessWidget {
             DataRow(
               cells: [
                 for (final (_, key) in _columns)
-                  DataCell(Text(record[key] as String? ?? '')),
+                  DataCell(Text(_formatCell(record[key]))),
               ],
             ),
         ],

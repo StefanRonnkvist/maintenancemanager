@@ -24,7 +24,7 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Work Order',
       icon: Icons.assignment_outlined,
-      content: 'Enter a business name, location name, address, direct phone number, and nearest airport. Tap Save Work Order to save the details locally; saved records can be exported or imported from Application DB → Work Order.',
+      content: 'Enter a business name, location name, address, direct phone number, and nearest airport. Review matching people and the list of people associated with Principle businesses, then add notes and component details. Tap Save Work Order to save the details locally; saved records can be exported or imported from Application DB → Work Order.',
     ),
     _HelpSection(
       title: 'People and Business',
