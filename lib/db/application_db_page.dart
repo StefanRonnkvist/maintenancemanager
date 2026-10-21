@@ -295,11 +295,13 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       ],
     ],
     'Work Order' => [
+      'workOrderNumber',
       'businessName',
       'locationName',
       'locationAddress',
       'locationDirectPhone',
       'locationAirport',
+      'matchingPeople',
       'notes',
       'principlePeople',
       'componentCategory',
@@ -461,7 +463,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                 'CSV row ${rowIndex + 1}, column "$name" must contain a JSON list.',
               );
             }
-          } else if (table == 'Work Order' && name == 'principlePeople') {
+          } else if (table == 'Work Order' &&
+              (name == 'matchingPeople' || name == 'principlePeople')) {
             try {
               final decoded = jsonDecode(value);
               if (decoded is! List || decoded.any((person) => person is! Map)) {
@@ -564,11 +567,15 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         }
       }
       if (table == 'Work Order') {
+        sample['workOrderNumber'] = '${DateTime.now().day.toString().padLeft(2, '0')}'
+            '${DateTime.now().month.toString().padLeft(2, '0')}'
+            '${DateTime.now().year.toString().padLeft(4, '0')}-1';
         sample['businessName'] = 'Example Business';
         sample['locationName'] = 'Example Location';
         sample['componentCategory'] = 'Electrical Components';
         sample['component'] = 'Power Supply';
         sample['notes'] = 'Example work order notes';
+        sample['matchingPeople'] = '[{"name":"Example Contact","title":"Maintenance Manager","businessName":"Example Business","locationName":"Example Location","directPhone":"555-0100","directPhoneExtension":"123","cellPhone":"555-0101","email":"contact@example.com"}]';
         sample['principlePeople'] = '[{"name":"Example Person","businessName":"Example Principle","locationName":"Example Location"}]';
       }
       if (table == 'Messages') sample['subject'] = 'Example message';

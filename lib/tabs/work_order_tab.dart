@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart' as pdf;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../models/business_entry.dart';
 import '../services/local_record_store.dart';
@@ -36,6 +39,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   String? _selectedComponent;
   String? _selectedBusinessName;
   String? _selectedLocationName;
+  Map<String, dynamic>? _editingRecord;
   bool _formExpanded = false;
 
   List<String> get _businessOptions =>
@@ -145,20 +149,237 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     super.dispose();
   }
 
+  Future<void> _printWorkOrder() async {
+    final record = _editingRecord;
+    if (record == null) return;
+    try {
+      final document = pw.Document();
+      document.addPage(
+        pw.MultiPage(
+          pageFormat: pdf.PdfPageFormat.letter.portrait,
+          margin: const pw.EdgeInsets.all(24),
+          build: (_) => [
+            pw.Text(
+              'Work Order',
+              style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 6),
+            for (final (label, key) in const [
+              ('Work Order Number', 'workOrderNumber'),
+              ('Business Name', 'businessName'),
+              ('Location Name', 'locationName'),
+              ('Location Address', 'locationAddress'),
+              ('Location Direct Phone Number', 'locationDirectPhone'),
+              ('Location Airports', 'locationAirport'),
+              ('Notes', 'notes'),
+              ('Component Category', 'componentCategory'),
+              ('Component', 'component'),
+            ]) ...[
+              pw.Text(
+                '$label: ${_formatPrintValue(record[key])}',
+                style: const pw.TextStyle(fontSize: 10),
+              ),
+              pw.SizedBox(height: 2),
+            ],
+            pw.SizedBox(height: 12),
+            ..._printContactsTable(
+              'People at this business and location',
+              record['matchingPeople'],
+              showEmptyMessage: true,
+              includeTitle: true,
+            ),
+            pw.SizedBox(height: 12),
+            ..._printContactsTable(
+              'People at Principle businesses',
+              record['principlePeople'],
+              showEmptyMessage: true,
+              includeTitle: true,
+            ),
+            pw.SizedBox(height: 12),
+          ],
+          footer: (context) => pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.only(top: 6),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                top: pw.BorderSide(color: pdf.PdfColors.grey, width: 0.5),
+              ),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'Work Order ${_formatPrintValue(record['workOrderNumber'])}',
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+                pw.Text(
+                  'Page ${context.pageNumber} of ${context.pagesCount}',
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await Printing.layoutPdf(onLayout: (_) async => document.save());
+    } catch (error) {
+      if (mounted) _showMessage('Could not print work order: $error');
+    }
+  }
+
+  List<pw.Widget> _printContactsTable(
+    String title,
+    Object? value, {
+    required bool showEmptyMessage,
+    bool includeTitle = false,
+  }) {
+    List<Map<String, dynamic>> contacts = const [];
+    try {
+      final decoded = jsonDecode(value?.toString() ?? '[]');
+      if (decoded is List) {
+        contacts = decoded
+            .whereType<Map>()
+            .map((person) => Map<String, dynamic>.from(person))
+            .toList();
+      }
+    } on FormatException {
+      // Show an empty-state message if saved contact data is malformed.
+    }
+
+    return [
+      if (includeTitle) ...[
+        pw.Text(
+          title,
+          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 2),
+      ],
+      if (contacts.isEmpty)
+        pw.Text('No contacts available.')
+      else
+        pw.TableHelper.fromTextArray(
+          headers: const [
+            'Name',
+            'Title',
+            'Phone',
+            'Ext',
+            'Cell Phone',
+            'Email',
+          ],
+          data: [
+            for (final contact in contacts)
+              [
+                for (final key in const [
+                  'name',
+                  'title',
+                  'directPhone',
+                  'directPhoneExtension',
+                  'cellPhone',
+                  'email',
+                ])
+                  contact[key]?.toString() ?? '',
+              ],
+          ],
+          headerStyle: pw.TextStyle(
+            fontSize: 8,
+            fontWeight: pw.FontWeight.bold,
+          ),
+          cellStyle: const pw.TextStyle(fontSize: 8),
+          headerDecoration: const pw.BoxDecoration(
+            color: pdf.PdfColors.grey300,
+          ),
+          border: pw.TableBorder.all(color: pdf.PdfColors.grey, width: 0.5),
+          cellPadding: const pw.EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 3,
+          ),
+          columnWidths: const {
+            0: pw.FlexColumnWidth(0.8),
+            1: pw.FlexColumnWidth(0.35),
+            2: pw.FlexColumnWidth(0.4),
+            3: pw.FlexColumnWidth(0.25),
+            4: pw.FlexColumnWidth(0.4),
+            5: pw.FlexColumnWidth(0.7),
+          },
+        ),
+    ];
+  }
+
+  String _formatPrintValue(Object? value) => value?.toString() ?? '';
+
+  void _editWorkOrder(Map<String, dynamic> record) {
+    setState(() {
+      _editingRecord = record;
+      _formExpanded = true;
+      _selectedBusinessName = _businessOptions.contains(record['businessName'])
+          ? record['businessName'] as String
+          : null;
+      _selectedLocationName = _locationOptions.contains(record['locationName'])
+          ? record['locationName'] as String
+          : null;
+      _selectedComponentCategory =
+          _componentOptions.containsKey(record['componentCategory'])
+          ? record['componentCategory'] as String
+          : null;
+      _selectedComponent =
+          (_componentOptions[_selectedComponentCategory] ?? const []).contains(
+            record['component'],
+          )
+          ? record['component'] as String
+          : null;
+      _businessNameController.text = record['businessName']?.toString() ?? '';
+      _locationNameController.text = record['locationName']?.toString() ?? '';
+      _locationAddressController.text =
+          record['locationAddress']?.toString() ?? '';
+      _locationPhoneController.text =
+          record['locationDirectPhone']?.toString() ?? '';
+      _locationAirportController.text =
+          record['locationAirport']?.toString() ?? '';
+      _notesController.text = record['notes']?.toString() ?? '';
+    });
+  }
+
   Future<void> _saveCurrentWorkOrder() async {
+    final now = DateTime.now();
+    final date =
+        '${now.day.toString().padLeft(2, '0')}'
+        '${now.month.toString().padLeft(2, '0')}'
+        '${now.year.toString().padLeft(4, '0')}';
+    final sequence = _records.length + 1;
     final record = <String, dynamic>{
+      'workOrderNumber':
+          _editingRecord?['workOrderNumber'] ?? '$date-$sequence',
       'businessName': _businessNameController.text.trim(),
       'locationName': _locationNameController.text.trim(),
       'locationAddress': _locationAddressController.text.trim(),
       'locationDirectPhone': _locationPhoneController.text.trim(),
       'locationAirport': _locationAirportController.text.trim(),
       'notes': _notesController.text.trim(),
+      'matchingPeople': jsonEncode([
+        for (final person in _matchingPeople)
+          {
+            'name': person.name,
+            'title': person.title,
+            //'businessName': person.businessName,
+            //'locationName': person.locationName,
+            'directPhone': person.directPhone,
+            'directPhoneExtension': person.directPhoneExtension,
+            'cellPhone': person.cellPhone,
+            'email': person.email,
+          },
+      ]),
       'principlePeople': jsonEncode([
         for (final person in _principlePeople)
           {
             'name': person.name,
-            'businessName': person.businessName,
-            'locationName': person.locationName,
+            'title': person.title,
+            //'businessName': person.businessName,
+            //'locationName': person.locationName,
+            'directPhone': person.directPhone,
+            'directPhoneExtension': person.directPhoneExtension,
+            'cellPhone': person.cellPhone,
+            'email': person.email,
           },
       ]),
       'componentCategory': _selectedComponentCategory ?? '',
@@ -169,7 +390,15 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     )) {
       return;
     }
-    final updated = [record, ..._records];
+    final updated = [..._records];
+    final editingRecord = _editingRecord;
+    if (editingRecord == null) {
+      updated.insert(0, record);
+    } else {
+      final index = updated.indexOf(editingRecord);
+      if (index == -1) return;
+      updated[index] = record;
+    }
     try {
       await LocalRecordStore.write(_storageKey, updated);
       if (!mounted) return;
@@ -177,8 +406,11 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         _records
           ..clear()
           ..addAll(updated);
+        _editingRecord = null;
         _selectedBusinessName = null;
         _selectedLocationName = null;
+        _selectedComponentCategory = null;
+        _selectedComponent = null;
       });
       _businessNameController.clear();
       _locationNameController.clear();
@@ -408,13 +640,29 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: FilledButton.icon(
-                          onPressed: _saveCurrentWorkOrder,
-                          icon: const Icon(Icons.save_outlined),
-                          label: const Text('Save Work Order'),
-                        ),
+                      Wrap(
+                        spacing: 12,
+                        children: [
+                          FilledButton.icon(
+                            onPressed: _saveCurrentWorkOrder,
+                            icon: Icon(
+                              _editingRecord == null
+                                  ? Icons.save_outlined
+                                  : Icons.update_outlined,
+                            ),
+                            label: Text(
+                              _editingRecord == null
+                                  ? 'Save Work Order'
+                                  : 'Update Work Order',
+                            ),
+                          ),
+                          if (_editingRecord != null)
+                            OutlinedButton.icon(
+                              onPressed: _printWorkOrder,
+                              icon: const Icon(Icons.print_outlined),
+                              label: const Text('Print Work Order'),
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -428,7 +676,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        WorkOrderTable(records: _records),
+        WorkOrderTable(records: _records, onRowTap: _editWorkOrder),
       ],
     );
   }
