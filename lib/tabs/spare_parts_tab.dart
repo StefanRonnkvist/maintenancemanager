@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_tab.dart';
+import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 import '../widgets/spare_parts_form.dart';
 import '../widgets/spare_parts_table.dart';
 
-/// Owns spare-part entry, local persistence, and the inventory table.
+/// Owns spare-part entry.
 class SparePartsTab extends StatefulWidget {
-  const SparePartsTab({super.key});
+  const SparePartsTab({required this.businessEntries, super.key});
+
+  final List<BusinessEntry> businessEntries;
 
   @override
   State<SparePartsTab> createState() => _SparePartsTabState();
@@ -20,15 +23,17 @@ class _SparePartsTabState extends State<SparePartsTab> {
   bool _formExpanded = false;
   bool _isLoading = true;
   String? _storageError;
+  int? _editingIndex;
+  final List<SparePartRecord> _records = [];
   final _oemPartNumber = TextEditingController();
   final _oemDescription = TextEditingController();
   final _vendorPartNumber = TextEditingController();
   final _vendorDescription = TextEditingController();
   final _serialNumber = TextEditingController();
   final _vendorName = TextEditingController();
+  final _locationName = TextEditingController();
   final _quantityInStock = TextEditingController();
   final _location = TextEditingController();
-  final List<SparePartRecord> _records = [];
 
   @override
   void initState() {
@@ -36,19 +41,19 @@ class _SparePartsTabState extends State<SparePartsTab> {
     _loadRecords();
   }
 
-  /// Restores saved parts and reports storage errors alongside the table.
   Future<void> _loadRecords() async {
     try {
       final rows = await LocalRecordStore.read(_storageKey);
-      _records.addAll(rows.map(SparePartRecord.fromJson));
+      _records
+        ..clear()
+        ..addAll(rows.map(SparePartRecord.fromJson));
     } catch (error) {
       _storageError = 'Could not load spare parts: $error';
     }
     if (mounted) setState(() => _isLoading = false);
   }
 
-  /// Persists the full parts list after changes.
-  Future<void> _persistRecords() async {
+  Future<void> _saveRecords() async {
     try {
       await LocalRecordStore.write(
         _storageKey,
@@ -70,25 +75,55 @@ class _SparePartsTabState extends State<SparePartsTab> {
     _vendorDescription.dispose();
     _serialNumber.dispose();
     _vendorName.dispose();
+    _locationName.dispose();
     _quantityInStock.dispose();
     _location.dispose();
     super.dispose();
   }
 
-  /// Appends a part, clears the form controllers, and saves the result.
-  void _addSparePart(SparePartRecord record) {
+  /// Adds or updates the selected record, persists it, and resets the form.
+  void _saveSparePart(SparePartRecord record) {
     setState(() {
-      _records.add(record);
-      _oemPartNumber.clear();
-      _oemDescription.clear();
-      _vendorPartNumber.clear();
-      _vendorDescription.clear();
-      _serialNumber.clear();
-      _vendorName.clear();
-      _quantityInStock.clear();
-      _location.clear();
+      final index = _editingIndex;
+      if (index == null) {
+        _records.add(record);
+      } else {
+        _records[index] = record;
+      }
+      _editingIndex = null;
+      _formExpanded = false;
     });
-    _persistRecords();
+    _saveRecords();
+    _clearForm();
+  }
+
+  void _selectSparePart(int index) {
+    final record = _records[index];
+    setState(() {
+      _editingIndex = index;
+      _formExpanded = true;
+    });
+    _oemPartNumber.text = record.oemPartNumber;
+    _oemDescription.text = record.oemDescription;
+    _vendorPartNumber.text = record.vendorPartNumber;
+    _vendorDescription.text = record.vendorDescription;
+    _serialNumber.text = record.serialNumber;
+    _vendorName.text = record.vendorName;
+    _locationName.text = record.locationName;
+    _quantityInStock.text = record.quantityInStock;
+    _location.text = record.location;
+  }
+
+  void _clearForm() {
+    _oemPartNumber.clear();
+    _oemDescription.clear();
+    _vendorPartNumber.clear();
+    _vendorDescription.clear();
+    _serialNumber.clear();
+    _vendorName.clear();
+    _locationName.clear();
+    _quantityInStock.clear();
+    _location.clear();
   }
 
   @override
@@ -116,27 +151,39 @@ class _SparePartsTabState extends State<SparePartsTab> {
                 vendorDescription: _vendorDescription,
                 serialNumber: _serialNumber,
                 vendorName: _vendorName,
+                locationName: _locationName,
+                vendorEntries: widget.businessEntries
+                    .where(
+                      (entry) =>
+                          entry.businessType.trim().toLowerCase() == 'vendor',
+                    )
+                    .toList(growable: false),
                 quantityInStock: _quantityInStock,
                 location: _location,
-                onAdd: _addSparePart,
+                onAdd: _saveSparePart,
+                isEditing: _editingIndex != null,
               ),
             ),
         ],
       ),
     ),
     recordsTitle: 'Spare parts list',
-    records: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_storageError != null)
-                Text(
-                  _storageError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              SparePartsTable(records: _records),
-            ],
+    records: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_storageError != null)
+          Text(
+            _storageError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
+        if (_isLoading)
+          const Center(child: CircularProgressIndicator())
+        else
+          SparePartsTable(
+            records: [for (final record in _records) record.values],
+            onRowTap: _selectSparePart,
+          ),
+      ],
+    ),
   );
 }

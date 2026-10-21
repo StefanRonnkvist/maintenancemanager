@@ -384,6 +384,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       ]),
       'componentCategory': _selectedComponentCategory ?? '',
       'component': _selectedComponent ?? '',
+      'completed': _editingRecord?['completed'] == true,
     };
     if (record.values.every(
       (value) => value == null || (value is String && value.isEmpty),
@@ -421,6 +422,40 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       _showMessage('Work order saved.');
     } catch (error) {
       _showMessage('Could not save work order: $error');
+    }
+  }
+
+  Future<void> _toggleWorkOrderCompletion() async {
+    final editingRecord = _editingRecord;
+    if (editingRecord == null) return;
+
+    final shouldComplete = editingRecord['completed'] != true;
+    final updated = [..._records];
+    final index = updated.indexOf(editingRecord);
+    if (index == -1) return;
+    updated[index] = {...editingRecord, 'completed': shouldComplete};
+
+    try {
+      await LocalRecordStore.write(_storageKey, updated);
+      if (!mounted) return;
+      setState(() {
+        _records
+          ..clear()
+          ..addAll(updated);
+        _editingRecord = null;
+        _formExpanded = false;
+      });
+      _showMessage(
+        shouldComplete
+            ? 'Work order marked complete.'
+            : 'Work order reopened.',
+      );
+    } catch (error) {
+      _showMessage(
+        shouldComplete
+            ? 'Could not complete work order: $error'
+            : 'Could not reopen work order: $error',
+      );
     }
   }
 
@@ -656,12 +691,26 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                                   : 'Update Work Order',
                             ),
                           ),
-                          if (_editingRecord != null)
+                          if (_editingRecord != null) ...[
                             OutlinedButton.icon(
                               onPressed: _printWorkOrder,
                               icon: const Icon(Icons.print_outlined),
                               label: const Text('Print Work Order'),
                             ),
+                            OutlinedButton.icon(
+                              onPressed: _toggleWorkOrderCompletion,
+                              icon: Icon(
+                                _editingRecord?['completed'] == true
+                                    ? Icons.assignment_return_outlined
+                                    : Icons.check_circle_outline,
+                              ),
+                              label: Text(
+                                _editingRecord?['completed'] == true
+                                    ? 'Open Work Order'
+                                    : 'Complete Work Order',
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
@@ -676,7 +725,20 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
-        WorkOrderTable(records: _records, onRowTap: _editWorkOrder),
+        WorkOrderTable(
+          records: _records.where((record) => record['completed'] != true).toList(),
+          onRowTap: _editWorkOrder,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Completed Work Orders',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        WorkOrderTable(
+          records: _records.where((record) => record['completed'] == true).toList(),
+          onRowTap: _editWorkOrder,
+        ),
       ],
     );
   }

@@ -228,7 +228,7 @@ class _MainTabPageState extends State<MainTabPage>
 
   Widget _pageForTab(AppTab tab) => switch (tab) {
     AppTab.equipment => EquipmentTab(businessEntries: _businesses),
-    AppTab.spareParts => const SparePartsTab(),
+    AppTab.spareParts => SparePartsTab(businessEntries: _businesses),
     AppTab.workOrder => WorkOrderTab(
       businessEntries: _businesses,
       peopleEntries: _people,
@@ -246,7 +246,7 @@ class _MainTabPageState extends State<MainTabPage>
       kind: BusinessTabKind.business,
     ),
     AppTab.information => const InformationTabs(),
-    AppTab.message => MessageTab(people: _people),
+    AppTab.message => MessageTab(people: _people, businesses: _businesses),
     AppTab.applicationDb => const ApplicationDbTab(),
     AppTab.help => const HelpTab(),
   };

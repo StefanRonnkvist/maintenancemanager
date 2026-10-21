@@ -6,16 +6,16 @@ class ManagementTabLayout extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.form,
-    required this.recordsTitle,
-    required this.records,
+    this.recordsTitle,
+    this.records,
     super.key,
   });
 
   final String title;
   final IconData icon;
   final Widget form;
-  final String recordsTitle;
-  final Widget records;
+  final String? recordsTitle;
+  final Widget? records;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -44,13 +44,17 @@ class ManagementTabLayout extends StatelessWidget {
                     child: form,
                   ),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  recordsTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                records,
+                if (records != null) ...[
+                  const SizedBox(height: 24),
+                  if (recordsTitle != null && recordsTitle!.isNotEmpty)
+                    Text(
+                      recordsTitle!,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  if (recordsTitle != null && recordsTitle!.isNotEmpty)
+                    const SizedBox(height: 8),
+                  records!,
+                ],
               ],
             ),
           ),

@@ -7,6 +7,7 @@ class SparePartRecord {
     required this.vendorDescription,
     required this.serialNumber,
     required this.vendorName,
+    required this.locationName,
     required this.quantityInStock,
     required this.location,
   });
@@ -17,6 +18,7 @@ class SparePartRecord {
   final String vendorDescription;
   final String serialNumber;
   final String vendorName;
+  final String locationName;
   final String quantityInStock;
   final String location;
 
@@ -28,6 +30,7 @@ class SparePartRecord {
     vendorDescription,
     serialNumber,
     vendorName,
+    locationName,
     quantityInStock,
     location,
   ];
@@ -40,20 +43,68 @@ class SparePartRecord {
     'vendorDescription': vendorDescription,
     'serialNumber': serialNumber,
     'vendorName': vendorName,
+    'locationName': locationName,
     'quantityInStock': quantityInStock,
-    'location': location,
+    'storageLocation': location,
   };
 
-  /// Restores a record, defaulting missing fields for older saved entries.
+  /// Restores a record from local storage or database/import field aliases.
+  /// Unknown fields are ignored; missing values are shown as empty strings.
   factory SparePartRecord.fromJson(Map<String, dynamic> json) =>
       SparePartRecord(
-        oemPartNumber: json['oemPartNumber'] as String? ?? '',
-        oemDescription: json['oemDescription'] as String? ?? '',
-        vendorPartNumber: json['vendorPartNumber'] as String? ?? '',
-        vendorDescription: json['vendorDescription'] as String? ?? '',
-        serialNumber: json['serialNumber'] as String? ?? '',
-        vendorName: json['vendorName'] as String? ?? '',
-        quantityInStock: json['quantityInStock'] as String? ?? '',
-        location: json['location'] as String? ?? '',
+        oemPartNumber: _readString(json, const [
+          'oemPartNumber',
+          'oem_part_number',
+          'OEM Part Number',
+        ]),
+        oemDescription: _readString(json, const [
+          'oemDescription',
+          'oem_description',
+          'OEM Description',
+        ]),
+        vendorPartNumber: _readString(json, const [
+          'vendorPartNumber',
+          'vendor_part_number',
+          'Vendor Part Number',
+        ]),
+        vendorDescription: _readString(json, const [
+          'vendorDescription',
+          'vendor_description',
+          'Vendor Description',
+        ]),
+        serialNumber: _readString(json, const [
+          'serialNumber',
+          'serial_number',
+          'Serial Number',
+        ]),
+        vendorName: _readString(json, const [
+          'vendorName',
+          'vendor_name',
+          'Vendor Name',
+        ]),
+        locationName: _readString(json, const [
+          'locationName',
+          'location_name',
+          'Location Name',
+        ]),
+        quantityInStock: _readString(json, const [
+          'quantityInStock',
+          'quantity_in_stock',
+          'Quantity in Stock',
+        ]),
+        location: _readString(json, const [
+          'location',
+          'storageLocation',
+          'storage_location',
+          'Storage Location',
+        ]),
       );
+
+  static String _readString(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value != null) return value.toString();
+    }
+    return '';
+  }
 }

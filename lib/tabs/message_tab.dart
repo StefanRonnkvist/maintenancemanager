@@ -1,71 +1,122 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_tab.dart';
 import '../models/business_entry.dart';
-import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
 
-/// Builds a message composer with free-entry recipients.
+/// Builds a message composer with business-based recipient selection.
 class MessageTab extends StatefulWidget {
-  const MessageTab({required this.people, super.key});
+  const MessageTab({
+    required this.people,
+    required this.businesses,
+    super.key,
+  });
 
   final List<BusinessEntry> people;
+  final List<BusinessEntry> businesses;
 
   @override
   State<MessageTab> createState() => _MessageTabState();
 }
 
 class _MessageTabState extends State<MessageTab> {
-  static const _storageKey = 'message_records_v1';
-
   final _toController = TextEditingController();
   final _ccController = TextEditingController();
-  String? _selectedTo;
-  String? _selectedCc;
+  String? _selectedBusiness;
+  String? _selectedLocation;
+  final Set<String> _selectedTo = {};
+  final Set<String> _selectedCc = {};
 
-  List<BusinessEntry> get _peopleOptions => widget.people
-      .where((person) => person.name.trim().isNotEmpty && person.email.trim().isNotEmpty)
+  List<String> get _businessOptions => widget.businesses
+      .map((business) => business.name.trim())
+      .where((name) => name.isNotEmpty)
+      .toSet()
+      .toList()
+    ..sort();
+
+  List<String> get _locationOptions {
+    final business = widget.businesses
+        .where((entry) => entry.name.trim() == _selectedBusiness)
+        .firstOrNull;
+    if (business == null) return const [];
+    return business.locations
+        .map((location) => location.name.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<BusinessEntry> get _toPeopleOptions => widget.people
+      .where(
+        (person) =>
+            person.businessName.trim() == _selectedBusiness &&
+            (_selectedLocation == null ||
+                person.locationName.trim() == _selectedLocation) &&
+            person.name.trim().isNotEmpty &&
+            person.email.trim().isNotEmpty,
+      )
       .toList()
     ..sort((first, second) => first.name.compareTo(second.name));
-  final _senderNameController = TextEditingController();
-  final _senderEmailController = TextEditingController();
-  final _senderReplyEmailController = TextEditingController();
+
+  List<BusinessEntry> get _ccPeopleOptions {
+    final selectedBusiness = _selectedBusiness;
+    if (selectedBusiness == null) return const [];
+    final principleBusinessNames = widget.businesses
+        .where((business) => business.businessType.trim() == 'Principle')
+        .map((business) => business.name.trim())
+        .toSet();
+    return widget.people
+        .where(
+          (person) =>
+              person.name.trim().isNotEmpty &&
+              person.email.trim().isNotEmpty &&
+              !_selectedTo.contains(person.email) &&
+              ((person.businessName.trim() == selectedBusiness &&
+                  (_selectedLocation == null ||
+                          person.locationName.trim() == _selectedLocation)) ||
+                  principleBusinessNames.contains(person.businessName.trim())),
+        )
+        .toList()
+      ..sort((first, second) => first.name.compareTo(second.name));
+  }
   final _subjectController = TextEditingController();
-  bool _senderDetailsSet = false;
-  String _storedSenderName = '';
-  String _storedSenderEmail = '';
-  String _storedSenderReplyEmail = '';
   final _messageController = TextEditingController();
-  final List<_EmailMessage> _messages = [];
+  final List<_MessageRow> _messageRows = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadMessages();
+  void _syncRecipientControllers() {
+    _toController.text = _selectedTo.join('; ');
+    _ccController.text = _selectedCc.join('; ');
   }
 
-  Future<void> _loadMessages() async {
-    try {
-      final records = await LocalRecordStore.read(_storageKey);
-      if (!mounted) return;
-      setState(() => _messages.addAll(records.map(_EmailMessage.fromJson)));
-    } catch (_) {
-      // Message composition remains available when the history cannot be read.
-    }
-  }
-
-  Future<void> _persistMessages() async {
-    await LocalRecordStore.write(
-      _storageKey,
-      _messages.map((item) => item.toJson()).toList(),
+  Future<void> _deleteMessageRow(_MessageRow row) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete message?'),
+        content: const Text('Delete this message row?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
+    if (shouldDelete == true && mounted) {
+      setState(() => _messageRows.remove(row));
+    }
   }
 
   /// Records the composed message locally in this tab and opens a mailto target.
   Future<void> _sendMessage() async {
-    final to = _toController.text.trim();
-    final cc = _ccController.text.trim();
+    final to = _selectedTo.join(',');
+    final cc = _selectedCc.join(',');
     final subject = _subjectController.text.trim();
     final message = _messageController.text.trim();
 
@@ -76,33 +127,39 @@ class _MessageTabState extends State<MessageTab> {
       return;
     }
 
-    setState(() {
-      _messages.add(
-        _EmailMessage(to: to, cc: cc, subject: subject, message: message),
-      );
-    });
-    try {
-      await _persistMessages();
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not save message history: $error')),
-        );
-      }
-    }
-
-    final mailUri = Uri(
+    final mailtoUri = Uri(
       scheme: 'mailto',
       path: to,
-      queryParameters: {
-        if (cc.isNotEmpty) 'cc': cc,
-        if (subject.isNotEmpty) 'subject': subject,
-        if (message.isNotEmpty) 'body': message,
-      },
+      query: [
+        if (cc.isNotEmpty) 'cc=${Uri.encodeComponent(cc)}',
+        if (subject.isNotEmpty) 'subject=${Uri.encodeComponent(subject)}',
+        if (message.isNotEmpty) 'body=${Uri.encodeComponent(message)}',
+      ].join('&'),
     );
 
+    setState(() {
+      _messageRows.add(
+        _MessageRow(
+          business: _selectedBusiness ?? '',
+          location: _selectedLocation ?? '',
+          to: to,
+          cc: cc,
+          subject: subject,
+          message: message,
+        ),
+      );
+    });
+
     try {
-      await SharePlus.instance.share(ShareParams(uri: mailUri));
+      final launched = await launchUrl(
+        mailtoUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No email client is available.')),
+        );
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,30 +169,10 @@ class _MessageTabState extends State<MessageTab> {
     }
   }
 
-  /// Locks the sender fields, or restores the values captured when they were set.
-  void _toggleSenderDetails() {
-    setState(() {
-      if (_senderDetailsSet) {
-        _senderNameController.text = _storedSenderName;
-        _senderEmailController.text = _storedSenderEmail;
-        _senderReplyEmailController.text = _storedSenderReplyEmail;
-        _senderDetailsSet = false;
-      } else {
-        _storedSenderName = _senderNameController.text;
-        _storedSenderEmail = _senderEmailController.text;
-        _storedSenderReplyEmail = _senderReplyEmailController.text;
-        _senderDetailsSet = true;
-      }
-    });
-  }
-
   @override
   void dispose() {
     _toController.dispose();
     _ccController.dispose();
-    _senderNameController.dispose();
-    _senderEmailController.dispose();
-    _senderReplyEmailController.dispose();
     _subjectController.dispose();
     _messageController.dispose();
     super.dispose();
@@ -161,74 +198,6 @@ class _MessageTabState extends State<MessageTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Sender details',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: 320,
-                  child: TextField(
-                    controller: _senderNameController,
-                    readOnly: _senderDetailsSet,
-                    decoration: const InputDecoration(
-                      labelText: 'Sender Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 320,
-                  child: TextField(
-                    controller: _senderEmailController,
-                    readOnly: _senderDetailsSet,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Sender Email',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 320,
-                  child: TextField(
-                    controller: _senderReplyEmailController,
-                    readOnly: _senderDetailsSet,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Sender Reply Email',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 120,
-                  child: FilledButton(
-                    onPressed: _toggleSenderDetails,
-                    child: Text(_senderDetailsSet ? 'Reset' : 'Set'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
             Text('Recipients', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             Wrap(
@@ -238,45 +207,162 @@ class _MessageTabState extends State<MessageTab> {
                 SizedBox(
                   width: 320,
                   child: DropdownButtonFormField<String>(
-                    key: ValueKey('to-$_selectedTo'),
-                    initialValue: _selectedTo,
+                    key: ValueKey('business-$_selectedBusiness'),
+                    initialValue: _selectedBusiness,
                     isExpanded: true,
                     decoration: const InputDecoration(
-                      labelText: 'To',
+                      labelText: 'Business',
                       border: OutlineInputBorder(),
                     ),
-                    items: _peopleOptions
-                        .map((person) => DropdownMenuItem(
-                              value: person.email,
-                              child: Text(person.name),
+                    items: _businessOptions
+                        .map((business) => DropdownMenuItem(
+                              value: business,
+                              child: Text(business),
                             ))
                         .toList(),
-                    onChanged: (email) => setState(() {
-                      _selectedTo = email;
-                      _toController.text = email ?? '';
+                    onChanged: (business) => setState(() {
+                      _selectedBusiness = business;
+                      _selectedLocation = null;
+                      _selectedTo.clear();
+                      _selectedCc.clear();
+                      _syncRecipientControllers();
                     }),
                   ),
                 ),
                 SizedBox(
                   width: 320,
                   child: DropdownButtonFormField<String>(
-                    key: ValueKey('cc-$_selectedCc'),
-                    initialValue: _selectedCc,
+                    key: ValueKey('location-$_selectedBusiness-$_selectedLocation'),
+                    initialValue: _selectedLocation,
                     isExpanded: true,
                     decoration: const InputDecoration(
-                      labelText: 'Cc',
+                      labelText: 'Location',
                       border: OutlineInputBorder(),
                     ),
-                    items: _peopleOptions
-                        .map((person) => DropdownMenuItem(
-                              value: person.email,
-                              child: Text(person.name),
+                    items: _locationOptions
+                        .map((location) => DropdownMenuItem(
+                              value: location,
+                              child: Text(location),
                             ))
                         .toList(),
-                    onChanged: (email) => setState(() {
-                      _selectedCc = email;
-                      _ccController.text = email ?? '';
-                    }),
+                    onChanged: _selectedBusiness == null
+                        ? null
+                        : (location) => setState(() {
+                            _selectedLocation = location;
+                            _selectedTo.clear();
+                            _selectedCc.clear();
+                            _syncRecipientControllers();
+                          }),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
+                  child: DropdownButtonHideUnderline(
+                    child: PopupMenuButton<String>(
+                      enabled: _selectedBusiness != null,
+                      tooltip: 'Select To recipients',
+                      onSelected: (email) => setState(() {
+                        if (email == '__select_all__') {
+                          _selectedTo
+                            ..clear()
+                            ..addAll(_toPeopleOptions.map((person) => person.email));
+                        } else if (email == '__clear__') {
+                          _selectedTo.clear();
+                        } else if (!_selectedTo.add(email)) {
+                          _selectedTo.remove(email);
+                        }
+                        _syncRecipientControllers();
+                      }),
+                      itemBuilder: (context) => [
+                        PopupMenuItem<String>(
+                          value: '__select_all__',
+                          child: Text('Select All'),
+                        ),
+                        PopupMenuItem<String>(
+                          value: '__clear__',
+                          child: Text('Clear'),
+                        ),
+                        for (final person in _toPeopleOptions)
+                          CheckedPopupMenuItem<String>(
+                            value: person.email,
+                            checked: _selectedTo.contains(person.email),
+                            child: Text(person.name),
+                          ),
+                      ],
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'To',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
+                        ),
+                        child: Text(
+                          _selectedTo.isEmpty
+                              ? 'Select recipients'
+                              : _toPeopleOptions
+                                  .where((person) =>
+                                      _selectedTo.contains(person.email))
+                                  .map((person) => person.name)
+                                  .join(', '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
+                  child: DropdownButtonHideUnderline(
+                    child: PopupMenuButton<String>(
+                      enabled: _selectedBusiness != null,
+                      tooltip: 'Select Cc recipients',
+                      onSelected: (email) => setState(() {
+                        if (email == '__select_all__') {
+                          _selectedCc
+                            ..clear()
+                            ..addAll(_ccPeopleOptions.map((person) => person.email));
+                        } else if (email == '__clear__') {
+                          _selectedCc.clear();
+                        } else if (!_selectedCc.add(email)) {
+                          _selectedCc.remove(email);
+                        }
+                        _syncRecipientControllers();
+                      }),
+                      itemBuilder: (context) => [
+                        PopupMenuItem<String>(
+                          value: '__select_all__',
+                          child: Text('Select All'),
+                        ),
+                        PopupMenuItem<String>(
+                          value: '__clear__',
+                          child: Text('Clear'),
+                        ),
+                        for (final person in _ccPeopleOptions)
+                          CheckedPopupMenuItem<String>(
+                            value: person.email,
+                            checked: _selectedCc.contains(person.email),
+                            child: Text(person.name),
+                          ),
+                      ],
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Cc',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
+                        ),
+                        child: Text(
+                          _selectedCc.isEmpty
+                              ? 'Select recipients'
+                              : _ccPeopleOptions
+                                  .where((person) =>
+                                      _selectedCc.contains(person.email))
+                                  .map((person) => person.name)
+                                  .join(', '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -315,32 +401,35 @@ class _MessageTabState extends State<MessageTab> {
     ],
   );
 
-  /// Shows messages composed during this screen's current lifetime.
   Widget _messageTable(BuildContext context) => SingleChildScrollView(
     scrollDirection: Axis.horizontal,
     child: DataTable(
+      showCheckboxColumn: false,
       headingRowColor: WidgetStatePropertyAll(
         Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      dataRowMinHeight: 52,
       columns: const [
+        DataColumn(label: Text('Business')),
+        DataColumn(label: Text('Location')),
         DataColumn(label: Text('To')),
         DataColumn(label: Text('Cc')),
         DataColumn(label: Text('Subject')),
         DataColumn(label: Text('Message')),
       ],
-      rows: _messages
-          .map(
-            (message) => DataRow(
-              cells: [
-                DataCell(Text(message.to)),
-                DataCell(Text(message.cc)),
-                DataCell(Text(message.subject)),
-                DataCell(Text(message.message)),
-              ],
-            ),
-          )
-          .toList(),
+      rows: [
+        for (final row in _messageRows)
+          DataRow(
+            onSelectChanged: (_) => _deleteMessageRow(row),
+            cells: [
+              DataCell(Text(row.business)),
+              DataCell(Text(row.location)),
+              DataCell(Text(row.to)),
+              DataCell(Text(row.cc)),
+              DataCell(Text(row.subject)),
+              DataCell(Text(row.message)),
+            ],
+          ),
+      ],
     ),
   );
 
@@ -356,30 +445,20 @@ class _MessageTabState extends State<MessageTab> {
   );
 }
 
-class _EmailMessage {
-  const _EmailMessage({
+class _MessageRow {
+  const _MessageRow({
+    required this.business,
+    required this.location,
     required this.to,
     required this.cc,
     required this.subject,
     required this.message,
   });
 
+  final String business;
+  final String location;
   final String to;
   final String cc;
   final String subject;
   final String message;
-
-  Map<String, String> toJson() => {
-    'to': to,
-    'cc': cc,
-    'subject': subject,
-    'message': message,
-  };
-
-  factory _EmailMessage.fromJson(Map<String, dynamic> json) => _EmailMessage(
-    to: json['to'] as String? ?? '',
-    cc: json['cc'] as String? ?? '',
-    subject: json['subject'] as String? ?? '',
-    message: json['message'] as String? ?? '',
-  );
 }

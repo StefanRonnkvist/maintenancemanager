@@ -268,8 +268,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'vendorDescription',
       'serialNumber',
       'vendorName',
+      'locationName',
       'quantityInStock',
-      'location',
+      'storageLocation',
     ],
     'People' => [
       'name',
@@ -556,7 +557,17 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               'Subsection $subsection local item';
         }
       }
-      if (table == 'Spare Parts') sample['oemPartNumber'] = 'PART-001';
+      if (table == 'Spare Parts') {
+        sample['oemPartNumber'] = 'PART-001';
+        sample['oemDescription'] = 'Example part';
+        sample['vendorPartNumber'] = 'VENDOR-001';
+        sample['vendorDescription'] = 'Example vendor part';
+        sample['serialNumber'] = 'SERIAL-001';
+        sample['vendorName'] = 'Example Vendor';
+        sample['locationName'] = 'Main Warehouse';
+        sample['quantityInStock'] = '10';
+        sample['storageLocation'] = 'A-01';
+      }
       if (table == 'People' || table == 'Business') sample['name'] = 'Example';
       if (table == 'Business') {
         for (var location = 1; location <= 4; location++) {
@@ -567,7 +578,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         }
       }
       if (table == 'Work Order') {
-        sample['workOrderNumber'] = '${DateTime.now().day.toString().padLeft(2, '0')}'
+        sample['workOrderNumber'] =
+            '${DateTime.now().day.toString().padLeft(2, '0')}'
             '${DateTime.now().month.toString().padLeft(2, '0')}'
             '${DateTime.now().year.toString().padLeft(4, '0')}-1';
         sample['businessName'] = 'Example Business';

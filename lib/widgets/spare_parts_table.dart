@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../models/spare_part_record.dart';
-
-/// Horizontal inventory table with fields aligned to [SparePartRecord.values].
+/// Displays spare-part field headers and rows submitted from the entry form.
 class SparePartsTable extends StatelessWidget {
-  const SparePartsTable({required this.records, super.key});
+  const SparePartsTable({
+    required this.records,
+    required this.onRowTap,
+    super.key,
+  });
 
-  final List<SparePartRecord> records;
+  final List<List<String>> records;
+  final ValueChanged<int> onRowTap;
 
-  // Column order must match the order returned by SparePartRecord.values.
   static const _columns = [
     'OEM Part Number',
     'OEM Description',
@@ -16,6 +18,7 @@ class SparePartsTable extends StatelessWidget {
     'Vendor Description',
     'Serial Number',
     'Vendor Name',
+    'Location Name',
     'Quantity in Stock',
     'Storage Location',
   ];
@@ -25,17 +28,34 @@ class SparePartsTable extends StatelessWidget {
     final table = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
+        showCheckboxColumn: false,
         headingRowColor: WidgetStatePropertyAll(
           Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         dataRowMinHeight: 52,
+        dataRowMaxHeight: 80,
         columns: [
           for (final column in _columns) DataColumn(label: Text(column)),
         ],
         rows: [
-          for (final record in records)
+          for (var rowIndex = 0; rowIndex < records.length; rowIndex++)
             DataRow(
-              cells: [for (final value in record.values) DataCell(Text(value))],
+              onSelectChanged: (_) => onRowTap(rowIndex),
+              cells: [
+                for (var index = 0; index < _columns.length; index++)
+                  DataCell(
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 240),
+                      child: Text(
+                        index < records[rowIndex].length
+                            ? records[rowIndex][index]
+                            : '',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+              ],
             ),
         ],
       ),
