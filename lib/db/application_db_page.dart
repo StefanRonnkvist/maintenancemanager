@@ -231,9 +231,11 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               return '';
             }
           }
-          if ((table == 'Business' || table == 'People') &&
-              (column == 'locations' || column == 'airports')) {
-            return value is String ? value : jsonEncode(value ?? []);
+          if (table == 'Business' && column == 'locations') {
+            return jsonEncode(BusinessEntry.decodeLocationList(value));
+          }
+          if (table == 'People' && column == 'airports') {
+            return jsonEncode(value is List ? value : <Object?>[]);
           }
           if (table == 'Work Order' &&
               (column == 'matchingPeople' ||
@@ -359,7 +361,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         row.add(field.toString());
         field.clear();
       } else if (char == '\n' || char == '\r') {
-        if (char == '\r' && index + 1 < source.length && source[index + 1] == '\n') {
+        if (char == '\r' &&
+            index + 1 < source.length &&
+            source[index + 1] == '\n') {
           index++;
         }
         row.add(field.toString());
@@ -370,7 +374,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         field.write(char);
       }
     }
-    if (quoted) throw const FormatException('CSV contains an unclosed quoted field.');
+    if (quoted) {
+      throw const FormatException('CSV contains an unclosed quoted field.');
+    }
     if (field.length > 0 || row.isNotEmpty) {
       row.add(field.toString());
       if (row.any((cell) => cell.isNotEmpty)) rows.add(row);
@@ -411,7 +417,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       if (bytes == null) {
         throw const FormatException('Unable to read selected CSV.');
       }
-      final rows = _parseCsv(utf8.decode(bytes, allowMalformed: false));
+      var source = utf8.decode(bytes, allowMalformed: false);
+      if (source.startsWith('\uFEFF')) source = source.substring(1);
+      final rows = _parseCsv(source);
       final expected = _columnsFor(table);
       if (rows.isEmpty) throw const FormatException('CSV is empty.');
       final headers = rows.first.map((value) => value.trim()).toList();
@@ -466,10 +474,10 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         ) {
           final name = importColumns[columnIndex];
           final value = row[indexes[columnIndex]];
-          if ((table == 'People' || table == 'Business') &&
-              (name == 'airports' || name == 'locations')) {
+          if ((table == 'People' && name == 'airports') ||
+              (table == 'Business' && name == 'locations')) {
             try {
-              mapped[name] = jsonDecode(value);
+              mapped[name] = jsonDecode(value.isEmpty ? '[]' : value);
             } on FormatException catch (error) {
               throw FormatException(
                 'Invalid JSON in CSV row ${rowIndex + 1}, column "$name": '
@@ -503,6 +511,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                 '${error.message}',
               );
             }
+          } else if (table == 'Spare Parts' && name == 'storageLocation') {
+            mapped['location'] = value;
           } else {
             mapped[name] = value;
           }
@@ -552,9 +562,10 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         throw const FormatException('No valid rows found in CSV.');
       }
       final key = _managedStores[table]!;
-      final existing = _managedRecords[table] ?? <Map<String, dynamic>>[];
+      final existing = await LocalRecordStore.read(key);
       final merged = [...imported, ...existing];
       await LocalRecordStore.write(key, merged);
+      if (!mounted) return;
       setState(() => _managedRecords[table] = merged);
       if (mounted) _showMessage('Imported ${imported.length} $table records.');
     } catch (error) {
@@ -623,8 +634,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       table: table,
     );
     try {
+      final templateType = example ? 'example' : 'blank';
       final filename =
-          '${table.toLowerCase().replaceAll(' ', '_')}_template.csv';
+          '${table.toLowerCase().replaceAll(' ', '_')}_${templateType}_template.csv';
       await _saveCsv(filename, csv);
     } catch (error) {
       _showMessage('Could not create CSV template: $error');
@@ -636,7 +648,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     if (kIsWeb) {
       await SharePlus.instance.share(
         ShareParams(
-          files: [XFile.fromData(bytes, mimeType: 'text/csv')],
+          files: [XFile.fromData(bytes, mimeType: 'text/csv', name: filename)],
           fileNameOverrides: [filename],
           subject: filename,
         ),

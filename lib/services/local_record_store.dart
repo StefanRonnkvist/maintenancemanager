@@ -11,7 +11,13 @@ class LocalRecordStore {
     final preferences = await SharedPreferences.getInstance();
     final stored = preferences.getString(key);
     if (stored == null || stored.isEmpty) return [];
-    final decoded = jsonDecode(stored);
+    final dynamic decoded;
+    try {
+      decoded = jsonDecode(stored);
+    } catch (_) {
+      // Treat corrupt stored JSON as an empty collection, not a startup failure.
+      return [];
+    }
     if (decoded is! List) return [];
     return decoded
         .whereType<Map>()

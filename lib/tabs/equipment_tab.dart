@@ -102,11 +102,18 @@ class _EquipmentTabState extends State<EquipmentTab> {
   Future<void> _loadRecords() async {
     try {
       final rows = await LocalRecordStore.read(_storageKey);
-      _records.addAll(rows.map(EquipmentRecord.fromJson));
+      for (final row in rows) {
+        try {
+          _records.add(EquipmentRecord.fromJson(row));
+        } catch (_) {
+          // Skip malformed entries so one bad row cannot prevent app startup.
+        }
+      }
     } catch (error) {
       _storageError = 'Could not load equipment: $error';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   /// Saves the current equipment list and exposes failures in the tab UI.

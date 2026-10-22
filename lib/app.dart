@@ -304,8 +304,12 @@ class _MainTabPageState extends State<MainTabPage>
     super.initState();
     // The ticker provider drives the animation shared by TabBar and TabBarView.
     _controller = TabController(length: _tabs.length, vsync: this);
-    _loadTabOrder();
-    _loadSharedEntries();
+    // Restore the shell immediately; load user-controlled preferences after first paint.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadTabOrder();
+      _loadSharedEntries();
+    });
   }
 
   @override
