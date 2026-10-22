@@ -2,10 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'sortable_data_table.dart';
+
 /// Displays saved work orders using the same scrollable DataTable style as
 /// the other record tables.
 class WorkOrderTable extends StatelessWidget {
-  const WorkOrderTable({required this.records, required this.onRowTap, super.key});
+  const WorkOrderTable({
+    required this.records,
+    required this.onRowTap,
+    super.key,
+  });
 
   final List<Map<String, dynamic>> records;
   final ValueChanged<Map<String, dynamic>> onRowTap;
@@ -66,29 +72,21 @@ class WorkOrderTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tableRows = [
+      for (final record in records)
+        [for (final (_, key) in _columns) _formatCell(record[key])],
+    ];
     final table = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
+      child: SortableDataTable(
+        columns: [for (final (header, _) in _columns) header],
+        rows: tableRows,
+        onRowTap: (index) => onRowTap(records[index]),
         headingRowColor: WidgetStatePropertyAll(
           Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         dataRowMinHeight: 52,
         dataRowMaxHeight: 64,
-        columns: [
-          for (final (header, _) in _columns) DataColumn(label: Text(header)),
-        ],
-        rows: [
-          for (final record in records)
-            DataRow(
-              cells: [
-                for (final (_, key) in _columns)
-                  DataCell(
-                    Text(_formatCell(record[key])),
-                    onTap: () => onRowTap(record),
-                  ),
-              ],
-            ),
-        ],
       ),
     );
 

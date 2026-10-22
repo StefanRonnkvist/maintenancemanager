@@ -4,14 +4,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../widgets/management_tab_layout.dart';
+import '../widgets/sortable_data_table.dart';
 
 /// Builds a message composer with business-based recipient selection.
 class MessageTab extends StatefulWidget {
-  const MessageTab({
-    required this.people,
-    required this.businesses,
-    super.key,
-  });
+  const MessageTab({required this.people, required this.businesses, super.key});
 
   final List<BusinessEntry> people;
   final List<BusinessEntry> businesses;
@@ -28,12 +25,13 @@ class _MessageTabState extends State<MessageTab> {
   final Set<String> _selectedTo = {};
   final Set<String> _selectedCc = {};
 
-  List<String> get _businessOptions => widget.businesses
-      .map((business) => business.name.trim())
-      .where((name) => name.isNotEmpty)
-      .toSet()
-      .toList()
-    ..sort();
+  List<String> get _businessOptions =>
+      widget.businesses
+          .map((business) => business.name.trim())
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
 
   List<String> get _locationOptions {
     final business = widget.businesses
@@ -48,17 +46,18 @@ class _MessageTabState extends State<MessageTab> {
       ..sort();
   }
 
-  List<BusinessEntry> get _toPeopleOptions => widget.people
-      .where(
-        (person) =>
-            person.businessName.trim() == _selectedBusiness &&
-            (_selectedLocation == null ||
-                person.locationName.trim() == _selectedLocation) &&
-            person.name.trim().isNotEmpty &&
-            person.email.trim().isNotEmpty,
-      )
-      .toList()
-    ..sort((first, second) => first.name.compareTo(second.name));
+  List<BusinessEntry> get _toPeopleOptions =>
+      widget.people
+          .where(
+            (person) =>
+                person.businessName.trim() == _selectedBusiness &&
+                (_selectedLocation == null ||
+                    person.locationName.trim() == _selectedLocation) &&
+                person.name.trim().isNotEmpty &&
+                person.email.trim().isNotEmpty,
+          )
+          .toList()
+        ..sort((first, second) => first.name.compareTo(second.name));
 
   List<BusinessEntry> get _ccPeopleOptions {
     final selectedBusiness = _selectedBusiness;
@@ -74,13 +73,14 @@ class _MessageTabState extends State<MessageTab> {
               person.email.trim().isNotEmpty &&
               !_selectedTo.contains(person.email) &&
               ((person.businessName.trim() == selectedBusiness &&
-                  (_selectedLocation == null ||
+                      (_selectedLocation == null ||
                           person.locationName.trim() == _selectedLocation)) ||
                   principleBusinessNames.contains(person.businessName.trim())),
         )
         .toList()
       ..sort((first, second) => first.name.compareTo(second.name));
   }
+
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
   final List<_MessageRow> _messageRows = [];
@@ -215,10 +215,12 @@ class _MessageTabState extends State<MessageTab> {
                       border: OutlineInputBorder(),
                     ),
                     items: _businessOptions
-                        .map((business) => DropdownMenuItem(
-                              value: business,
-                              child: Text(business),
-                            ))
+                        .map(
+                          (business) => DropdownMenuItem(
+                            value: business,
+                            child: Text(business),
+                          ),
+                        )
                         .toList(),
                     onChanged: (business) => setState(() {
                       _selectedBusiness = business;
@@ -232,7 +234,9 @@ class _MessageTabState extends State<MessageTab> {
                 SizedBox(
                   width: 320,
                   child: DropdownButtonFormField<String>(
-                    key: ValueKey('location-$_selectedBusiness-$_selectedLocation'),
+                    key: ValueKey(
+                      'location-$_selectedBusiness-$_selectedLocation',
+                    ),
                     initialValue: _selectedLocation,
                     isExpanded: true,
                     decoration: const InputDecoration(
@@ -240,10 +244,12 @@ class _MessageTabState extends State<MessageTab> {
                       border: OutlineInputBorder(),
                     ),
                     items: _locationOptions
-                        .map((location) => DropdownMenuItem(
-                              value: location,
-                              child: Text(location),
-                            ))
+                        .map(
+                          (location) => DropdownMenuItem(
+                            value: location,
+                            child: Text(location),
+                          ),
+                        )
                         .toList(),
                     onChanged: _selectedBusiness == null
                         ? null
@@ -265,7 +271,9 @@ class _MessageTabState extends State<MessageTab> {
                         if (email == '__select_all__') {
                           _selectedTo
                             ..clear()
-                            ..addAll(_toPeopleOptions.map((person) => person.email));
+                            ..addAll(
+                              _toPeopleOptions.map((person) => person.email),
+                            );
                         } else if (email == '__clear__') {
                           _selectedTo.clear();
                         } else if (!_selectedTo.add(email)) {
@@ -299,10 +307,12 @@ class _MessageTabState extends State<MessageTab> {
                           _selectedTo.isEmpty
                               ? 'Select recipients'
                               : _toPeopleOptions
-                                  .where((person) =>
-                                      _selectedTo.contains(person.email))
-                                  .map((person) => person.name)
-                                  .join(', '),
+                                    .where(
+                                      (person) =>
+                                          _selectedTo.contains(person.email),
+                                    )
+                                    .map((person) => person.name)
+                                    .join(', '),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -320,7 +330,9 @@ class _MessageTabState extends State<MessageTab> {
                         if (email == '__select_all__') {
                           _selectedCc
                             ..clear()
-                            ..addAll(_ccPeopleOptions.map((person) => person.email));
+                            ..addAll(
+                              _ccPeopleOptions.map((person) => person.email),
+                            );
                         } else if (email == '__clear__') {
                           _selectedCc.clear();
                         } else if (!_selectedCc.add(email)) {
@@ -354,10 +366,12 @@ class _MessageTabState extends State<MessageTab> {
                           _selectedCc.isEmpty
                               ? 'Select recipients'
                               : _ccPeopleOptions
-                                  .where((person) =>
-                                      _selectedCc.contains(person.email))
-                                  .map((person) => person.name)
-                                  .join(', '),
+                                    .where(
+                                      (person) =>
+                                          _selectedCc.contains(person.email),
+                                    )
+                                    .map((person) => person.name)
+                                    .join(', '),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -403,33 +417,24 @@ class _MessageTabState extends State<MessageTab> {
 
   Widget _messageTable(BuildContext context) => SingleChildScrollView(
     scrollDirection: Axis.horizontal,
-    child: DataTable(
+    child: SortableDataTable(
       showCheckboxColumn: false,
       headingRowColor: WidgetStatePropertyAll(
         Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
-      columns: const [
-        DataColumn(label: Text('Business')),
-        DataColumn(label: Text('Location')),
-        DataColumn(label: Text('To')),
-        DataColumn(label: Text('Cc')),
-        DataColumn(label: Text('Subject')),
-        DataColumn(label: Text('Message')),
-      ],
+      columns: const ['Business', 'Location', 'To', 'Cc', 'Subject', 'Message'],
       rows: [
         for (final row in _messageRows)
-          DataRow(
-            onSelectChanged: (_) => _deleteMessageRow(row),
-            cells: [
-              DataCell(Text(row.business)),
-              DataCell(Text(row.location)),
-              DataCell(Text(row.to)),
-              DataCell(Text(row.cc)),
-              DataCell(Text(row.subject)),
-              DataCell(Text(row.message)),
-            ],
-          ),
+          [
+            row.business,
+            row.location,
+            row.to,
+            row.cc,
+            row.subject,
+            row.message,
+          ],
       ],
+      onRowSelected: (index) => _deleteMessageRow(_messageRows[index]),
     ),
   );
 

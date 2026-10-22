@@ -228,7 +228,10 @@ class _MainTabPageState extends State<MainTabPage>
 
   Widget _pageForTab(AppTab tab) => switch (tab) {
     AppTab.equipment => EquipmentTab(businessEntries: _businesses),
-    AppTab.spareParts => SparePartsTab(businessEntries: _businesses),
+    AppTab.spareParts => SparePartsTab(
+      businessEntries: _businesses,
+      peopleEntries: _people,
+    ),
     AppTab.workOrder => WorkOrderTab(
       businessEntries: _businesses,
       peopleEntries: _people,

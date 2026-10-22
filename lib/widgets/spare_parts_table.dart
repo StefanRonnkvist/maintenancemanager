@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sortable_data_table.dart';
+
 /// Displays spare-part field headers and rows submitted from the entry form.
 class SparePartsTable extends StatelessWidget {
   const SparePartsTable({
@@ -29,43 +31,19 @@ class SparePartsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columns = [
-      ?leadingColumnLabel,
-      ..._columns,
-    ];
+    final columns = [?leadingColumnLabel, ..._columns];
     final table = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
+      child: SortableDataTable(
         showCheckboxColumn: false,
         headingRowColor: WidgetStatePropertyAll(
           Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         dataRowMinHeight: 52,
         dataRowMaxHeight: 80,
-        columns: [
-          for (final column in columns) DataColumn(label: Text(column)),
-        ],
-        rows: [
-          for (var rowIndex = 0; rowIndex < records.length; rowIndex++)
-            DataRow(
-              onSelectChanged: (_) => onRowTap(rowIndex),
-              cells: [
-                for (var index = 0; index < columns.length; index++)
-                  DataCell(
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 240),
-                      child: Text(
-                        index < records[rowIndex].length
-                            ? records[rowIndex][index]
-                            : '',
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-        ],
+        columns: columns,
+        rows: records,
+        onRowSelected: onRowTap,
       ),
     );
     if (records.isNotEmpty || !showEmptyMessage) return table;

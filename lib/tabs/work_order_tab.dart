@@ -9,6 +9,7 @@ import 'package:printing/printing.dart';
 import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
 import '../services/local_record_store.dart';
+import '../widgets/sortable_data_table.dart';
 import '../widgets/spare_parts_table.dart';
 import '../widgets/work_order_table.dart';
 
@@ -959,35 +960,34 @@ class _MatchingPeopleTable extends StatelessWidget {
         else
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.surfaceContainerHighest,
-              ),
+            child: SortableDataTable(
               columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Title')),
-                DataColumn(label: Text('Business Name')),
-                DataColumn(label: Text('Location Name')),
-                DataColumn(label: Text('Direct Phone')),
-                DataColumn(label: Text('Extension')),
-                DataColumn(label: Text('Cell Phone')),
-                DataColumn(label: Text('eMail')),
+                'Name',
+                'Title',
+                'Business Name',
+                'Location Name',
+                'Direct Phone',
+                'Extension',
+                'Cell Phone',
+                'eMail',
               ],
               rows: [
                 for (final person in people)
-                  DataRow(
-                    cells: [
-                      DataCell(Text(person.name)),
-                      DataCell(Text(person.title)),
-                      DataCell(Text(person.businessName)),
-                      DataCell(Text(person.locationName)),
-                      DataCell(Text(person.directPhone)),
-                      DataCell(Text(person.directPhoneExtension)),
-                      DataCell(Text(person.cellPhone)),
-                      DataCell(Text(person.email)),
-                    ],
-                  ),
+                  [
+                    person.name,
+                    person.title,
+                    person.businessName,
+                    person.locationName,
+                    person.directPhone,
+                    person.directPhoneExtension,
+                    person.cellPhone,
+                    person.email,
+                  ],
               ],
+              onRowTap: (_) {},
+              headingRowColor: WidgetStatePropertyAll(
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
             ),
           ),
       ],
@@ -1015,25 +1015,16 @@ class _PrinciplePeopleTable extends StatelessWidget {
         else
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: DataTable(
+            child: SortableDataTable(
+              columns: const ['Name', 'Business Name', 'Business Location'],
+              rows: [
+                for (final person in people)
+                  [person.name, person.businessName, person.locationName],
+              ],
+              onRowTap: (_) {},
               headingRowColor: WidgetStatePropertyAll(
                 Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
-              columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Business Name')),
-                DataColumn(label: Text('Business Location')),
-              ],
-              rows: [
-                for (final person in people)
-                  DataRow(
-                    cells: [
-                      DataCell(Text(person.name)),
-                      DataCell(Text(person.businessName)),
-                      DataCell(Text(person.locationName)),
-                    ],
-                  ),
-              ],
             ),
           ),
       ],

@@ -8,6 +8,7 @@ import '../models/business_entry.dart';
 import '../models/equipment_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/management_tab_layout.dart';
+import '../widgets/sortable_data_table.dart';
 
 /// Builds the equipment browser and its free-entry equipment form.
 class EquipmentTab extends StatefulWidget {
@@ -611,7 +612,7 @@ class _EquipmentTabState extends State<EquipmentTab> {
   }
 }
 
-class _EquipmentTable extends StatelessWidget {
+class _EquipmentTable extends StatefulWidget {
   const _EquipmentTable({
     required this.records,
     required this.onRowTap,
@@ -623,9 +624,64 @@ class _EquipmentTable extends StatelessWidget {
   final EquipmentRecord? selectedRecord;
 
   @override
+  State<_EquipmentTable> createState() => _EquipmentTableState();
+}
+
+class _EquipmentTableState extends State<_EquipmentTable> {
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
+  List<EquipmentRecord> _sortedRecords = [];
+
+  List<EquipmentRecord> get _visibleRecords =>
+      _sortColumnIndex != null && _sortedRecords.length == widget.records.length
+      ? _sortedRecords
+      : widget.records;
+
+  void _sort(int column, bool ascending) {
+    final fields = [
+      'equipmentCategory',
+      'localName',
+      'localNumber',
+      'manufacturerName',
+      'equipmentName',
+      'equipmentModel',
+      'serialNumber',
+      'maintenanceManual',
+      'publisher',
+      for (var section = 1; section <= 4; section++) ...[
+        'subsection${section}LocalName',
+        'subsection${section}LocalNumber',
+        'subsection${section}ManufacturerName',
+        'subsection${section}EquipmentName',
+        'subsection${section}EquipmentModel',
+        'subsection${section}SerialNumber',
+        'subsection${section}MaintenanceManual',
+        'subsection${section}Publisher',
+      ],
+      'businessName',
+      'locationName',
+    ];
+    setState(() {
+      _sortColumnIndex = column;
+      _sortAscending = ascending;
+      _sortedRecords = [...widget.records]
+        ..sort((a, b) {
+          final aValue = a.toJson()[fields[column]]?.toString() ?? '';
+          final bValue = b.toJson()[fields[column]]?.toString() ?? '';
+          final aNumber = num.tryParse(aValue);
+          final bNumber = num.tryParse(bValue);
+          final result = aNumber != null && bNumber != null
+              ? aNumber.compareTo(bNumber)
+              : aValue.toLowerCase().compareTo(bValue.toLowerCase());
+          return ascending ? result : -result;
+        });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final table = _buildTable(context);
-    if (records.isNotEmpty) return table;
+    if (widget.records.isNotEmpty) return table;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -638,112 +694,80 @@ class _EquipmentTable extends StatelessWidget {
     );
   }
 
-  Widget _buildTable(BuildContext context) => SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: DataTable(
-      showCheckboxColumn: false,
-      headingRowColor: WidgetStatePropertyAll(
-        Theme.of(context).colorScheme.surfaceContainerHighest,
-      ),
-      dataRowMinHeight: 48,
-      columns: const [
-        DataColumn(label: Text('Equipment Category')),
-        DataColumn(label: Text('Local Name')),
-        DataColumn(label: Text('Local Number')),
-        DataColumn(label: Text('Manufacturer Name')),
-        DataColumn(label: Text('Equipment Name')),
-        DataColumn(label: Text('Equipment Model')),
-        DataColumn(label: Text('Serial Number')),
-        DataColumn(label: Text('Maintenance Manual')),
-        DataColumn(label: Text('Publisher')),
-        DataColumn(label: Text('Subsection 1 Local Name')),
-        DataColumn(label: Text('Subsection 1 Local Number')),
-        DataColumn(label: Text('Subsection 1 Manufacturer Name')),
-        DataColumn(label: Text('Subsection 1 Equipment Name')),
-        DataColumn(label: Text('Subsection 1 Equipment Model')),
-        DataColumn(label: Text('Subsection 1 Serial Number')),
-        DataColumn(label: Text('Subsection 1 Maintenance Manual')),
-        DataColumn(label: Text('Subsection 1 Publisher')),
-        DataColumn(label: Text('Subsection 2 Local Name')),
-        DataColumn(label: Text('Subsection 2 Local Number')),
-        DataColumn(label: Text('Subsection 2 Manufacturer Name')),
-        DataColumn(label: Text('Subsection 2 Equipment Name')),
-        DataColumn(label: Text('Subsection 2 Equipment Model')),
-        DataColumn(label: Text('Subsection 2 Serial Number')),
-        DataColumn(label: Text('Subsection 2 Maintenance Manual')),
-        DataColumn(label: Text('Subsection 2 Publisher')),
-        DataColumn(label: Text('Subsection 3 Local Name')),
-        DataColumn(label: Text('Subsection 3 Local Number')),
-        DataColumn(label: Text('Subsection 3 Manufacturer Name')),
-        DataColumn(label: Text('Subsection 3 Equipment Name')),
-        DataColumn(label: Text('Subsection 3 Equipment Model')),
-        DataColumn(label: Text('Subsection 3 Serial Number')),
-        DataColumn(label: Text('Subsection 3 Maintenance Manual')),
-        DataColumn(label: Text('Subsection 3 Publisher')),
-        DataColumn(label: Text('Subsection 4 Local Name')),
-        DataColumn(label: Text('Subsection 4 Local Number')),
-        DataColumn(label: Text('Subsection 4 Manufacturer Name')),
-        DataColumn(label: Text('Subsection 4 Equipment Name')),
-        DataColumn(label: Text('Subsection 4 Equipment Model')),
-        DataColumn(label: Text('Subsection 4 Serial Number')),
-        DataColumn(label: Text('Subsection 4 Maintenance Manual')),
-        DataColumn(label: Text('Subsection 4 Publisher')),
-        DataColumn(label: Text('Business Name')),
-        DataColumn(label: Text('Location Name')),
+  Widget _buildTable(BuildContext context) {
+    final records = _visibleRecords;
+    final fields = [
+      'equipmentCategory',
+      'localName',
+      'localNumber',
+      'manufacturerName',
+      'equipmentName',
+      'equipmentModel',
+      'serialNumber',
+      'maintenanceManual',
+      'publisher',
+      for (var section = 1; section <= 4; section++) ...[
+        'subsection${section}LocalName',
+        'subsection${section}LocalNumber',
+        'subsection${section}ManufacturerName',
+        'subsection${section}EquipmentName',
+        'subsection${section}EquipmentModel',
+        'subsection${section}SerialNumber',
+        'subsection${section}MaintenanceManual',
+        'subsection${section}Publisher',
       ],
-      rows: records
-          .map(
-            (record) => DataRow(
-              selected: identical(record, selectedRecord),
-              onSelectChanged: (_) => onRowTap(record),
-              cells: [
-                DataCell(Text(record.equipmentCategory)),
-                DataCell(Text(record.localName)),
-                DataCell(Text(record.localNumber)),
-                DataCell(Text(record.manufacturerName)),
-                DataCell(Text(record.equipmentName)),
-                DataCell(Text(record.equipmentModel)),
-                DataCell(Text(record.serialNumber)),
-                DataCell(Text(record.maintenanceManual)),
-                DataCell(Text(record.publisher)),
-                DataCell(Text(record.subsection1LocalName)),
-                DataCell(Text(record.subsection1LocalNumber)),
-                DataCell(Text(record.subsection1ManufacturerName)),
-                DataCell(Text(record.subsection1EquipmentName)),
-                DataCell(Text(record.subsection1EquipmentModel)),
-                DataCell(Text(record.subsection1SerialNumber)),
-                DataCell(Text(record.subsection1MaintenanceManual)),
-                DataCell(Text(record.subsection1Publisher)),
-                DataCell(Text(record.subsection2LocalName)),
-                DataCell(Text(record.subsection2LocalNumber)),
-                DataCell(Text(record.subsection2ManufacturerName)),
-                DataCell(Text(record.subsection2EquipmentName)),
-                DataCell(Text(record.subsection2EquipmentModel)),
-                DataCell(Text(record.subsection2SerialNumber)),
-                DataCell(Text(record.subsection2MaintenanceManual)),
-                DataCell(Text(record.subsection2Publisher)),
-                DataCell(Text(record.subsection3LocalName)),
-                DataCell(Text(record.subsection3LocalNumber)),
-                DataCell(Text(record.subsection3ManufacturerName)),
-                DataCell(Text(record.subsection3EquipmentName)),
-                DataCell(Text(record.subsection3EquipmentModel)),
-                DataCell(Text(record.subsection3SerialNumber)),
-                DataCell(Text(record.subsection3MaintenanceManual)),
-                DataCell(Text(record.subsection3Publisher)),
-                DataCell(Text(record.subsection4LocalName)),
-                DataCell(Text(record.subsection4LocalNumber)),
-                DataCell(Text(record.subsection4ManufacturerName)),
-                DataCell(Text(record.subsection4EquipmentName)),
-                DataCell(Text(record.subsection4EquipmentModel)),
-                DataCell(Text(record.subsection4SerialNumber)),
-                DataCell(Text(record.subsection4MaintenanceManual)),
-                DataCell(Text(record.subsection4Publisher)),
-                DataCell(Text(record.businessName)),
-                DataCell(Text(record.locationName)),
-              ],
-            ),
-          )
-          .toList(),
-    ),
-  );
+      'businessName',
+      'locationName',
+    ];
+    final labels = [
+      'Equipment Category',
+      'Local Name',
+      'Local Number',
+      'Manufacturer Name',
+      'Equipment Name',
+      'Equipment Model',
+      'Serial Number',
+      'Maintenance Manual',
+      'Publisher',
+      for (var section = 1; section <= 4; section++) ...[
+        'Subsection $section Local Name',
+        'Subsection $section Local Number',
+        'Subsection $section Manufacturer Name',
+        'Subsection $section Equipment Name',
+        'Subsection $section Equipment Model',
+        'Subsection $section Serial Number',
+        'Subsection $section Maintenance Manual',
+        'Subsection $section Publisher',
+      ],
+      'Business Name',
+      'Location Name',
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SortableDataTable(
+        showCheckboxColumn: false,
+        headingRowColor: WidgetStatePropertyAll(
+          Theme.of(context).colorScheme.surfaceContainerHighest,
+        ),
+        dataRowMinHeight: 48,
+        sortColumnIndex: _sortColumnIndex,
+        sortAscending: _sortAscending,
+        columns: labels,
+        rows: [
+          for (final record in records)
+            [for (final key in fields) record.toJson()[key]?.toString() ?? ''],
+        ],
+        onRowSelected: (index) => widget.onRowTap(records[index]),
+        onColumnSort: _sort,
+        rowColors: [
+          for (final record in records)
+            identical(record, widget.selectedRecord)
+                ? Theme.of(context).colorScheme.primaryContainer
+                : null,
+        ],
+      ),
+    );
+  }
+
+  // Legacy implementation removed after adding sortable columns.
 }

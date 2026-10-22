@@ -4,15 +4,21 @@ import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
 import '../services/local_record_store.dart';
+import '../widgets/business_table.dart';
 import '../widgets/management_tab_layout.dart';
 import '../widgets/spare_parts_form.dart';
 import '../widgets/spare_parts_table.dart';
 
 /// Owns spare-part entry.
 class SparePartsTab extends StatefulWidget {
-  const SparePartsTab({required this.businessEntries, super.key});
+  const SparePartsTab({
+    required this.businessEntries,
+    required this.peopleEntries,
+    super.key,
+  });
 
   final List<BusinessEntry> businessEntries;
+  final List<BusinessEntry> peopleEntries;
 
   @override
   State<SparePartsTab> createState() => _SparePartsTabState();
@@ -25,6 +31,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
   String? _storageError;
   int? _editingIndex;
   final List<SparePartRecord> _records = [];
+  SparePartRecord? _selectedRecord;
   final _oemPartNumber = TextEditingController();
   final _oemDescription = TextEditingController();
   final _vendorPartNumber = TextEditingController();
@@ -91,16 +98,34 @@ class _SparePartsTabState extends State<SparePartsTab> {
         _records[index] = record;
       }
       _editingIndex = null;
+      _selectedRecord = null;
       _formExpanded = false;
     });
     _saveRecords();
     _clearForm();
   }
 
+  List<BusinessEntry> get _matchingVendorPeople {
+    final record = _selectedRecord;
+    if (record == null ||
+        record.vendorName.trim().isEmpty ||
+        record.locationName.trim().isEmpty) {
+      return const [];
+    }
+    return widget.peopleEntries
+        .where(
+          (person) =>
+              person.businessName.trim() == record.vendorName.trim() &&
+              person.locationName.trim() == record.locationName.trim(),
+        )
+        .toList(growable: false);
+  }
+
   void _selectSparePart(int index) {
     final record = _records[index];
     setState(() {
       _editingIndex = index;
+      _selectedRecord = record;
       _formExpanded = true;
     });
     _oemPartNumber.text = record.oemPartNumber;
@@ -171,6 +196,20 @@ class _SparePartsTabState extends State<SparePartsTab> {
     records: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_selectedRecord != null) ...[
+          Text(
+            'People for ${_selectedRecord!.vendorName} — ${_selectedRecord!.locationName}',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          PeopleTable(
+            entries: _matchingVendorPeople,
+            onRowTap: (_) {},
+            selectedEntry: null,
+            emptyMessage: 'No people match this vendor and location.',
+          ),
+          const SizedBox(height: 16),
+        ],
         if (_storageError != null)
           Text(
             _storageError!,
