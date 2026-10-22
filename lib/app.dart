@@ -181,6 +181,8 @@ class _MainTabPageState extends State<MainTabPage>
         ..addAll(restored);
     }
 
+    // Always open the Application DB tab on boot, independent of saved tab order.
+    _controller.index = _tabs.indexOf(AppTab.applicationDb);
     setState(() => _tabOrderLoaded = true);
   }
 
