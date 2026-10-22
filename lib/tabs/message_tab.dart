@@ -8,13 +8,37 @@ import '../widgets/sortable_data_table.dart';
 
 /// Builds a message composer with business-based recipient selection.
 class MessageTab extends StatefulWidget {
-  const MessageTab({required this.people, required this.businesses, super.key});
+  const MessageTab({
+    required this.people,
+    required this.businesses,
+    this.prefillRequest,
+    this.onPrefillHandled,
+    super.key,
+  });
 
   final List<BusinessEntry> people;
   final List<BusinessEntry> businesses;
+  final MessagePrefillRequest? prefillRequest;
+  final VoidCallback? onPrefillHandled;
 
   @override
   State<MessageTab> createState() => _MessageTabState();
+}
+
+class MessagePrefillRequest {
+  const MessagePrefillRequest({
+    required this.business,
+    required this.location,
+    required this.person,
+    required this.subject,
+    required this.message,
+  });
+
+  final String business;
+  final String location;
+  final BusinessEntry person;
+  final String subject;
+  final String message;
 }
 
 class _MessageTabState extends State<MessageTab> {
@@ -84,6 +108,66 @@ class _MessageTabState extends State<MessageTab> {
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
   final List<_MessageRow> _messageRows = [];
+  Object? _lastHandledPrefill;
+  String? _prefilledToName;
+
+  @override
+  void didUpdateWidget(covariant MessageTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final request = widget.prefillRequest;
+    if (request != null && !identical(request, _lastHandledPrefill)) {
+      _lastHandledPrefill = request;
+      _applyPrefill(request);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final request = widget.prefillRequest;
+    if (request != null) {
+      _lastHandledPrefill = request;
+      _applyPrefill(request);
+    }
+  }
+
+  void _applyPrefill(MessagePrefillRequest request) {
+    final matchingBusiness = widget.businesses
+        .where((business) => business.name.trim() == request.business.trim())
+        .firstOrNull;
+    final businessName = matchingBusiness?.name.trim() ?? request.business.trim();
+    final locationName = matchingBusiness?.locations
+            .where((location) => location.name.trim() == request.location.trim())
+            .firstOrNull
+            ?.name
+            .trim() ??
+        request.location.trim();
+    final recipient = widget.people
+        .where((person) => identical(person, request.person))
+        .firstOrNull;
+    final personName = recipient?.name.trim() ?? request.person.name.trim();
+    final email = recipient?.email.trim() ?? request.person.email.trim();
+
+    setState(() {
+      _selectedBusiness = _businessOptions.contains(businessName)
+          ? businessName
+          : null;
+      _selectedLocation = _locationOptions.contains(locationName)
+          ? locationName
+          : null;
+      _selectedTo
+        ..clear()
+        ..add(email);
+      _prefilledToName = personName;
+      _selectedCc.clear();
+      _syncRecipientControllers();
+      _subjectController.text = request.subject;
+      _messageController.text = request.message;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onPrefillHandled?.call();
+    });
+  }
 
   void _syncRecipientControllers() {
     _toController.text = _selectedTo.join('; ');
@@ -209,6 +293,13 @@ class _MessageTabState extends State<MessageTab> {
                   child: DropdownButtonFormField<String>(
                     key: ValueKey('business-$_selectedBusiness'),
                     initialValue: _selectedBusiness,
+                    onChanged: (business) => setState(() {
+                      _selectedBusiness = business;
+                      _selectedLocation = null;
+                      _selectedTo.clear();
+                      _selectedCc.clear();
+                      _syncRecipientControllers();
+                    }),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Business',
@@ -222,13 +313,6 @@ class _MessageTabState extends State<MessageTab> {
                           ),
                         )
                         .toList(),
-                    onChanged: (business) => setState(() {
-                      _selectedBusiness = business;
-                      _selectedLocation = null;
-                      _selectedTo.clear();
-                      _selectedCc.clear();
-                      _syncRecipientControllers();
-                    }),
                   ),
                 ),
                 SizedBox(
@@ -238,6 +322,14 @@ class _MessageTabState extends State<MessageTab> {
                       'location-$_selectedBusiness-$_selectedLocation',
                     ),
                     initialValue: _selectedLocation,
+                    onChanged: _selectedBusiness == null
+                        ? null
+                        : (location) => setState(() {
+                            _selectedLocation = location;
+                            _selectedTo.clear();
+                            _selectedCc.clear();
+                            _syncRecipientControllers();
+                          }),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Location',
@@ -251,14 +343,6 @@ class _MessageTabState extends State<MessageTab> {
                           ),
                         )
                         .toList(),
-                    onChanged: _selectedBusiness == null
-                        ? null
-                        : (location) => setState(() {
-                            _selectedLocation = location;
-                            _selectedTo.clear();
-                            _selectedCc.clear();
-                            _syncRecipientControllers();
-                          }),
                   ),
                 ),
                 SizedBox(
@@ -276,8 +360,12 @@ class _MessageTabState extends State<MessageTab> {
                             );
                         } else if (email == '__clear__') {
                           _selectedTo.clear();
+                          _prefilledToName = null;
                         } else if (!_selectedTo.add(email)) {
                           _selectedTo.remove(email);
+                          _prefilledToName = null;
+                        } else {
+                          _prefilledToName = null;
                         }
                         _syncRecipientControllers();
                       }),
@@ -306,12 +394,12 @@ class _MessageTabState extends State<MessageTab> {
                         child: Text(
                           _selectedTo.isEmpty
                               ? 'Select recipients'
-                              : _toPeopleOptions
-                                    .where(
-                                      (person) =>
-                                          _selectedTo.contains(person.email),
-                                    )
-                                    .map((person) => person.name)
+                              : _selectedTo.length == 1 && _prefilledToName != null
+                              ? _prefilledToName!
+                              : _selectedTo
+                                    .map((email) => widget.people
+                                        .where((person) => person.email.trim() == email)
+                                        .firstOrNull?.name ?? email)
                                     .join(', '),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

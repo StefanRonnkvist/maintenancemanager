@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/app_tab.dart';
 import 'models/business_entry.dart';
+import 'models/spare_part_record.dart';
 import 'services/local_record_store.dart';
 import 'tabs/business_tab.dart';
 import 'tabs/information_tabs.dart';
@@ -206,6 +207,44 @@ class _MainTabPageState extends State<MainTabPage>
   static const _businessStorageKey = 'business_records_v1';
   final List<BusinessEntry> _people = [];
   final List<BusinessEntry> _businesses = [];
+  MessagePrefillRequest? _messagePrefillRequest;
+
+  void _prefillMessageFromSparePart({
+    required BusinessEntry person,
+    required SparePartRecord record,
+  }) {
+    _messagePrefillRequest = MessagePrefillRequest(
+      business: record.vendorName,
+      location: record.locationName,
+      person: person,
+      subject: [record.vendorDescription, record.vendorPartNumber]
+          .where((part) => part.trim().isNotEmpty)
+          .join(' — '),
+      message: [
+        ('OEM Part Number', record.oemPartNumber),
+        ('OEM Description', record.oemDescription),
+        ('Vendor Part Number', record.vendorPartNumber),
+        ('Vendor Description', record.vendorDescription),
+        ('Serial Number', record.serialNumber),
+        ('Vendor Name', record.vendorName),
+        ('Location Name', record.locationName),
+        ('Quantity in Stock', record.quantityInStock),
+        ('Storage Location', record.location),
+      ].map((field) => '${field.$1}: ${field.$2}').join('\n'),
+    );
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final messageTabIndex = _tabs.indexOf(AppTab.message);
+      if (messageTabIndex >= 0) _controller.animateTo(messageTabIndex);
+    });
+  }
+
+  void _clearMessagePrefill() {
+    if (_messagePrefillRequest != null) {
+      setState(() => _messagePrefillRequest = null);
+    }
+  }
 
   Future<void> _loadSharedEntries() async {
     try {
@@ -231,6 +270,7 @@ class _MainTabPageState extends State<MainTabPage>
     AppTab.spareParts => SparePartsTab(
       businessEntries: _businesses,
       peopleEntries: _people,
+      onMessagePersonSelected: _prefillMessageFromSparePart,
     ),
     AppTab.workOrder => WorkOrderTab(
       businessEntries: _businesses,
@@ -249,7 +289,12 @@ class _MainTabPageState extends State<MainTabPage>
       kind: BusinessTabKind.business,
     ),
     AppTab.information => const InformationTabs(),
-    AppTab.message => MessageTab(people: _people, businesses: _businesses),
+    AppTab.message => MessageTab(
+      people: _people,
+      businesses: _businesses,
+      prefillRequest: _messagePrefillRequest,
+      onPrefillHandled: _clearMessagePrefill,
+    ),
     AppTab.applicationDb => const ApplicationDbTab(),
     AppTab.help => const HelpTab(),
   };

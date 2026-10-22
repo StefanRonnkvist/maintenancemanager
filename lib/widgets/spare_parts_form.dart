@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
+import 'business_table.dart';
 
 /// Form for entering a spare part and emitting a complete record on submit.
 class SparePartsForm extends StatefulWidget {
@@ -18,6 +19,8 @@ class SparePartsForm extends StatefulWidget {
     required this.location,
     required this.onAdd,
     this.isEditing = false,
+    this.peopleAboveSubmit,
+    this.onPersonTap,
     super.key,
   });
 
@@ -33,6 +36,8 @@ class SparePartsForm extends StatefulWidget {
   final TextEditingController location;
   final ValueChanged<SparePartRecord> onAdd;
   final bool isEditing;
+  final List<BusinessEntry>? peopleAboveSubmit;
+  final ValueChanged<BusinessEntry>? onPersonTap;
 
   @override
   State<SparePartsForm> createState() => _SparePartsFormState();
@@ -73,7 +78,13 @@ class _SparePartsFormState extends State<SparePartsForm> {
       const SizedBox(height: 16),
       _field(widget.vendorDescription, 'Vendor Description'),
       const SizedBox(height: 16),
-      _field(widget.serialNumber, 'Serial Number'),
+      _field(
+        widget.serialNumber,
+        'Serial Numbers',
+        helperText: 'Enter multiple serial numbers separated by commas or new lines.',
+        minLines: 1,
+        maxLines: 3,
+      ),
       const SizedBox(height: 16),
       DropdownButtonFormField<String>(
         key: ValueKey('vendor-${widget.vendorName.text}'),
@@ -137,6 +148,20 @@ class _SparePartsFormState extends State<SparePartsForm> {
       ),
       const SizedBox(height: 16),
       _field(widget.location, 'Storage Location'),
+      if (widget.peopleAboveSubmit != null) ...[
+        const SizedBox(height: 20),
+        Text(
+          'People for ${widget.vendorName.text} — ${widget.locationName.text}',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        PeopleTable(
+          entries: widget.peopleAboveSubmit!,
+          onRowTap: (person) => widget.onPersonTap?.call(person),
+          selectedEntry: null,
+          emptyMessage: 'No people match this vendor and location.',
+        ),
+      ],
       const SizedBox(height: 16),
       Align(
         alignment: Alignment.centerRight,
@@ -156,11 +181,17 @@ class _SparePartsFormState extends State<SparePartsForm> {
     TextEditingController controller,
     String label, {
     TextInputType? keyboardType,
+    String? helperText,
+    int minLines = 1,
+    int maxLines = 1,
   }) => TextFormField(
     controller: controller,
     keyboardType: keyboardType,
+    minLines: minLines,
+    maxLines: maxLines,
     decoration: InputDecoration(
       labelText: label,
+      helperText: helperText,
       border: const OutlineInputBorder(),
     ),
   );

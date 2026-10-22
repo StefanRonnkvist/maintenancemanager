@@ -4,7 +4,6 @@ import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../models/spare_part_record.dart';
 import '../services/local_record_store.dart';
-import '../widgets/business_table.dart';
 import '../widgets/management_tab_layout.dart';
 import '../widgets/spare_parts_form.dart';
 import '../widgets/spare_parts_table.dart';
@@ -14,11 +13,16 @@ class SparePartsTab extends StatefulWidget {
   const SparePartsTab({
     required this.businessEntries,
     required this.peopleEntries,
+    this.onMessagePersonSelected,
     super.key,
   });
 
   final List<BusinessEntry> businessEntries;
   final List<BusinessEntry> peopleEntries;
+  final void Function({
+    required BusinessEntry person,
+    required SparePartRecord record,
+  })? onMessagePersonSelected;
 
   @override
   State<SparePartsTab> createState() => _SparePartsTabState();
@@ -121,6 +125,13 @@ class _SparePartsTabState extends State<SparePartsTab> {
         .toList(growable: false);
   }
 
+  void _selectPersonForMessage(BusinessEntry person) {
+    final record = _selectedRecord;
+    if (record != null) {
+      widget.onMessagePersonSelected?.call(person: person, record: record);
+    }
+  }
+
   void _selectSparePart(int index) {
     final record = _records[index];
     setState(() {
@@ -187,6 +198,10 @@ class _SparePartsTabState extends State<SparePartsTab> {
                 location: _location,
                 onAdd: _saveSparePart,
                 isEditing: _editingIndex != null,
+                peopleAboveSubmit: _editingIndex != null
+                    ? _matchingVendorPeople
+                    : null,
+                onPersonTap: _selectPersonForMessage,
               ),
             ),
         ],
@@ -196,20 +211,7 @@ class _SparePartsTabState extends State<SparePartsTab> {
     records: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_selectedRecord != null) ...[
-          Text(
-            'People for ${_selectedRecord!.vendorName} — ${_selectedRecord!.locationName}',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          PeopleTable(
-            entries: _matchingVendorPeople,
-            onRowTap: (_) {},
-            selectedEntry: null,
-            emptyMessage: 'No people match this vendor and location.',
-          ),
-          const SizedBox(height: 16),
-        ],
+
         if (_storageError != null)
           Text(
             _storageError!,
