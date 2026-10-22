@@ -44,9 +44,12 @@ class MessagePrefillRequest {
 class _MessageTabState extends State<MessageTab> {
   final _toController = TextEditingController();
   final _ccController = TextEditingController();
+  final _principleController = TextEditingController();
   String? _selectedBusiness;
   String? _selectedLocation;
+  String _principleFilter = '';
   final Set<String> _selectedTo = {};
+  final Set<String> _selectedPrinciple = {};
   final Set<String> _selectedCc = {};
 
   List<String> get _businessOptions =>
@@ -83,11 +86,38 @@ class _MessageTabState extends State<MessageTab> {
           .toList()
         ..sort((first, second) => first.name.compareTo(second.name));
 
+  List<BusinessEntry> get _principlePeopleOptions {
+    final principleBusinessNames = widget.businesses
+        .where(
+          (business) =>
+              business.businessType.trim().toLowerCase() == 'principle',
+        )
+        .map((business) => business.name.trim())
+        .toSet();
+    final query = _principleFilter.trim().toLowerCase();
+    return widget.people
+        .where(
+          (person) =>
+              person.name.trim().isNotEmpty &&
+              person.email.trim().isNotEmpty &&
+              principleBusinessNames.contains(person.businessName.trim()) &&
+              (query.isEmpty ||
+                  person.name.toLowerCase().contains(query) ||
+                  person.businessName.toLowerCase().contains(query) ||
+                  person.email.toLowerCase().contains(query)),
+        )
+        .toList()
+      ..sort((first, second) => first.name.compareTo(second.name));
+  }
+
   List<BusinessEntry> get _ccPeopleOptions {
     final selectedBusiness = _selectedBusiness;
     if (selectedBusiness == null) return const [];
     final principleBusinessNames = widget.businesses
-        .where((business) => business.businessType.trim() == 'Principle')
+        .where(
+          (business) =>
+              business.businessType.trim().toLowerCase() == 'principle',
+        )
         .map((business) => business.name.trim())
         .toSet();
     return widget.people
@@ -95,11 +125,11 @@ class _MessageTabState extends State<MessageTab> {
           (person) =>
               person.name.trim().isNotEmpty &&
               person.email.trim().isNotEmpty &&
+              !principleBusinessNames.contains(person.businessName.trim()) &&
               !_selectedTo.contains(person.email) &&
-              ((person.businessName.trim() == selectedBusiness &&
-                      (_selectedLocation == null ||
-                          person.locationName.trim() == _selectedLocation)) ||
-                  principleBusinessNames.contains(person.businessName.trim())),
+              person.businessName.trim() == selectedBusiness &&
+              (_selectedLocation == null ||
+                  person.locationName.trim() == _selectedLocation),
         )
         .toList()
       ..sort((first, second) => first.name.compareTo(second.name));
@@ -135,9 +165,13 @@ class _MessageTabState extends State<MessageTab> {
     final matchingBusiness = widget.businesses
         .where((business) => business.name.trim() == request.business.trim())
         .firstOrNull;
-    final businessName = matchingBusiness?.name.trim() ?? request.business.trim();
-    final locationName = matchingBusiness?.locations
-            .where((location) => location.name.trim() == request.location.trim())
+    final businessName =
+        matchingBusiness?.name.trim() ?? request.business.trim();
+    final locationName =
+        matchingBusiness?.locations
+            .where(
+              (location) => location.name.trim() == request.location.trim(),
+            )
             .firstOrNull
             ?.name
             .trim() ??
@@ -171,7 +205,8 @@ class _MessageTabState extends State<MessageTab> {
 
   void _syncRecipientControllers() {
     _toController.text = _selectedTo.join('; ');
-    _ccController.text = _selectedCc.join('; ');
+    _ccController.text = {..._selectedCc, ..._selectedPrinciple}.join('; ');
+    _principleController.text = _selectedPrinciple.join('; ');
   }
 
   Future<void> _deleteMessageRow(_MessageRow row) async {
@@ -257,6 +292,7 @@ class _MessageTabState extends State<MessageTab> {
   void dispose() {
     _toController.dispose();
     _ccController.dispose();
+    _principleController.dispose();
     _subjectController.dispose();
     _messageController.dispose();
     super.dispose();
@@ -347,6 +383,108 @@ class _MessageTabState extends State<MessageTab> {
                 ),
                 SizedBox(
                   width: 320,
+                  child: TextField(
+                    controller: _principleController,
+                    readOnly: true,
+                    onTap: () => showDialog<void>(
+                      context: context,
+                      builder: (dialogContext) => StatefulBuilder(
+                        builder: (context, setDialogState) => AlertDialog(
+                          title: const Text('Select Principle people'),
+                          content: SizedBox(
+                            width: 360,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextField(
+                                  autofocus: true,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Principle',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() => _principleFilter = value);
+                                    setDialogState(() {});
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () => setState(() {
+                                        _selectedPrinciple.addAll(
+                                          _principlePeopleOptions.map(
+                                            (person) => person.email,
+                                          ),
+                                        );
+                                        _syncRecipientControllers();
+                                        setDialogState(() {});
+                                      }),
+                                      child: const Text('Select All'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => setState(() {
+                                        _selectedPrinciple.clear();
+                                        _syncRecipientControllers();
+                                        setDialogState(() {});
+                                      }),
+                                      child: const Text('Clear'),
+                                    ),
+                                  ],
+                                ),
+                                Flexible(
+                                  child: ListView(
+                                    shrinkWrap: true,
+                                    children: [
+                                      for (final person
+                                          in _principlePeopleOptions)
+                                        CheckboxListTile(
+                                          dense: true,
+                                          value: _selectedPrinciple.contains(
+                                            person.email,
+                                          ),
+                                          title: Text(person.name),
+                                          subtitle: Text(person.businessName),
+                                          onChanged: (selected) => setState(() {
+                                            if (selected == true) {
+                                              _selectedPrinciple.add(
+                                                person.email,
+                                              );
+                                            } else {
+                                              _selectedPrinciple.remove(
+                                                person.email,
+                                              );
+                                            }
+                                            _syncRecipientControllers();
+                                            setDialogState(() {});
+                                          }),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          actions: [
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
+                              child: const Text('Done'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Principle',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.arrow_drop_down),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 320,
                   child: DropdownButtonHideUnderline(
                     child: PopupMenuButton<String>(
                       enabled: _selectedBusiness != null,
@@ -394,12 +532,22 @@ class _MessageTabState extends State<MessageTab> {
                         child: Text(
                           _selectedTo.isEmpty
                               ? 'Select recipients'
-                              : _selectedTo.length == 1 && _prefilledToName != null
+                              : _selectedTo.length == 1 &&
+                                    _prefilledToName != null
                               ? _prefilledToName!
                               : _selectedTo
-                                    .map((email) => widget.people
-                                        .where((person) => person.email.trim() == email)
-                                        .firstOrNull?.name ?? email)
+                                    .map(
+                                      (email) =>
+                                          widget.people
+                                              .where(
+                                                (person) =>
+                                                    person.email.trim() ==
+                                                    email,
+                                              )
+                                              .firstOrNull
+                                              ?.name ??
+                                          email,
+                                    )
                                     .join(', '),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
