@@ -7,7 +7,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../models/business_entry.dart';
+import '../models/spare_part_record.dart';
 import '../services/local_record_store.dart';
+import '../widgets/spare_parts_table.dart';
 import '../widgets/work_order_table.dart';
 
 /// Work order page with free-entry business and location details.
@@ -27,13 +29,17 @@ class WorkOrderTab extends StatefulWidget {
 
 class _WorkOrderTabState extends State<WorkOrderTab> {
   static const _storageKey = 'work_order_records_v1';
+  static const _sparePartsStorageKey = 'spare_parts_records_v1';
   final _businessNameController = TextEditingController();
   final _locationNameController = TextEditingController();
   final _locationAddressController = TextEditingController();
   final _locationPhoneController = TextEditingController();
   final _locationAirportController = TextEditingController();
   final _notesController = TextEditingController();
+  final _sparePartsSearchController = TextEditingController();
   final List<Map<String, dynamic>> _records = [];
+  List<SparePartRecord> _sparePartRecords = const [];
+  final List<_SparePartNeeded> _sparePartsNeeded = [];
   Map<String, List<String>> _componentOptions = const {};
   String? _selectedComponentCategory;
   String? _selectedComponent;
@@ -106,7 +112,109 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   void initState() {
     super.initState();
     _loadRecords();
+    _loadSparePartRecords();
     _loadComponentOptions();
+  }
+
+  Future<void> _loadSparePartRecords() async {
+    try {
+      final records = await LocalRecordStore.read(_sparePartsStorageKey);
+      if (!mounted) return;
+      setState(() {
+        _sparePartRecords = records
+            .map(SparePartRecord.fromJson)
+            .toList(growable: false);
+      });
+    } catch (error) {
+      if (mounted) _showMessage('Could not load spare parts: $error');
+    }
+  }
+
+  List<SparePartRecord> get _filteredSparePartRecords {
+    final query = _sparePartsSearchController.text.trim().toLowerCase();
+    if (query.isEmpty) return const [];
+    return _sparePartRecords
+        .where(
+          (record) =>
+              record.values.any((value) => value.toLowerCase().contains(query)),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> _addSparePartNeeded(SparePartRecord record) async {
+    final quantityController = TextEditingController();
+    final quantity = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final parsedQuantity = int.tryParse(quantityController.text);
+          return AlertDialog(
+            title: const Text('Quantity Needed'),
+            content: TextField(
+              controller: quantityController,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                labelText: 'Enter quantity',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) => setDialogState(() {}),
+              onSubmitted: (_) {
+                if (parsedQuantity != null && parsedQuantity > 0) {
+                  Navigator.of(dialogContext).pop(parsedQuantity);
+                }
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: parsedQuantity != null && parsedQuantity > 0
+                    ? () => Navigator.of(dialogContext).pop(parsedQuantity)
+                    : null,
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    quantityController.dispose();
+    if (quantity == null || !mounted) return;
+    setState(() {
+      _sparePartsNeeded.add(
+        _SparePartNeeded(record: record, quantityNeeded: quantity),
+      );
+    });
+  }
+
+  Future<void> _removeSparePartNeeded(int index) async {
+    final part = _sparePartsNeeded[index];
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remove spare part?'),
+        content: Text(
+          'Delete ${part.record.oemPartNumber.isEmpty ? 'this spare part' : part.record.oemPartNumber} from Spare Parts Needed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete == true && mounted) {
+      setState(() => _sparePartsNeeded.removeAt(index));
+    }
   }
 
   Future<void> _loadComponentOptions() async {
@@ -146,6 +254,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     _locationPhoneController.dispose();
     _locationAirportController.dispose();
     _notesController.dispose();
+    _sparePartsSearchController.dispose();
     super.dispose();
   }
 
@@ -337,6 +446,24 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       _locationAirportController.text =
           record['locationAirport']?.toString() ?? '';
       _notesController.text = record['notes']?.toString() ?? '';
+      _sparePartsNeeded
+        ..clear()
+        ..addAll(
+          (record['sparePartsNeeded'] as List? ?? const [])
+              .whereType<Map>()
+              .map((part) {
+                final data = Map<String, dynamic>.from(part);
+                final quantityNeeded =
+                    int.tryParse(
+                      data.remove('quantityNeeded')?.toString() ?? '',
+                    ) ??
+                    1;
+                return _SparePartNeeded(
+                  record: SparePartRecord.fromJson(data),
+                  quantityNeeded: quantityNeeded,
+                );
+              }),
+        );
     });
   }
 
@@ -356,6 +483,10 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'locationDirectPhone': _locationPhoneController.text.trim(),
       'locationAirport': _locationAirportController.text.trim(),
       'notes': _notesController.text.trim(),
+      'sparePartsNeeded': [
+        for (final part in _sparePartsNeeded)
+          {...part.record.toJson(), 'quantityNeeded': part.quantityNeeded},
+      ],
       'matchingPeople': jsonEncode([
         for (final person in _matchingPeople)
           {
@@ -412,6 +543,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         _selectedLocationName = null;
         _selectedComponentCategory = null;
         _selectedComponent = null;
+        _sparePartsNeeded.clear();
       });
       _businessNameController.clear();
       _locationNameController.clear();
@@ -446,9 +578,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         _formExpanded = false;
       });
       _showMessage(
-        shouldComplete
-            ? 'Work order marked complete.'
-            : 'Work order reopened.',
+        shouldComplete ? 'Work order marked complete.' : 'Work order reopened.',
       );
     } catch (error) {
       _showMessage(
@@ -591,6 +721,23 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                       const SizedBox(height: 24),
                       _PrinciplePeopleTable(people: _principlePeople),
                       const SizedBox(height: 24),
+                      Text(
+                        'Spare Parts Needed',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      SparePartsTable(
+                        records: [
+                          for (final part in _sparePartsNeeded)
+                            [
+                              part.quantityNeeded.toString(),
+                              ...part.record.values,
+                            ],
+                        ],
+                        onRowTap: _removeSparePartNeeded,
+                        leadingColumnLabel: 'Quantity Needed',
+                      ),
+                      const SizedBox(height: 24),
                       TextField(
                         controller: _notesController,
                         minLines: 4,
@@ -601,6 +748,43 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                           alignLabelWithHint: true,
                           border: OutlineInputBorder(),
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Spare Parts',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      SparePartsTable(
+                        records: [
+                          for (final record in _filteredSparePartRecords)
+                            record.values,
+                        ],
+                        onRowTap: (index) => _addSparePartNeeded(
+                          _filteredSparePartRecords[index],
+                        ),
+                        showEmptyMessage: false,
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _sparePartsSearchController,
+                        decoration: InputDecoration(
+                          labelText: 'Search spare parts',
+                          hintText: 'Search all spare-part columns',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _sparePartsSearchController.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Clear search',
+                                  onPressed: () {
+                                    _sparePartsSearchController.clear();
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(Icons.clear),
+                                ),
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 16),
                       Wrap(
@@ -726,7 +910,9 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         ),
         const SizedBox(height: 8),
         WorkOrderTable(
-          records: _records.where((record) => record['completed'] != true).toList(),
+          records: _records
+              .where((record) => record['completed'] != true)
+              .toList(),
           onRowTap: _editWorkOrder,
         ),
         const SizedBox(height: 24),
@@ -736,12 +922,21 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         ),
         const SizedBox(height: 8),
         WorkOrderTable(
-          records: _records.where((record) => record['completed'] == true).toList(),
+          records: _records
+              .where((record) => record['completed'] == true)
+              .toList(),
           onRowTap: _editWorkOrder,
         ),
       ],
     );
   }
+}
+
+class _SparePartNeeded {
+  const _SparePartNeeded({required this.record, required this.quantityNeeded});
+
+  final SparePartRecord record;
+  final int quantityNeeded;
 }
 
 class _MatchingPeopleTable extends StatelessWidget {

@@ -80,6 +80,11 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
                 changed = true;
               }
             }
+            if (entry.key == 'Work Order' &&
+                !record.containsKey('sparePartsNeeded')) {
+              record['sparePartsNeeded'] = <Map<String, dynamic>>[];
+              changed = true;
+            }
           }
           if (changed) {
             await LocalRecordStore.write(entry.value, storedRecords);
@@ -230,6 +235,20 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               (column == 'locations' || column == 'airports')) {
             return value is String ? value : jsonEncode(value ?? []);
           }
+          if (table == 'Work Order' &&
+              (column == 'matchingPeople' ||
+                  column == 'principlePeople' ||
+                  column == 'sparePartsNeeded')) {
+            Object? decoded = value;
+            if (value is String) {
+              try {
+                decoded = jsonDecode(value);
+              } on FormatException {
+                decoded = value;
+              }
+            }
+            return decoded is List ? jsonEncode(decoded) : jsonEncode([]);
+          }
           return value is String ? value : jsonEncode(value ?? '');
         }).toList(),
     ];
@@ -304,15 +323,17 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locationAirport',
       'matchingPeople',
       'notes',
+      'sparePartsNeeded',
       'principlePeople',
       'componentCategory',
       'component',
+      'completed',
     ],
-    'Messages' => ['to', 'cc', 'subject', 'message'],
+    'Messages' => ['business', 'location', 'to', 'cc', 'subject', 'message'],
     _ => const ['name', 'value', 'updatedAt'],
   };
 
-  String _escapeCsv(String value) => '"${value.replaceAll('"', '"')}"';
+  String _escapeCsv(String value) => '"${value.replaceAll('"', '""')}"';
 
   List<List<String>> _parseCsv(String source) {
     final rows = <List<String>>[];
@@ -338,9 +359,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         row.add(field.toString());
         field.clear();
       } else if (char == '\n' || char == '\r') {
-        if (char == '\r' &&
-            index + 1 < source.length &&
-            source[index + 1] == '\n') {
+        if (char == '\r' && index + 1 < source.length && source[index + 1] == '\n') {
           index++;
         }
         row.add(field.toString());
@@ -351,9 +370,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
         field.write(char);
       }
     }
-    if (quoted) {
-      throw const FormatException('CSV contains an unclosed quoted field.');
-    }
+    if (quoted) throw const FormatException('CSV contains an unclosed quoted field.');
     if (field.length > 0 || row.isNotEmpty) {
       row.add(field.toString());
       if (row.any((cell) => cell.isNotEmpty)) rows.add(row);
@@ -465,16 +482,19 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               );
             }
           } else if (table == 'Work Order' &&
-              (name == 'matchingPeople' || name == 'principlePeople')) {
+              (name == 'matchingPeople' ||
+                  name == 'principlePeople' ||
+                  name == 'sparePartsNeeded') &&
+              value.isNotEmpty) {
             try {
               final decoded = jsonDecode(value);
-              if (decoded is! List || decoded.any((person) => person is! Map)) {
-                throw const FormatException('Expected a JSON list of people.');
+              if (decoded is! List || decoded.any((item) => item is! Map)) {
+                throw const FormatException('Expected a JSON list of records.');
               }
               mapped[name] = jsonEncode(
                 decoded
                     .whereType<Map>()
-                    .map((person) => Map<String, dynamic>.from(person))
+                    .map((item) => Map<String, dynamic>.from(item))
                     .toList(),
               );
             } on FormatException catch (error) {

@@ -5,11 +5,15 @@ class SparePartsTable extends StatelessWidget {
   const SparePartsTable({
     required this.records,
     required this.onRowTap,
+    this.showEmptyMessage = true,
+    this.leadingColumnLabel,
     super.key,
   });
 
   final List<List<String>> records;
   final ValueChanged<int> onRowTap;
+  final bool showEmptyMessage;
+  final String? leadingColumnLabel;
 
   static const _columns = [
     'OEM Part Number',
@@ -25,6 +29,10 @@ class SparePartsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final columns = [
+      ?leadingColumnLabel,
+      ..._columns,
+    ];
     final table = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
@@ -35,14 +43,14 @@ class SparePartsTable extends StatelessWidget {
         dataRowMinHeight: 52,
         dataRowMaxHeight: 80,
         columns: [
-          for (final column in _columns) DataColumn(label: Text(column)),
+          for (final column in columns) DataColumn(label: Text(column)),
         ],
         rows: [
           for (var rowIndex = 0; rowIndex < records.length; rowIndex++)
             DataRow(
               onSelectChanged: (_) => onRowTap(rowIndex),
               cells: [
-                for (var index = 0; index < _columns.length; index++)
+                for (var index = 0; index < columns.length; index++)
                   DataCell(
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 240),
@@ -60,7 +68,7 @@ class SparePartsTable extends StatelessWidget {
         ],
       ),
     );
-    if (records.isNotEmpty) return table;
+    if (records.isNotEmpty || !showEmptyMessage) return table;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
