@@ -7,7 +7,7 @@ class SortableDataTable extends StatefulWidget {
     required this.rows,
     this.onRowTap,
     this.sortValues,
-    this.showCheckboxColumn = true,
+    this.showCheckboxColumn = false,
     this.headingRowColor,
     this.dataRowMinHeight,
     this.dataRowMaxHeight,
@@ -17,6 +17,7 @@ class SortableDataTable extends StatefulWidget {
     this.onColumnSort,
     this.rowColors,
     this.enableFiltering = true,
+    this.selectedRows = const {},
     super.key,
   });
 
@@ -34,6 +35,7 @@ class SortableDataTable extends StatefulWidget {
   final void Function(int columnIndex, bool ascending)? onColumnSort;
   final List<Color?>? rowColors;
   final bool enableFiltering;
+  final Set<int> selectedRows;
 
   @override
   State<SortableDataTable> createState() => _SortableDataTableState();
@@ -167,6 +169,7 @@ class _SortableDataTableState extends State<SortableDataTable> {
       rows: [
         for (var sortedIndex = 0; sortedIndex < visibleOrder.length; sortedIndex++)
           DataRow(
+          selected: widget.selectedRows.contains(visibleOrder[sortedIndex]),
           color: widget.rowColors == null
               ? null
               : WidgetStatePropertyAll(

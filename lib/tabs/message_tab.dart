@@ -671,6 +671,7 @@ class _MessageTabState extends State<MessageTab> {
           ],
       ],
       onRowSelected: (index) => _deleteMessageRow(_messageRows[index]),
+      enableFiltering: false,
     ),
   );
 

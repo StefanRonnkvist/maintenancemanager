@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/business_entry.dart';
+import '../services/local_record_store.dart';
 import '../tabs/business_tab.dart';
 import 'form_section.dart';
 
@@ -59,6 +60,7 @@ class _BusinessFormState extends State<BusinessForm> {
   static const _businessTypes = ['Customer', 'Vendor', 'Principle'];
   String? _businessType;
   bool _remoteWork = false;
+  static const _customAirportsStorageKey = 'custom_airports_v1';
   List<String> _airportOptions = const [];
 
   double _airportFieldWidth(TextEditingController controller) {
@@ -74,38 +76,163 @@ class _BusinessFormState extends State<BusinessForm> {
     return (textPainter.width + 80).clamp(260.0, double.infinity);
   }
 
-  Widget _airportAutocomplete({
+  Widget _airportDropdown({
     required TextEditingController controller,
     required String label,
-  }) => SizedBox(
-    width: _airportFieldWidth(controller),
-    child: Autocomplete<String>(
-      initialValue: TextEditingValue(text: controller.text),
-      optionsBuilder: (textEditingValue) {
-        final query = textEditingValue.text.trim().toLowerCase();
-        if (query.isEmpty) return const Iterable<String>.empty();
-        return _airportOptions.where(
-          (airport) => airport.toLowerCase().contains(query),
-        );
-      },
-      onSelected: (airport) => controller.text = airport,
-      fieldViewBuilder:
-          (context, textEditingController, focusNode, onFieldSubmitted) {
-            textEditingController.addListener(() {
-              controller.text = textEditingController.text;
-            });
-            return TextFormField(
-              controller: textEditingController,
-              focusNode: focusNode,
-              onChanged: (_) => setState(() {}),
+  }) {
+    final options = [
+      ..._airportOptions,
+      if (controller.text.isNotEmpty &&
+          !_airportOptions.contains(controller.text))
+        controller.text,
+    ];
+    return SizedBox(
+      width: _airportFieldWidth(controller) + 140,
+      child: Row(
+        children: [
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              key: ValueKey(
+                '$label-${controller.text}-${_airportOptions.length}',
+              ),
+              initialValue: options.contains(controller.text)
+                  ? controller.text
+                  : null,
+              isExpanded: true,
               decoration: InputDecoration(
                 labelText: label,
                 border: const OutlineInputBorder(),
               ),
-            );
-          },
-    ),
-  );
+              selectedItemBuilder: (context) => [
+                for (final airport in options)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(_airportCode(airport)),
+                  ),
+              ],
+              items: [
+                for (final airport in options)
+                  DropdownMenuItem(value: airport, child: Text(airport)),
+              ],
+              onChanged: (airport) {
+                controller.text = airport ?? '';
+                setState(() {});
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: () => _addAirport(controller),
+            icon: const Icon(Icons.add_location_alt_outlined),
+            label: const Text('Add Airport'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _airportCode(String airport) {
+    final match = RegExp(r'\(([^()]*)\)\s*$').firstMatch(airport);
+    return match?.group(1) ?? airport;
+  }
+
+  Future<void> _addAirport(TextEditingController targetController) async {
+    final formKey = GlobalKey<FormState>();
+    final nameController = TextEditingController();
+    final codeController = TextEditingController();
+    final airport = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add Airport'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                autofocus: true,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Enter an airport name'
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Airport Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: codeController,
+                textCapitalization: TextCapitalization.characters,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Enter an airport code'
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Airport Code',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() != true) return;
+              final name = nameController.text.trim();
+              final code = codeController.text.trim().toUpperCase();
+              Navigator.of(dialogContext).pop('$name ($code)');
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    nameController.dispose();
+    codeController.dispose();
+    if (airport == null || !mounted) return;
+
+    final exists = _airportOptions.any(
+      (option) => option.toLowerCase() == airport.toLowerCase(),
+    );
+    if (exists) {
+      final existingAirport = _airportOptions.firstWhere(
+        (option) => option.toLowerCase() == airport.toLowerCase(),
+      );
+      setState(() => targetController.text = existingAirport);
+      return;
+    }
+
+    final updatedOptions = [..._airportOptions, airport]..sort();
+    try {
+      final customAirports = await LocalRecordStore.read(
+        _customAirportsStorageKey,
+      );
+      final records = <Map<String, Object?>>[
+        for (final record in customAirports)
+          if (record['airport']?.toString().toLowerCase() !=
+              airport.toLowerCase())
+            record,
+        {'airport': airport},
+      ];
+      await LocalRecordStore.write(_customAirportsStorageKey, records);
+      if (!mounted) return;
+      setState(() {
+        _airportOptions = updatedOptions;
+        targetController.text = airport;
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save airport: $error')),
+        );
+      }
+    }
+  }
 
   // Both form variants reuse these controllers; kind determines which fields show.
   bool get _isPeople => widget.kind == BusinessTabKind.people;
@@ -143,23 +270,37 @@ class _BusinessFormState extends State<BusinessForm> {
   }
 
   Future<void> _loadAirports() async {
-    final csv = await rootBundle.loadString('assets/airports.csv');
-    final airports =
-        csv
-            .split(RegExp(r'\r?\n'))
-            .skip(1)
-            .map((row) {
-              final columns = row.split(',');
-              if (columns.length < 3) return null;
-              final name = columns[0].trim();
-              final code = columns[2].trim();
-              return name.isEmpty || code.isEmpty ? null : '$name ($code)';
-            })
-            .whereType<String>()
-            .toSet()
-            .toList()
-          ..sort();
-    if (mounted) setState(() => _airportOptions = airports);
+    try {
+      final csv = await rootBundle.loadString('assets/airports.csv');
+      final airports = csv
+          .split(RegExp(r'\r?\n'))
+          .skip(1)
+          .map((row) {
+            final columns = row.split(',');
+            if (columns.length < 3) return null;
+            final name = columns[0].trim();
+            final code = columns[2].trim();
+            return name.isEmpty || code.isEmpty ? null : '$name ($code)';
+          })
+          .whereType<String>()
+          .toSet();
+      final customAirports = await LocalRecordStore.read(
+        _customAirportsStorageKey,
+      );
+      airports.addAll(
+        customAirports
+            .map((record) => record['airport']?.toString() ?? '')
+            .where((airport) => airport.isNotEmpty),
+      );
+      final options = airports.toList()..sort();
+      if (mounted) setState(() => _airportOptions = options);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load airports: $error')),
+        );
+      }
+    }
   }
 
   @override
@@ -316,7 +457,7 @@ class _BusinessFormState extends State<BusinessForm> {
               width: 300,
               validator: (value) => _required(value, 'an address'),
             ),
-            _airportAutocomplete(
+            _airportDropdown(
               controller: _nearestAirportController,
               label: 'Nearest Airport',
             ),
@@ -455,7 +596,7 @@ class _BusinessFormState extends State<BusinessForm> {
                   validator: (value) =>
                       _required(value, 'a direct phone number'),
                 ),
-                _airportAutocomplete(
+                _airportDropdown(
                   controller: _nearestAirportController,
                   label: 'Nearest Airport',
                 ),
@@ -510,7 +651,7 @@ class _BusinessFormState extends State<BusinessForm> {
                               label: 'Location ${index + 1} Direct Phone',
                               keyboardType: TextInputType.phone,
                             ),
-                            _airportAutocomplete(
+                            _airportDropdown(
                               controller: _locationAirportControllers[index],
                               label: 'Location ${index + 1} Nearest Airport',
                             ),

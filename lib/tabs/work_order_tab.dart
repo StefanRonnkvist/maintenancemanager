@@ -7,10 +7,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../models/business_entry.dart';
-import '../models/spare_part_record.dart';
+import '../models/equipment_record.dart';
 import '../services/local_record_store.dart';
 import '../widgets/sortable_data_table.dart';
-import '../widgets/spare_parts_table.dart';
 import '../widgets/work_order_table.dart';
 
 /// Work order page with free-entry business and location details.
@@ -30,17 +29,16 @@ class WorkOrderTab extends StatefulWidget {
 
 class _WorkOrderTabState extends State<WorkOrderTab> {
   static const _storageKey = 'work_order_records_v1';
-  static const _sparePartsStorageKey = 'spare_parts_records_v1';
+  static const _equipmentStorageKey = 'equipment_records_v1';
   final _businessNameController = TextEditingController();
   final _locationNameController = TextEditingController();
   final _locationAddressController = TextEditingController();
   final _locationPhoneController = TextEditingController();
   final _locationAirportController = TextEditingController();
   final _notesController = TextEditingController();
-  final _sparePartsSearchController = TextEditingController();
   final List<Map<String, dynamic>> _records = [];
-  List<SparePartRecord> _sparePartRecords = const [];
-  final List<_SparePartNeeded> _sparePartsNeeded = [];
+  List<EquipmentRecord> _equipmentRecords = const [];
+  final List<EquipmentRecord> _selectedEquipmentRecords = [];
   Map<String, List<String>> _componentOptions = const {};
   String? _selectedComponentCategory;
   String? _selectedComponent;
@@ -71,6 +69,19 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       _businessNameController.clear();
       _locationNameController.clear();
     }
+  }
+
+  List<EquipmentRecord> get _matchingEquipmentRecords {
+    final businessName = _selectedBusinessName?.trim() ?? '';
+    final locationName = _selectedLocationName?.trim() ?? '';
+    if (businessName.isEmpty || locationName.isEmpty) return const [];
+    return _equipmentRecords
+        .where(
+          (record) =>
+              record.businessName.trim() == businessName &&
+              record.locationName.trim() == locationName,
+        )
+        .toList(growable: false);
   }
 
   List<String> get _locationOptions =>
@@ -113,109 +124,41 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   void initState() {
     super.initState();
     _loadRecords();
-    _loadSparePartRecords();
+    _loadEquipmentRecords();
     _loadComponentOptions();
   }
 
-  Future<void> _loadSparePartRecords() async {
+  Future<void> _loadEquipmentRecords() async {
     try {
-      final records = await LocalRecordStore.read(_sparePartsStorageKey);
+      final records = await LocalRecordStore.read(_equipmentStorageKey);
       if (!mounted) return;
       setState(() {
-        _sparePartRecords = records
-            .map(SparePartRecord.fromJson)
+        _equipmentRecords = records
+            .map(EquipmentRecord.fromJson)
             .toList(growable: false);
       });
     } catch (error) {
-      if (mounted) _showMessage('Could not load spare parts: $error');
+      if (mounted) _showMessage('Could not load equipment: $error');
     }
   }
 
-  List<SparePartRecord> get _filteredSparePartRecords {
-    final query = _sparePartsSearchController.text.trim().toLowerCase();
-    if (query.isEmpty) return const [];
-    return _sparePartRecords
-        .where(
-          (record) =>
-              record.values.any((value) => value.toLowerCase().contains(query)),
-        )
-        .toList(growable: false);
-  }
-
-  Future<void> _addSparePartNeeded(SparePartRecord record) async {
-    final quantityController = TextEditingController();
-    final quantity = await showDialog<int>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final parsedQuantity = int.tryParse(quantityController.text);
-          return AlertDialog(
-            title: const Text('Quantity Needed'),
-            content: TextField(
-              controller: quantityController,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: 'Enter quantity',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (_) => setDialogState(() {}),
-              onSubmitted: (_) {
-                if (parsedQuantity != null && parsedQuantity > 0) {
-                  Navigator.of(dialogContext).pop(parsedQuantity);
-                }
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: parsedQuantity != null && parsedQuantity > 0
-                    ? () => Navigator.of(dialogContext).pop(parsedQuantity)
-                    : null,
-                child: const Text('Add'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-    quantityController.dispose();
-    if (quantity == null || !mounted) return;
-    setState(() {
-      _sparePartsNeeded.add(
-        _SparePartNeeded(record: record, quantityNeeded: quantity),
+  bool _isEquipmentSelected(EquipmentRecord record) =>
+      _selectedEquipmentRecords.any(
+        (selected) =>
+            jsonEncode(selected.toJson()) == jsonEncode(record.toJson()),
       );
-    });
-  }
 
-  Future<void> _removeSparePartNeeded(int index) async {
-    final part = _sparePartsNeeded[index];
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Remove spare part?'),
-        content: Text(
-          'Delete ${part.record.oemPartNumber.isEmpty ? 'this spare part' : part.record.oemPartNumber} from Spare Parts Needed?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (shouldDelete == true && mounted) {
-      setState(() => _sparePartsNeeded.removeAt(index));
-    }
+  void _toggleEquipmentSelection(EquipmentRecord record) {
+    setState(() {
+      if (_isEquipmentSelected(record)) {
+        _selectedEquipmentRecords.removeWhere(
+          (selected) =>
+              jsonEncode(selected.toJson()) == jsonEncode(record.toJson()),
+        );
+      } else {
+        _selectedEquipmentRecords.add(record);
+      }
+    });
   }
 
   Future<void> _loadComponentOptions() async {
@@ -255,7 +198,6 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     _locationPhoneController.dispose();
     _locationAirportController.dispose();
     _notesController.dispose();
-    _sparePartsSearchController.dispose();
     super.dispose();
   }
 
@@ -447,23 +389,16 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       _locationAirportController.text =
           record['locationAirport']?.toString() ?? '';
       _notesController.text = record['notes']?.toString() ?? '';
-      _sparePartsNeeded
+      _selectedEquipmentRecords
         ..clear()
         ..addAll(
-          (record['sparePartsNeeded'] as List? ?? const [])
+          (record['equipmentSelected'] as List? ?? const [])
               .whereType<Map>()
-              .map((part) {
-                final data = Map<String, dynamic>.from(part);
-                final quantityNeeded =
-                    int.tryParse(
-                      data.remove('quantityNeeded')?.toString() ?? '',
-                    ) ??
-                    1;
-                return _SparePartNeeded(
-                  record: SparePartRecord.fromJson(data),
-                  quantityNeeded: quantityNeeded,
-                );
-              }),
+              .map(
+                (equipment) => EquipmentRecord.fromJson(
+                  Map<String, dynamic>.from(equipment),
+                ),
+              ),
         );
     });
   }
@@ -484,10 +419,10 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'locationDirectPhone': _locationPhoneController.text.trim(),
       'locationAirport': _locationAirportController.text.trim(),
       'notes': _notesController.text.trim(),
-      'sparePartsNeeded': [
-        for (final part in _sparePartsNeeded)
-          {...part.record.toJson(), 'quantityNeeded': part.quantityNeeded},
+      'equipmentSelected': [
+        for (final equipment in _selectedEquipmentRecords) equipment.toJson(),
       ],
+
       'matchingPeople': jsonEncode([
         for (final person in _matchingPeople)
           {
@@ -544,7 +479,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
         _selectedLocationName = null;
         _selectedComponentCategory = null;
         _selectedComponent = null;
-        _sparePartsNeeded.clear();
+        _selectedEquipmentRecords.clear();
       });
       _businessNameController.clear();
       _locationNameController.clear();
@@ -649,6 +584,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                                 _locationAddressController.clear();
                                 _locationPhoneController.clear();
                                 _locationAirportController.clear();
+                                _selectedEquipmentRecords.clear();
                               }),
                             ),
                           ),
@@ -685,6 +621,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                                     location?.directPhone ?? '';
                                 _locationAirportController.text =
                                     location?.nearestAirport ?? '';
+                                _selectedEquipmentRecords.clear();
                               }),
                             ),
                           ),
@@ -717,76 +654,22 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                           border: OutlineInputBorder(),
                         ),
                       ),
+                      if (_locationAirportController.text
+                          .trim()
+                          .isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        _EquipmentSelectionTable(
+                          records: _matchingEquipmentRecords,
+                          selectedRecords: _selectedEquipmentRecords,
+                          onRowSelected: (index) => _toggleEquipmentSelection(
+                            _matchingEquipmentRecords[index],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       _MatchingPeopleTable(people: _matchingPeople),
                       const SizedBox(height: 24),
                       _PrinciplePeopleTable(people: _principlePeople),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Spare Parts Needed',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      SparePartsTable(
-                        records: [
-                          for (final part in _sparePartsNeeded)
-                            [
-                              part.quantityNeeded.toString(),
-                              ...part.record.values,
-                            ],
-                        ],
-                        onRowTap: _removeSparePartNeeded,
-                        leadingColumnLabel: 'Quantity Needed',
-                      ),
-                      const SizedBox(height: 24),
-                      TextField(
-                        controller: _notesController,
-                        minLines: 4,
-                        maxLines: 8,
-                        keyboardType: TextInputType.multiline,
-                        decoration: const InputDecoration(
-                          labelText: 'Notes',
-                          alignLabelWithHint: true,
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Spare Parts',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      SparePartsTable(
-                        records: [
-                          for (final record in _filteredSparePartRecords)
-                            record.values,
-                        ],
-                        onRowTap: (index) => _addSparePartNeeded(
-                          _filteredSparePartRecords[index],
-                        ),
-                        showEmptyMessage: false,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _sparePartsSearchController,
-                        decoration: InputDecoration(
-                          labelText: 'Search spare parts',
-                          hintText: 'Search all spare-part columns',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _sparePartsSearchController.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: 'Clear search',
-                                  onPressed: () {
-                                    _sparePartsSearchController.clear();
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.clear),
-                                ),
-                          border: const OutlineInputBorder(),
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
                       const SizedBox(height: 16),
                       Wrap(
                         spacing: 16,
@@ -859,7 +742,19 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 24),
+                      TextField(
+                        controller: _notesController,
+                        minLines: 4,
+                        maxLines: 8,
+                        keyboardType: TextInputType.multiline,
+                        decoration: const InputDecoration(
+                          labelText: 'Notes',
+                          alignLabelWithHint: true,
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       Wrap(
                         spacing: 12,
                         children: [
@@ -933,11 +828,81 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
   }
 }
 
-class _SparePartNeeded {
-  const _SparePartNeeded({required this.record, required this.quantityNeeded});
+class _EquipmentSelectionTable extends StatelessWidget {
+  const _EquipmentSelectionTable({
+    required this.records,
+    required this.selectedRecords,
+    required this.onRowSelected,
+  });
 
-  final SparePartRecord record;
-  final int quantityNeeded;
+  final List<EquipmentRecord> records;
+  final List<EquipmentRecord> selectedRecords;
+  final ValueChanged<int> onRowSelected;
+
+  bool _isSelected(EquipmentRecord record) => selectedRecords.any(
+    (selected) => jsonEncode(selected.toJson()) == jsonEncode(record.toJson()),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    const fields = [
+      'Equipment Category',
+      'Local Name',
+      'Local Number',
+      'Manufacturer Name',
+      'Equipment Name',
+      'Equipment Model',
+      'Serial Number',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Equipment at this business and location',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        if (records.isEmpty)
+          const Text('No equipment matches the selected business and location.')
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SortableDataTable(
+              columns: fields,
+              rows: [
+                for (final record in records)
+                  [
+                    record.equipmentCategory,
+                    record.localName,
+                    record.localNumber,
+                    record.manufacturerName,
+                    record.equipmentName,
+                    record.equipmentModel,
+                    record.serialNumber,
+                  ],
+              ],
+              showCheckboxColumn: false,
+              enableFiltering: false,
+              onRowSelected: onRowSelected,
+              selectedRows: {
+                for (var index = 0; index < records.length; index++)
+                  if (_isSelected(records[index])) index,
+              },
+              rowColors: [
+                for (final record in records)
+                  if (_isSelected(record))
+                    Theme.of(context).colorScheme.primaryContainer
+                  else
+                    null,
+              ],
+              headingRowColor: WidgetStatePropertyAll(
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _MatchingPeopleTable extends StatelessWidget {
@@ -984,7 +949,7 @@ class _MatchingPeopleTable extends StatelessWidget {
                     person.email,
                   ],
               ],
-              onRowTap: (_) {},
+              showCheckboxColumn: false,
               headingRowColor: WidgetStatePropertyAll(
                 Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
@@ -1021,7 +986,7 @@ class _PrinciplePeopleTable extends StatelessWidget {
                 for (final person in people)
                   [person.name, person.businessName, person.locationName],
               ],
-              onRowTap: (_) {},
+              showCheckboxColumn: false,
               headingRowColor: WidgetStatePropertyAll(
                 Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
