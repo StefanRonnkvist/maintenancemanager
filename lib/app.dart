@@ -281,13 +281,15 @@ class _MainTabPageState extends State<MainTabPage>
     AppTab.people => BusinessTab(
       entries: _people,
       businessEntries: _businesses,
-      onAdd: (entry) => setState(() => _people.add(entry)),
+      onAdd: (entry) => _people.add(entry),
+      onEntriesChanged: () => setState(() {}),
       kind: BusinessTabKind.people,
     ),
     AppTab.business => BusinessTab(
       entries: _businesses,
       businessEntries: _businesses,
-      onAdd: (entry) => setState(() => _businesses.add(entry)),
+      onAdd: (entry) => _businesses.add(entry),
+      onEntriesChanged: () => setState(() {}),
       kind: BusinessTabKind.business,
     ),
     AppTab.information => const InformationTabs(),

@@ -262,8 +262,8 @@ class _EquipmentTabState extends State<EquipmentTab> {
   /// Builds a record from the form, then appends and persists it.
   void _addEquipment() {
     final record = EquipmentRecord(
-      businessName: _businessNameController.text.trim(),
-      locationName: _locationNameController.text.trim(),
+      businessName: _selectedBusinessName ?? _businessNameController.text.trim(),
+      locationName: _selectedLocationName ?? _locationNameController.text.trim(),
       equipmentCategory: _categoryController.text.trim(),
       localName: _localNameController.text.trim(),
       localNumber: _localNumberController.text.trim(),

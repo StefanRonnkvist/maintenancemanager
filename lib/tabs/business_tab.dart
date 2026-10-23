@@ -11,6 +11,7 @@ class BusinessTab extends StatefulWidget {
   const BusinessTab({
     required this.entries,
     required this.onAdd,
+    required this.onEntriesChanged,
     required this.kind,
     required this.businessEntries,
     super.key,
@@ -18,6 +19,7 @@ class BusinessTab extends StatefulWidget {
 
   final List<BusinessEntry> entries;
   final ValueChanged<BusinessEntry> onAdd;
+  final VoidCallback onEntriesChanged;
   final BusinessTabKind kind;
   final List<BusinessEntry> businessEntries;
 
@@ -95,6 +97,7 @@ class _BusinessTabState extends State<BusinessTab> {
       }
       _selectedEntry = null;
     });
+    widget.onEntriesChanged();
     _persistEntries();
   }
 

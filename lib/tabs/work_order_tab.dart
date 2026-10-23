@@ -8,6 +8,7 @@ import 'package:printing/printing.dart';
 
 import '../models/business_entry.dart';
 import '../models/equipment_record.dart';
+import '../services/csv_utils.dart';
 import '../services/local_record_store.dart';
 import '../widgets/sortable_data_table.dart';
 import '../widgets/work_order_table.dart';
@@ -165,8 +166,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
     try {
       final csv = await rootBundle.loadString('assets/components.csv');
       final options = <String, List<String>>{};
-      for (final line in const LineSplitter().convert(csv).skip(1)) {
-        final columns = line.split(',');
+      for (final columns in CsvUtils.parse(csv).skip(1)) {
         if (columns.length < 2) continue;
         final category = columns[0].trim();
         final component = columns[1].trim();
@@ -422,6 +422,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'equipmentSelected': [
         for (final equipment in _selectedEquipmentRecords) equipment.toJson(),
       ],
+      'sparePartsNeeded': _editingRecord?['sparePartsNeeded'] ?? const [],
 
       'matchingPeople': jsonEncode([
         for (final person in _matchingPeople)
@@ -453,9 +454,12 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
       'component': _selectedComponent ?? '',
       'completed': _editingRecord?['completed'] == true,
     };
-    if (record.values.every(
-      (value) => value == null || (value is String && value.isEmpty),
-    )) {
+    if (record.entries.where((entry) => entry.key != 'completed').every((entry) {
+      final value = entry.value;
+      return value == null ||
+          (value is String && value.isEmpty) ||
+          (value is List && value.isEmpty);
+    })) {
       return;
     }
     final updated = [..._records];
@@ -654,9 +658,7 @@ class _WorkOrderTabState extends State<WorkOrderTab> {
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      if (_locationAirportController.text
-                          .trim()
-                          .isNotEmpty) ...[
+                      if (_selectedLocationName != null) ...[
                         const SizedBox(height: 24),
                         _EquipmentSelectionTable(
                           records: _matchingEquipmentRecords,

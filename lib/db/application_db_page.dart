@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/business_entry.dart';
+import '../services/csv_utils.dart';
 import '../services/local_record_store.dart';
 
 /// A lightweight persisted local database for application records.
@@ -76,14 +77,15 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
           for (final record in storedRecords) {
             for (final field in _columnsFor(entry.key)) {
               if (!record.containsKey(field)) {
-                record[field] = '';
+                record[field] = switch (field) {
+                  'equipmentSelected' ||
+                  'matchingPeople' ||
+                  'principlePeople' ||
+                  'sparePartsNeeded' => <Map<String, dynamic>>[],
+                  _ => '',
+                };
                 changed = true;
               }
-            }
-            if (entry.key == 'Work Order' &&
-                !record.containsKey('sparePartsNeeded')) {
-              record['sparePartsNeeded'] = <Map<String, dynamic>>[];
-              changed = true;
             }
           }
           if (changed) {
@@ -323,6 +325,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
       'locationAddress',
       'locationDirectPhone',
       'locationAirport',
+      'equipmentSelected',
       'matchingPeople',
       'notes',
       'sparePartsNeeded',
@@ -337,52 +340,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
 
   String _escapeCsv(String value) => '"${value.replaceAll('"', '""')}"';
 
-  List<List<String>> _parseCsv(String source) {
-    final rows = <List<String>>[];
-    var row = <String>[];
-    final field = StringBuffer();
-    var quoted = false;
-    for (var index = 0; index < source.length; index++) {
-      final char = source[index];
-      if (quoted) {
-        if (char == '"') {
-          if (index + 1 < source.length && source[index + 1] == '"') {
-            field.write('"');
-            index++;
-          } else {
-            quoted = false;
-          }
-        } else {
-          field.write(char);
-        }
-      } else if (char == '"') {
-        quoted = true;
-      } else if (char == ',') {
-        row.add(field.toString());
-        field.clear();
-      } else if (char == '\n' || char == '\r') {
-        if (char == '\r' &&
-            index + 1 < source.length &&
-            source[index + 1] == '\n') {
-          index++;
-        }
-        row.add(field.toString());
-        field.clear();
-        if (row.any((cell) => cell.isNotEmpty)) rows.add(row);
-        row = <String>[];
-      } else {
-        field.write(char);
-      }
-    }
-    if (quoted) {
-      throw const FormatException('CSV contains an unclosed quoted field.');
-    }
-    if (field.length > 0 || row.isNotEmpty) {
-      row.add(field.toString());
-      if (row.any((cell) => cell.isNotEmpty)) rows.add(row);
-    }
-    return rows;
-  }
+  List<List<String>> _parseCsv(String source) => CsvUtils.parse(source);
+
+
 
   Future<void> _exportCsv(String table) async {
     try {
@@ -490,7 +450,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
               );
             }
           } else if (table == 'Work Order' &&
-              (name == 'matchingPeople' ||
+              (name == 'equipmentSelected' ||
+                  name == 'matchingPeople' ||
                   name == 'principlePeople' ||
                   name == 'sparePartsNeeded') &&
               value.isNotEmpty) {

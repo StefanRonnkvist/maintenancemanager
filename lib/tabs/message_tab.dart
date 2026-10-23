@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/local_record_store.dart';
+
 import '../models/app_tab.dart';
 import '../models/business_entry.dart';
 import '../widgets/management_tab_layout.dart';
@@ -136,6 +138,7 @@ class _MessageTabState extends State<MessageTab> {
   }
 
   final _subjectController = TextEditingController();
+  static const _messageStorageKey = 'message_records_v1';
   final _messageController = TextEditingController();
   final List<_MessageRow> _messageRows = [];
   Object? _lastHandledPrefill;
@@ -154,6 +157,7 @@ class _MessageTabState extends State<MessageTab> {
   @override
   void initState() {
     super.initState();
+    _loadMessageRows();
     final request = widget.prefillRequest;
     if (request != null) {
       _lastHandledPrefill = request;
@@ -209,6 +213,39 @@ class _MessageTabState extends State<MessageTab> {
     _principleController.text = _selectedPrinciple.join('; ');
   }
 
+  Future<void> _loadMessageRows() async {
+    try {
+      final stored = await LocalRecordStore.read(_messageStorageKey);
+      if (!mounted) return;
+      setState(() {
+        _messageRows
+          ..clear()
+          ..addAll(stored.map(_MessageRow.fromJson));
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load messages: $error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _persistMessageRows() async {
+    try {
+      await LocalRecordStore.write(
+        _messageStorageKey,
+        _messageRows.map((row) => row.toJson()).toList(),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save messages: $error')),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteMessageRow(_MessageRow row) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -229,13 +266,14 @@ class _MessageTabState extends State<MessageTab> {
     );
     if (shouldDelete == true && mounted) {
       setState(() => _messageRows.remove(row));
+      await _persistMessageRows();
     }
   }
 
   /// Records the composed message locally in this tab and opens a mailto target.
   Future<void> _sendMessage() async {
     final to = _selectedTo.join(',');
-    final cc = _selectedCc.join(',');
+    final cc = {..._selectedCc, ..._selectedPrinciple}.join(',');
     final subject = _subjectController.text.trim();
     final message = _messageController.text.trim();
 
@@ -268,6 +306,7 @@ class _MessageTabState extends State<MessageTab> {
         ),
       );
     });
+    await _persistMessageRows();
 
     try {
       final launched = await launchUrl(
@@ -703,4 +742,22 @@ class _MessageRow {
   final String cc;
   final String subject;
   final String message;
+
+  Map<String, Object?> toJson() => {
+    'business': business,
+    'location': location,
+    'to': to,
+    'cc': cc,
+    'subject': subject,
+    'message': message,
+  };
+
+  factory _MessageRow.fromJson(Map<String, dynamic> json) => _MessageRow(
+    business: json['business']?.toString() ?? '',
+    location: json['location']?.toString() ?? '',
+    to: json['to']?.toString() ?? '',
+    cc: json['cc']?.toString() ?? '',
+    subject: json['subject']?.toString() ?? '',
+    message: json['message']?.toString() ?? '',
+  );
 }

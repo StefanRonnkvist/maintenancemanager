@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/business_entry.dart';
+import '../services/csv_utils.dart';
 import '../services/local_record_store.dart';
 import '../tabs/business_tab.dart';
 import 'form_section.dart';
@@ -272,14 +273,13 @@ class _BusinessFormState extends State<BusinessForm> {
   Future<void> _loadAirports() async {
     try {
       final csv = await rootBundle.loadString('assets/airports.csv');
-      final airports = csv
-          .split(RegExp(r'\r?\n'))
+      final rows = CsvUtils.parse(csv);
+      final airports = rows
           .skip(1)
+          .where((row) => row.length >= 3)
           .map((row) {
-            final columns = row.split(',');
-            if (columns.length < 3) return null;
-            final name = columns[0].trim();
-            final code = columns[2].trim();
+            final name = row[0].trim();
+            final code = row[2].trim();
             return name.isEmpty || code.isEmpty ? null : '$name ($code)';
           })
           .whereType<String>()
@@ -351,6 +351,12 @@ class _BusinessFormState extends State<BusinessForm> {
   /// Validates fields, emits the model, then resets the form for another entry.
   void _submit() {
     if (_formKey.currentState?.validate() != true) return;
+    if (!_isPeople && _businessType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose a business type.')),
+      );
+      return;
+    }
     widget.onSubmit(
       BusinessEntry(
         name: _nameController.text.trim(),
@@ -358,7 +364,7 @@ class _BusinessFormState extends State<BusinessForm> {
         address: _addressController.text.trim(),
         directPhone: _phoneController.text.trim(),
         directPhoneExtension: _phoneExtensionController.text.trim(),
-        businessType: _isPeople ? '' : 'Customer',
+        businessType: _isPeople ? '' : _businessType!,
         cellPhone: _cellPhoneController.text.trim(),
         email: _emailController.text.trim(),
         businessName: _isPeople
