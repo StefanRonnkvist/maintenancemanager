@@ -335,6 +335,7 @@ class _MainTabPageState extends State<MainTabPage>
       ],
       bottom: TabBar(
         controller: _controller,
+        isScrollable: true,
         tabs: _tabs.map((tab) => AppTabItem(tab: tab)).toList(),
       ),
     ),

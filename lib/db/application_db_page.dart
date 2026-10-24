@@ -35,7 +35,7 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
 
   final List<_AppRecord> _records = <_AppRecord>[];
   final Map<String, List<Map<String, dynamic>>> _managedRecords = {};
-  String _selectedTable = 'Equipment';
+  String? _selectedTable;
   bool _isLoading = true;
   String? _storageError;
 
@@ -176,19 +176,21 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   }
 
   Future<void> _deleteAllSelectedTableRecords() async {
-    final records = _managedRecords[_selectedTable] ?? const [];
+    final table = _selectedTable;
+    if (table == null) return;
+    final records = _managedRecords[table] ?? const [];
     if (records.isEmpty ||
-        !await _confirmDeleteAll('the $_selectedTable table')) {
+        !await _confirmDeleteAll('the $table table')) {
       return;
     }
     try {
-      await LocalRecordStore.write(_managedStores[_selectedTable]!, []);
+      await LocalRecordStore.write(_managedStores[table]!, <Map<String, Object?>>[]);
       if (mounted) {
         setState(() {
-          _managedRecords[_selectedTable] = [];
+          _managedRecords[table] = [];
           _storageError = null;
         });
-        _showMessage('Deleted all $_selectedTable records.');
+        _showMessage('Deleted all $table records.');
       }
     } catch (error) {
       if (mounted) {
@@ -344,9 +346,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
 
 
 
-  Future<void> _exportCsv(String table) async {
+  Future<void> _exportCsv(String? table) async {
     try {
-      if (!_managedStores.containsKey(table)) {
+      if (table == null || !_managedStores.containsKey(table)) {
         throw FormatException('Unknown table: $table');
       }
       final columns = _columnsFor(table);
@@ -359,9 +361,9 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     }
   }
 
-  Future<void> _importCsv(String table) async {
+  Future<void> _importCsv(String? table) async {
     try {
-      if (!_managedStores.containsKey(table)) {
+      if (table == null || !_managedStores.containsKey(table)) {
         throw FormatException('Unknown table: $table');
       }
       final result = await FilePicker.platform.pickFiles(
@@ -534,8 +536,8 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
     }
   }
 
-  Future<void> _shareTemplate(String table, {required bool example}) async {
-    if (!_managedStores.containsKey(table)) {
+  Future<void> _shareTemplate(String? table, {required bool example}) async {
+    if (table == null || !_managedStores.containsKey(table)) {
       _showMessage('Enter a valid table name.');
       return;
     }
@@ -718,87 +720,144 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
+    final isPhoneLayout = MediaQuery.sizeOf(context).width < 600;
+    final controls = Row(
+      children: <Widget>[
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField<String>(
+            initialValue: _selectedTable ?? _managedStores.keys.first,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Table',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            items: _managedStores.keys
+                .map(
+                  (table) => DropdownMenuItem<String>(
+                    value: table,
+                    child: Text(table, overflow: TextOverflow.ellipsis),
+                  ),
+                )
+                .toList(),
+            onChanged: (table) {
+              if (table != null) setState(() => _selectedTable = table);
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          tooltip: 'Import CSV',
+          onPressed: () => _importCsv(_selectedTable),
+          icon: const Icon(Icons.file_open_outlined),
+        ),
+        IconButton(
+          tooltip: 'Export CSV',
+          onPressed: () => _exportCsv(_selectedTable),
+          icon: const Icon(Icons.file_download_outlined),
+        ),
+        IconButton(
+          tooltip: 'Share example CSV template',
+          onPressed: () => _shareTemplate(_selectedTable, example: true),
+          icon: const Icon(Icons.description_outlined),
+        ),
+        IconButton(
+          tooltip: 'Share blank CSV template',
+          onPressed: () => _shareTemplate(_selectedTable, example: false),
+          icon: const Icon(Icons.note_add_outlined),
+        ),
+        const SizedBox(width: 8),
+        FilledButton.icon(
+          onPressed: _createRecord,
+          icon: const Icon(Icons.add),
+          label: const Text('Add'),
+        ),
+        IconButton(
+          tooltip: 'Delete all records in selected table',
+          onPressed:
+              (_selectedTable != null &&
+                      (_managedRecords[_selectedTable!]?.isNotEmpty ?? false))
+                  ? _deleteAllSelectedTableRecords
+                  : null,
+          color: Theme.of(context).colorScheme.error,
+          icon: const Icon(Icons.delete_sweep_outlined),
+        ),
+        IconButton(
+          tooltip: 'Delete all application records',
+          onPressed: _records.isNotEmpty ? _deleteAllApplicationRecords : null,
+          color: Theme.of(context).colorScheme.error,
+          icon: const Icon(Icons.delete_forever_outlined),
+        ),
+      ],
+    );
+    final recordList = _selectedTable == null && _records.isEmpty
+        ? const Center(
+            child: Text('No records yet. Add a record to get started.'),
+          )
+        : ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: _records.length,
+            itemBuilder: (BuildContext context, int index) {
+              final _AppRecord record = _records[index];
+              return Card(
+                child: ListTile(
+                  title: Text(record.name),
+                  subtitle: Text(record.value),
+                  isThreeLine: record.value.contains('\n'),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit record',
+                        onPressed: () => _updateRecord(record),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete record',
+                        onPressed: () => _deleteRecord(record),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+
     return Column(
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text(
-                  'Local application records',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+          child: isPhoneLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Local application records',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: controls,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Local application records',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: controls,
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(
-                width: 180,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedTable,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Table',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  items: _managedStores.keys
-                      .map(
-                        (table) => DropdownMenuItem<String>(
-                          value: table,
-                          child: Text(table, overflow: TextOverflow.ellipsis),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (table) {
-                    if (table != null) setState(() => _selectedTable = table);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Import CSV',
-                onPressed: () => _importCsv(_selectedTable),
-                icon: const Icon(Icons.file_open_outlined),
-              ),
-              IconButton(
-                tooltip: 'Export CSV',
-                onPressed: () => _exportCsv(_selectedTable),
-                icon: const Icon(Icons.file_download_outlined),
-              ),
-              IconButton(
-                tooltip: 'Share example CSV template',
-                onPressed: () => _shareTemplate(_selectedTable, example: true),
-                icon: const Icon(Icons.description_outlined),
-              ),
-              IconButton(
-                tooltip: 'Share blank CSV template',
-                onPressed: () => _shareTemplate(_selectedTable, example: false),
-                icon: const Icon(Icons.note_add_outlined),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: _createRecord,
-                icon: const Icon(Icons.add),
-                label: const Text('Add'),
-              ),
-              IconButton(
-                tooltip: 'Delete all records in selected table',
-                onPressed:
-                    (_managedRecords[_selectedTable]?.isNotEmpty ?? false)
-                    ? _deleteAllSelectedTableRecords
-                    : null,
-                color: Theme.of(context).colorScheme.error,
-                icon: const Icon(Icons.delete_sweep_outlined),
-              ),
-              IconButton(
-                tooltip: 'Delete all application records',
-                onPressed: _records.isNotEmpty
-                    ? _deleteAllApplicationRecords
-                    : null,
-                color: Theme.of(context).colorScheme.error,
-                icon: const Icon(Icons.delete_forever_outlined),
-              ),
-            ],
-          ),
         ),
         if (_storageError != null)
           Padding(
@@ -809,39 +868,13 @@ class _ApplicationDbPageState extends State<ApplicationDbPage> {
             ),
           ),
         Expanded(
-          child: _records.isEmpty
-              ? const Center(
-                  child: Text('No records yet. Add a record to get started.'),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _records.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final _AppRecord record = _records[index];
-                    return Card(
-                      child: ListTile(
-                        title: Text(record.name),
-                        subtitle: Text(record.value),
-                        isThreeLine: record.value.contains('\n'),
-                        trailing: Wrap(
-                          spacing: 4,
-                          children: [
-                            IconButton(
-                              tooltip: 'Edit record',
-                              onPressed: () => _updateRecord(record),
-                              icon: const Icon(Icons.edit_outlined),
-                            ),
-                            IconButton(
-                              tooltip: 'Delete record',
-                              onPressed: () => _deleteRecord(record),
-                              icon: const Icon(Icons.delete_outline),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: isPhoneLayout ? 600 : MediaQuery.sizeOf(context).width,
+              child: recordList,
+            ),
+          ),
         ),
       ],
     );

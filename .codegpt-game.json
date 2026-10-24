@@ -1,0 +1,6 @@
+{
+  "engine": "generic",
+  "launch": { "cmd": "flutter", "args": ["run", "-d", "windows"] },
+  "log": { "stdout": true },
+  "sourceRoots": ["lib", "windows"]
+}
