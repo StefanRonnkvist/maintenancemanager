@@ -9,32 +9,32 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Getting started',
       icon: Icons.start_outlined,
-      content: 'Use the tabs along the top to move between Equipment, Spare Parts, Work Order, People, Business, Information, Message, Application DB, and Help. Add forms are collapsed by default; tap the form heading to expand it. Open Settings and drag items in Tab order to customize navigation; your order is saved on this device and restored after restart or rotation.',
+      content: 'Use the tabs along the top to move between Equipment, Spare Parts, Work Order, People, Business, Information, Message, Application DB, and Help. Add forms are collapsed by default; tap a form heading to expand it. Open Settings and drag items in Tab order to customize navigation; your order is saved on this device. The app opens on Application DB each time it starts.',
     ),
     _HelpSection(
       title: 'Equipment',
       icon: Icons.precision_manufacturing_outlined,
-      content: 'Enter equipment category, equipment name, business, location, and equipment details: local name and number, manufacturer, model, serial number, maintenance manual, and publisher. Add Equipment saves a row in the equipment list.',
+      content: 'Choose or enter an equipment category and name, then select a saved business and one of its locations. Add local name and number, manufacturer, model, serial number, maintenance manual, and publisher as needed. Expand any of the four optional subsections to enter additional equipment details. Add Equipment saves a row; tap a row in the sortable list to edit it.',
     ),
     _HelpSection(
       title: 'Spare Parts',
       icon: Icons.build_outlined,
-      content: 'Enter OEM and vendor part numbers and descriptions, vendor name, serial number, stock quantity, and location. Add Spare Part adds the record to the list.',
+      content: 'Enter OEM and vendor part numbers and descriptions, serial number, stock quantity, storage location, and vendor. Vendors are selected from businesses marked Vendor. Tap a saved part to edit it; matching vendor contacts are shown while editing, and selecting a contact can prefill a Message with the contact and part details.',
     ),
     _HelpSection(
       title: 'Work Order',
       icon: Icons.assignment_outlined,
-      content: 'Choose a business and one of its locations to fill in the saved address, direct phone number, and airport details. Review equipment at that location and select any equipment to include. Check the matching people and Principle-business contact lists, then choose a component category and component and add notes. Save Work Order creates a numbered local record. Tap a row to edit it, print it to PDF or a printer, or mark it complete; completed orders appear in their own list and can be reopened. Import and export work orders through Application DB → Work Order.',
+      content: 'Choose a saved business and one of its locations to populate its address, direct phone number, and airport details. Select equipment associated with that business and location, review matching people and people associated with Principle businesses, then choose a component category and component and add notes. Save Work Order creates a numbered local record. Tap a row under Saved Work Orders or Completed Work Orders to edit it, print it, or complete/reopen it. Import and export work orders through Application DB → Work Order.',
     ),
     _HelpSection(
       title: 'People and Business',
       icon: Icons.people_outline,
-      content: 'Add people with their name, phone and email, business and work location, remote-work status, and nearest airport. Add businesses by choosing Customer, Vendor, or Principle, then enter contact details, airports, and business locations. Tables show saved records and their associated locations.',
+      content: 'Add people with their name, title, phone numbers, email, business and work location, remote-work status, and airport information. Add businesses by choosing Customer, Vendor, or Principle, then enter business contact details and up to four locations with address, direct phone, and nearest airport. Saved people and businesses are available to the equipment, spare-part, work-order, and message features.',
     ),
     _HelpSection(
       title: 'Message',
       icon: Icons.message_outlined,
-      content: 'Choose a business and optional location to find people with email addresses. Select To and Cc contacts, add a subject and message, and tap Send. The app saves the composed message in the Messages list, then opens an external email app using a mailto link; it does not send the email itself. Message history is saved locally and is available for CSV import/export in Application DB → Messages. If you opened Message from a person or spare-part contact, the recipient and relevant details may already be filled in.',
+      content: 'Choose a business and optional location to find people with email addresses. Select To and Cc contacts; use Principle to choose people associated with Principle businesses. Add a subject and message, then tap Send. The app saves the composed message in the Messages list and opens an external email app using a mailto link; it does not deliver the email itself. Message history is saved locally and is available for CSV import/export in Application DB → Messages. A Message opened from a matching vendor contact on a spare-part record may have the recipient and part details prefilled.',
     ),
     _HelpSection(
       title: 'Saved data',
@@ -44,12 +44,12 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Application DB and CSV',
       icon: Icons.table_view_outlined,
-      content: 'Application DB opens first when the app starts. Use it to create, edit, and delete local key/value records, and choose Equipment, Spare Parts, People, Business, Work Order, or Messages for CSV actions. Import appends valid rows to the selected category, so check for duplicates before importing. Use an example or blank template to get the expected column headers. Exported CSV files can be saved or shared, depending on your device.',
+      content: 'Application DB opens first when the app starts. Use it to create, edit, and delete local key/value records. Choose Equipment, Spare Parts, People, Business, Work Order, or Messages for CSV actions. Imports require the matching template headers and append valid rows to the selected table, so check for duplicates before importing. Use an example or blank template to see the expected columns. Exports and templates can be saved or shared depending on your platform. The selected table also has an option to delete all of its records; this cannot be undone.',
     ),
     _HelpSection(
       title: 'Settings and Information',
       icon: Icons.settings_outlined,
-      content: 'Open Settings in the upper-right corner to choose System, Dark, or Light appearance, or drag items in Tab order to rearrange navigation. Your appearance choice and tab order are kept on this device. Information contains Contact for support questions and Submissions for available responses. Contact sends the details you enter, your question, and basic app/device diagnostics to the support service; review your message before sending sensitive information.'
+      content: 'Open Settings in the upper-right corner to choose System, Dark, or Light appearance, or drag items in Tab order to rearrange navigation. Tab order is saved on this device; the app appearance choice applies while the app is running. Information contains Contact for support questions and Submissions for available responses. Contact sends the name, return email, question, app version/package details, and basic platform/layout diagnostics you provide to the configured support service. Review the form and avoid including sensitive information.'
     ),
   ];
 

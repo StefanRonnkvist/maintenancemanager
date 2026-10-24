@@ -1,1 +1,1 @@
-Track equipment, spare parts, contacts, work orders, and maintenance records.
+Organize equipment, spare parts, contacts, work orders, and messages.

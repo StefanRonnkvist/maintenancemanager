@@ -1,16 +1,16 @@
-Organize maintenance, equipment, parts, and business contacts in one place with Maintenance Manager.
+Organize maintenance equipment, spare parts, people, businesses, work orders, and messages with Maintenance Manager.
 
 Create records, then review them in clear lists:
 
-- **Equipment** — track categories, equipment, business and location, local name and number, manufacturer, model, serial number, manual, and publisher. Add custom category/type values and up to four equipment subsections.
-- **Spare Parts** — record OEM and vendor part numbers and descriptions, serial number, stock quantity, vendor, and storage location. Select vendors from businesses marked Vendor.
-- **Work Order** — select a business and location to see its saved contact details, choose equipment at that location, review related people, add component details and notes, and save a numbered work order. Edit, print, complete, or reopen work orders.
+- **Equipment** — record an equipment category and name, saved business and location, local name and number, manufacturer, model, serial number, maintenance manual, and publisher. Add details in up to four optional subsections, then tap a row to edit it.
+- **Spare Parts** — track OEM and vendor part numbers and descriptions, serial number, stock quantity, vendor, vendor location, and storage location. Select vendors from businesses marked Vendor; matching contacts can be used to prefill a message about a part.
+- **Work Order** — select a saved business and location to populate contact details, choose equipment at that location, review matching people and Principle-business contacts, add component details and notes, and save a numbered work order. Edit, print, complete, or reopen work orders.
 - **People** — keep names, titles, phone numbers, email, business and work location, remote-work status, and nearest airport together.
-- **Business** — organize Customer, Vendor, and Principle contacts, airports, and up to four business locations.
-- **Message** — prepare an email using people from your contact list. Filter recipients by business and location, select To and Cc contacts, and open an external email app with a `mailto` link. Messages are saved locally; the app does not itself deliver email.
+- **Business** — organize Customer, Vendor, and Principle businesses with contact details and up to four locations, including address, direct phone, and nearest airport.
+- **Message** — compose an email using people from your contact list. Filter by business and location, select To and Cc contacts, and choose Principle contacts. The message is saved locally before an external email app opens with a `mailto` link; the app does not itself deliver email.
 - **Information** — contact support with a question and view available responses in Submissions.
-- **Application DB** — create, edit, and delete local key/value records. Import and export CSV for Equipment, Spare Parts, People, Business, Work Order, or Messages, and use example or blank templates. Imports append records; check for duplicates.
-- **Help** — find in-app guidance for forms, work orders, records, CSV, saved data, and settings.
-Choose System, Dark, or Light appearance and rearrange tabs in Settings. Management records, work orders, message history, tab order, and Application DB records are saved locally on your device. CSV exports are useful backups; clearing app data or uninstalling may remove local records.
+- **Application DB** — create, edit, and delete local key/value records. Import and export CSV for Equipment, Spare Parts, People, Business, Work Order, or Messages, and generate example or blank templates. Imports validate template headers and append records; check for duplicates. You can also delete all records from a selected table.
+- **Help** — get in-app guidance for records, work orders, messages, CSV tools, saved data, settings, and support.
+Choose System, Dark, or Light appearance and rearrange tabs in Settings. Equipment, parts, people, businesses, work orders, message history, and Application DB records are stored locally on your device. Tab order is also saved locally. Keep CSV exports as backups; clearing app data or uninstalling may remove local records.
 
-Contact submissions send the details you enter, your question, and basic app/device diagnostics to the configured support service. Review your message before sending.
+Contact submissions send the name, return email, question, app/package version details, and basic platform and layout diagnostics you provide to the configured support service. Review your message and avoid including sensitive information.
