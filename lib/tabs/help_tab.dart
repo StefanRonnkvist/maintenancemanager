@@ -24,7 +24,7 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Work Order',
       icon: Icons.assignment_outlined,
-      content: 'Enter a business name, location name, address, direct phone number, and nearest airport. Review matching people and the list of people associated with Principle businesses, then add notes and component details. Tap Save Work Order to save the details locally; saved records can be exported or imported from Application DB → Work Order.',
+      content: 'Choose a business and one of its locations to fill in the saved address, direct phone number, and airport details. Review equipment at that location and select any equipment to include. Check the matching people and Principle-business contact lists, then choose a component category and component and add notes. Save Work Order creates a numbered local record. Tap a row to edit it, print it to PDF or a printer, or mark it complete; completed orders appear in their own list and can be reopened. Import and export work orders through Application DB → Work Order.',
     ),
     _HelpSection(
       title: 'People and Business',
@@ -34,7 +34,7 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Message',
       icon: Icons.message_outlined,
-      content: 'Set sender name, sender email, and reply email, enter To and Cc recipients, add a subject and message, and tap Send to add a row to the in-app Messages list and open the system share/email app with a mailto link. Message history is saved locally and is available for CSV import/export in Application DB → Messages. The sender fields are for reference and are not included in the mailto link; message delivery depends on the app you choose.',
+      content: 'Choose a business and optional location to find people with email addresses. Select To and Cc contacts, add a subject and message, and tap Send. The app saves the composed message in the Messages list, then opens an external email app using a mailto link; it does not send the email itself. Message history is saved locally and is available for CSV import/export in Application DB → Messages. If you opened Message from a person or spare-part contact, the recipient and relevant details may already be filled in.',
     ),
     _HelpSection(
       title: 'Saved data',
@@ -44,12 +44,12 @@ class HelpTab extends StatelessWidget {
     _HelpSection(
       title: 'Application DB and CSV',
       icon: Icons.table_view_outlined,
-      content: 'In Application DB, enter a table name (Equipment, Spare Parts, People, Business, Work Order, or Messages) and use the import, export, or template buttons. Import CSV appends rows to that category; the file must use the matching template headers. Example and blank templates help prepare compatible files.',
+      content: 'Application DB opens first when the app starts. Use it to create, edit, and delete local key/value records, and choose Equipment, Spare Parts, People, Business, Work Order, or Messages for CSV actions. Import appends valid rows to the selected category, so check for duplicates before importing. Use an example or blank template to get the expected column headers. Exported CSV files can be saved or shared, depending on your device.',
     ),
     _HelpSection(
-      title: 'Appearance and Information',
+      title: 'Settings and Information',
       icon: Icons.settings_outlined,
-      content: 'Open Settings in the upper-right corner to choose System, Dark, or Light appearance. Information contains Contact for support questions and Submissions for viewing available responses. Contact sends the details you enter, your question, and basic app/device diagnostics to the support service.',
+      content: 'Open Settings in the upper-right corner to choose System, Dark, or Light appearance, or drag items in Tab order to rearrange navigation. Your appearance choice and tab order are kept on this device. Information contains Contact for support questions and Submissions for available responses. Contact sends the details you enter, your question, and basic app/device diagnostics to the support service; review your message before sending sensitive information.'
     ),
   ];
 

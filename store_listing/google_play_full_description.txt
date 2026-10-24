@@ -2,15 +2,15 @@ Organize maintenance, equipment, parts, and business contacts in one place with 
 
 Create records, then review them in clear lists:
 
-- **Equipment** — track categories and equipment, business and work location, local name and number, manufacturer, model, serial number, manual, and publisher. Add custom categories and equipment types.
-- **Spare Parts** — record OEM and vendor part numbers and descriptions, serial number, stock quantity, and location. Select vendors from businesses marked Vendor.
-- **Work Order** — select a business and location to review the location name, address, direct phone number, and nearest airport, then save a local work order record.
-- **People** — keep names, phone numbers, email, business and work location, remote-work status, and nearest airport together.
-- **Business** — organize Customer, Vendor, and Principle contacts, airports, and business locations.
-- **Message** — prepare an email using people from your contact list. Filter recipients by business, select To and Cc contacts, and open your email app to send. Message history is saved locally.
+- **Equipment** — track categories, equipment, business and location, local name and number, manufacturer, model, serial number, manual, and publisher. Add custom category/type values and up to four equipment subsections.
+- **Spare Parts** — record OEM and vendor part numbers and descriptions, serial number, stock quantity, vendor, and storage location. Select vendors from businesses marked Vendor.
+- **Work Order** — select a business and location to see its saved contact details, choose equipment at that location, review related people, add component details and notes, and save a numbered work order. Edit, print, complete, or reopen work orders.
+- **People** — keep names, titles, phone numbers, email, business and work location, remote-work status, and nearest airport together.
+- **Business** — organize Customer, Vendor, and Principle contacts, airports, and up to four business locations.
+- **Message** — prepare an email using people from your contact list. Filter recipients by business and location, select To and Cc contacts, and open an external email app with a `mailto` link. Messages are saved locally; the app does not itself deliver email.
 - **Information** — contact support with a question and view available responses in Submissions.
-- **Application DB** — create, edit, and delete key/value records. Import and export CSV for Equipment, Spare Parts, People, Business, Work Order, or Messages, and use example or blank templates to prepare files.
-- **Help** — find in-app guidance for forms, records, CSV, and appearance settings.
-Choose System, Dark, or Light appearance in Settings. Management records, work orders, message history, and Application DB records are saved locally on your device and reload when you reopen the app. CSV exports are useful backups; clearing app data or uninstalling may remove local records.
+- **Application DB** — create, edit, and delete local key/value records. Import and export CSV for Equipment, Spare Parts, People, Business, Work Order, or Messages, and use example or blank templates. Imports append records; check for duplicates.
+- **Help** — find in-app guidance for forms, work orders, records, CSV, saved data, and settings.
+Choose System, Dark, or Light appearance and rearrange tabs in Settings. Management records, work orders, message history, tab order, and Application DB records are saved locally on your device. CSV exports are useful backups; clearing app data or uninstalling may remove local records.
 
 Contact submissions send the details you enter, your question, and basic app/device diagnostics to the configured support service. Review your message before sending.

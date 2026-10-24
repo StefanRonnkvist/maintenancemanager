@@ -3,17 +3,17 @@ Maintenance Manager is a Flutter app for keeping maintenance equipment, spare pa
 
 ## Main tabs
 The app entry point in `lib/main.dart` launches `lib/app.dart`, which creates the primary tab navigation and shares People and Business records with dependent tabs.
-- **Equipment** — add equipment under built-in or custom categories and types. Record the associated business and location, local name and number, manufacturer, model, serial number, maintenance manual, and publisher.
-- **Spare Parts** — track OEM and vendor part numbers and descriptions, serial number, quantity in stock, and location. The vendor selector lists businesses with type Vendor.
-- **Work Order** — select a business and its location to view the location name, address, direct phone number, and nearest airport, then save a local work order record.
-- **People** — keep names, direct and cell phone numbers, email, business and location associations, remote-work status, and nearest airport.
-- **Business** — create Customer, Vendor, or Principle entries with contact details, airports, and one or more business locations.
+- **Equipment** — add equipment under built-in or custom categories and types. Record the associated business and location, local name and number, manufacturer, model, serial number, maintenance manual, publisher, and up to four equipment subsections. Tap a row to edit it.
+- **Spare Parts** — track OEM and vendor part numbers and descriptions, serial number, stock quantity, vendor, and storage location. Vendors are selected from businesses with type Vendor; tap a row to edit a part and view matching vendor contacts.
+- **Work Order** — select a business and location to see its saved address, direct phone, and airport details, then choose equipment at that location, review matching and Principle-business contacts, select a component, and add notes. Save numbered work orders locally; tap a row to edit, print to PDF/printer, or mark complete. Completed work orders can be reopened.
+- **People** — keep names, titles, direct and cell phone numbers, email, business and location associations, remote-work status, and nearest airport.
+- **Business** — create Customer, Vendor, or Principle entries with contact details, airports, and up to four business locations.
 - **Information** — Contact sends a support question; Submissions displays available responses associated with this app.
-- **Message** — compose an email from your people and business lists. Set sender details, filter contacts by business, select To and Cc recipients, and open the system share/email app with a `mailto` link. Message history is saved locally. Sender fields are for reference and are not included in that link; the app does not itself deliver email.
-- **Application DB** — create, edit, and delete local key/value records. Choose Equipment, Spare Parts, People, Business, Work Order, or Messages to import or export that category's CSV records, or save an example or blank CSV template. Imports append records to the selected category.
-- **Help** — in-app guidance for using the tabs, managing records, CSV workflows, and appearance settings.
+- **Message** — compose an email using people in your contacts. Filter recipients by business and location, select To and Cc recipients (including Principle contacts), and open an external email app with a `mailto` link. Message history is saved locally. Sender details are for reference and are not included in that link; the app does not itself deliver email. Selecting a person from a spare-part record can prefill a message.
+- **Application DB** — opens when the app starts. Create, edit, and delete local key/value records. Choose Equipment, Spare Parts, People, Business, Work Order, or Messages to import/export CSV records, or generate an example or blank template. Imports append valid rows, so check for duplicates.
+- **Help** — expandable in-app guidance for using the tabs, work orders, CSV workflows, local data, and settings.
 
-Use **Settings → Tab order** to drag tabs into your preferred order. Your tab order is saved on the device and restored when you reopen the app or rotate the device.
+Use **Settings → Tab order** to drag tabs into your preferred order. Your tab order and appearance choice are saved on the device. The app starts on Application DB each time it opens.
 
 ## Data and privacy
 Equipment, spare parts, people, business, work orders, message history, and Application DB records are stored locally on the device. Clearing app data or uninstalling may remove these records; keep CSV exports as backups. Message hands a `mailto` link to the system share/email app, and delivery depends on the app you choose. Contact submissions send the details you enter, your question, and basic app/device diagnostics to the configured support service. Review the Contact form before sending sensitive information.
@@ -37,7 +37,7 @@ Google Play descriptions are maintained in `store_listing/`:
 - `google_play_full_description.txt` (4,000-character field limit)
 
 ## Version and platforms
-The app version is `0.1.23+24` (from `pubspec.yaml`). Configured release tasks build for Android, Web, and Windows; the Windows workflow also produces an MSIX package.
+The app version is `0.1.54+55` (from `pubspec.yaml`). Configured release tasks build for Android, Web, and Windows; the Windows workflow also produces an MSIX package.
 
 ## Development
 Install Flutter, then run `flutter pub get` and `flutter run`. Run `flutter analyze` to check the code. To audit documentation against the app, run:
