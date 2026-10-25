@@ -1,4 +1,4 @@
-package com.example.maintenancemanager
+package com.stefanronnkvist.maintenancemanager
 
 import io.flutter.embedding.android.FlutterActivity
 
