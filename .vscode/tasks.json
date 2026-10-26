@@ -220,7 +220,6 @@
     },
     {
       "label": "Git: Commit and Push All",
-      "detail": "Stages all changes, commits with the prompted message, then pushes the current branch.",
       "type": "shell",
       "command": "pwsh",
       "args": [
@@ -230,22 +229,13 @@
         "-File",
         "scripts/git-commit-push.ps1",
         "-Message",
-        "${input:gitCommitMessage}"
+        "Update project"
       ],
       "presentation": {
         "reveal": "always",
-        "panel": "shared",
-        "clear": true
- },
+        "panel": "shared"
+      },
       "problemMatcher": []
-    }
-  ],
-  "inputs": [
-    {
-      "id": "gitCommitMessage",
-      "type": "promptString",
-      "description": "Commit message",
-      "default": "Update project"
     }
   ]
 }

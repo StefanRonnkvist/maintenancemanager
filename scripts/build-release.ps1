@@ -4,7 +4,6 @@ param(
     [string]$Target
 )
 
-# Fail fast on invalid values and external build failures.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -25,12 +24,10 @@ if ($line -notmatch '^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)\s*$') {
     throw 'Expected version format x.y.z+n in pubspec.yaml'
 }
 
-# Derive artifact versions from pubspec to keep platform outputs aligned.
 $buildName = $Matches[1]
 $buildNumber = $Matches[2]
 $msixVersion = "$buildName.$buildNumber"
 
-# Build only the explicitly requested release artifact.
 switch ($Target) {
     'apk' {
         flutter build apk --release --build-name $buildName --build-number $buildNumber

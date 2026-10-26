@@ -16,17 +16,19 @@ function Invoke-Git([string[]]$Arguments) {
 }
 
 Invoke-Git -Arguments @('rev-parse', '--is-inside-work-tree')
+# Stage every tracked and untracked, non-ignored file in the repository.
 Invoke-Git -Arguments @('add', '--all')
 
-# Fail clearly without creating an empty commit when the working tree is clean.
-& git diff --cached --quiet
-if ($LASTEXITCODE -eq 0) {
-    Write-Host 'No staged changes to commit; nothing was pushed.'
-    exit 0
-}
-if ($LASTEXITCODE -ne 1) {
-    throw "Unable to inspect staged changes (git diff --cached --quiet exited $LASTEXITCODE)"
-}
-
+# Commit every staged and working-tree change; do not limit the commit to selected paths.
 Invoke-Git -Arguments @('commit', '-m', $Message)
-Invoke-Git -Arguments @('push')
+# Push the current branch and its upstream; set upstream automatically if absent.
+$branch = (& git branch --show-current).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($branch)) {
+    throw 'Unable to determine the current Git branch.'
+}
+$upstream = & git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Invoke-Git -Arguments @('push')
+} else {
+    Invoke-Git -Arguments @('push', '--set-upstream', 'origin', $branch)
+}

@@ -1,66 +1,62 @@
-[CmdletBinding()]
-param(
-  [switch]$RunPubGet
-)
+$ErrorActionPreference = "SilentlyContinue"
 
-$ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
-Set-Location $root
-# Kill only this checkout's Gradle daemons. Never stop a Gradle invocation
-# that could currently be performing a build.
-$gradleProcesses = @()
-if (Get-Command Get-CimInstance -ErrorAction SilentlyContinue) {
-  $gradleProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" -ErrorAction SilentlyContinue |
-    Where-Object {
-      $_.CommandLine -match 'org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon' -and
-      $_.CommandLine -match [regex]::Escape($root)
-    })
-}
-foreach ($process in $gradleProcesses) {
-  Write-Host "Stopping this checkout's Gradle daemon (PID $($process.ProcessId)) to release Gradle cache locks"
-  Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$projectName = Split-Path -Leaf $projectRoot
+$safeProjectName = ($projectName -replace '[^A-Za-z0-9._-]', '_')
+if ([string]::IsNullOrWhiteSpace($safeProjectName)) {
+    $safeProjectName = 'app'
 }
 
-# Clear project-local Gradle lock/cache metadata across versions without
-# removing downloaded dependencies or other build outputs.
-$gradleMetadataRoot = Join-Path $root 'android/.gradle'
-if (Test-Path $gradleMetadataRoot) {
-  $metadataPaths = @(Get-ChildItem -Path $gradleMetadataRoot -Directory -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -in @('buildOutputCleanup', 'fileHashes', 'checksums', 'executionHistory') -or $_.Name -match '^\d+(\.\d+)+$' } |
-    ForEach-Object {
-      if ($_.Name -match '^\d+(\.\d+)+$') {
-        Get-ChildItem -Path $_.FullName -Directory -ErrorAction SilentlyContinue |
-          Where-Object { $_.Name -in @('fileHashes', 'checksums', 'executionHistory') }
-      } else {
-        $_
-      }
-    } | Select-Object -ExpandProperty FullName -Unique)
+function Remove-PathRobust {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [int]$MaxAttempts = 5
+    )
 
-  foreach ($path in $metadataPaths) {
-    attrib -R $path /S /D | Out-Null
-    Remove-Item $path -Recurse -Force
-    Write-Host "Reset Gradle lock/cache state: $path"
-  }
-} else {
-  Write-Host 'Android Gradle metadata directory not found; nothing to reset.'
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        if (Test-Path $Path) {
+            attrib -R "$Path\*" /S /D 2>$null
+        }
+
+        try {
+            Remove-Item -Recurse -Force $Path -ErrorAction Stop
+        }
+        catch {
+            # Try cmd fallback because it can sometimes remove paths PowerShell cannot.
+            cmd /c "rmdir /s /q \"$Path\"" | Out-Null
+        }
+
+        if (-not (Test-Path $Path)) {
+            return
+        }
+
+        Start-Sleep -Milliseconds (250 * $attempt)
+    }
+
+    Write-Warning "Failed to fully remove path after retries: $Path"
 }
 
-$appleEphemeralPaths = @(
-  'ios/Flutter/ephemeral/Packages',
-  'macos/Flutter/ephemeral/Packages'
-)
-foreach ($path in $appleEphemeralPaths) {
-  if (Test-Path $path) {
-    attrib -R $path /S /D | Out-Null
-    Remove-Item $path -Recurse -Force
-    Write-Host "Removed stale Flutter ephemeral package cache: $path"
-  }
-}
+Get-Process aapt2, dart, flutter, java, javaw, gradle, kotlin -ErrorAction SilentlyContinue |
+    Stop-Process -Force -ErrorAction SilentlyContinue
 
-if ($RunPubGet) {
-  Write-Host 'Running: flutter pub get'
-  flutter pub get
-  if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
-  }
-}
+Remove-PathRobust "build\app\outputs\bundle\release"
+Remove-PathRobust "build\app\outputs\flutter-apk"
+Remove-PathRobust "build\app\outputs\apk\release"
+Remove-PathRobust "build\app\intermediates"
+Remove-PathRobust "windows\flutter\ephemeral\.plugin_symlinks"
+
+Remove-PathRobust ".android_build\app\outputs\bundle\release"
+Remove-PathRobust ".android_build\app\outputs\flutter-apk"
+Remove-PathRobust ".android_build\app\outputs\apk\release"
+Remove-PathRobust ".android_build\app\intermediates"
+
+$androidBuildRoot = Join-Path $env:LOCALAPPDATA "Temp\$safeProjectName`_android_build"
+Remove-PathRobust (Join-Path $androidBuildRoot "app\outputs\bundle\release")
+Remove-PathRobust (Join-Path $androidBuildRoot "app\outputs\flutter-apk")
+Remove-PathRobust (Join-Path $androidBuildRoot "app\outputs\apk\release")
+Remove-PathRobust (Join-Path $androidBuildRoot "app\intermediates")

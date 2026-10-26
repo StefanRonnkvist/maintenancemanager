@@ -7,7 +7,6 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-# These generated plugin folders can be recreated by Flutter's package resolution.
 $targets = @(
   'ios\Flutter\ephemeral\Packages',
   'macos\Flutter\ephemeral\Packages'
@@ -23,7 +22,6 @@ foreach ($target in $targets) {
   }
 }
 
-# Make dependency resolution optional for callers that only need cleanup.
 if ($RunPubGet) {
   Write-Host 'Running: flutter pub get'
   flutter pub get
