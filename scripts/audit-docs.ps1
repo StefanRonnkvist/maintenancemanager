@@ -5,7 +5,7 @@ param(
 # Audits the user-facing documentation against the app it describes:
 #   store_listing/google_play_short_description.txt
 #   store_listing/google_play_full_description.txt
-#   lib/features/world_map/presentation/help_panel.dart  (the in-app Help tab)
+#   lib/tabs/help_tab.dart  (the in-app Help tab)
 #   README.md
 #
 # The facts are read out of the source so the docs can never quietly drift from
@@ -32,15 +32,15 @@ $pubspecPath = Get-RequiredFile 'pubspec.yaml'
 $readmePath = Get-RequiredFile 'README.md'
 $shortPath = Get-RequiredFile 'store_listing/google_play_short_description.txt'
 $fullPath = Get-RequiredFile 'store_listing/google_play_full_description.txt'
-$helpPath = Get-RequiredFile 'lib/features/world_map/presentation/help_panel.dart'
-$controlTabsPath = Get-RequiredFile 'lib/features/world_map/presentation/map_control_tabs.dart'
+$helpPath = Get-RequiredFile 'lib/tabs/help_tab.dart'
+$appTabsPath = Get-RequiredFile 'lib/models/app_tab.dart'
 
 $pubspec = Get-Content -Path $pubspecPath -Raw
 $readme = Get-Content -Path $readmePath -Raw
 $short = Get-Content -Path $shortPath -Raw
 $full = Get-Content -Path $fullPath -Raw
 $help = Get-Content -Path $helpPath -Raw
-$controlTabs = Get-Content -Path $controlTabsPath -Raw
+$appTabDefinitions = Get-Content -Path $appTabsPath -Raw
 
 $failures = New-Object System.Collections.Generic.List[string]
 $checks = New-Object System.Collections.Generic.List[string]
@@ -61,30 +61,12 @@ if ($pubspec -match '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+\+[0-9]+)\s*$') {
     throw 'Could not read the version from pubspec.yaml'
 }
 
-# The top-level navigation tabs are the Tab(text/Text) labels declared in the
-# control tab bar. The settings gear opens a menu rather than a tab, so it is
-# not one of them.
-$tabBlock = [regex]::Match(
-    $controlTabs,
-    "desktop-navigation'.*?tabs:\s*const\s*\[(?<tabs>.*?)\]\s*,?\s*\);",
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $tabBlock.Success) {
-    throw 'Could not read the control tab bar from map_control_tabs.dart'
-}
-$appTabs = [regex]::Matches($tabBlock.Groups['tabs'].Value, "Text\('(?<label>[^']+)'\)") |
-    ForEach-Object { $_.Groups['label'].Value }
-
-$subBlock = [regex]::Match(
-    $controlTabs,
-    "map-sub-tabs'\).*?tabs:\s*const\s*\[(?<tabs>.*?)\]\s*,?\s*\);",
-    [System.Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $subBlock.Success) {
-    throw 'Could not read the map sub-tab bar from map_control_tabs.dart'
-}
-$appSubTabs = [regex]::Matches($subBlock.Groups['tabs'].Value, "Tab\(text:\s*'(?<label>[^']+)'\)") |
-    ForEach-Object { $_.Groups['label'].Value }
+# Navigation labels are mapped from the AppTab enum's presentation extension.
+# Settings is an action in the app bar rather than a navigation tab.
+$appTabs = [regex]::Matches(
+    $appTabDefinitions,
+    "AppTab\.\w+\s*=>\s*'(?<label>[^']+)'"
+) | ForEach-Object { $_.Groups['label'].Value }
 
 # --- 1. Every navigation tab is documented in the README ---------------------
 
@@ -114,25 +96,23 @@ $storeDetail = if ($missingInStore.Count -eq 0) {
 }
 Add-Check -name 'Store listing names every tab' -passed ($missingInStore.Count -eq 0) -detail $storeDetail
 
-# --- 3. The map sub-tabs are documented --------------------------------------
-
-$missingSubTabs = @($appSubTabs | Where-Object { $readme -notmatch [regex]::Escape($_) })
-$subTabDetail = if ($missingSubTabs.Count -eq 0) {
-    "all $($appSubTabs.Count) sub-tabs are described"
-} else {
-    "missing: $($missingSubTabs -join ', ')"
-}
-Add-Check -name 'README documents every map sub-tab' -passed ($missingSubTabs.Count -eq 0) -detail $subTabDetail
-
-# --- 4. The Help tab covers every navigation tab -----------------------------
+# --- 3. Help guidance covers all navigation topics ----------------------------
 
 $helpSectionTitles = [regex]::Matches($help, "title:\s*'(?<title>[^']+)'") |
     ForEach-Object { $_.Groups['title'].Value }
-Add-Check -name 'Help tab has guidance sections' -passed ($helpSectionTitles.Count -ge 8) -detail (
-    "$($helpSectionTitles.Count) sections: $($helpSectionTitles -join '; ')"
-)
+$missingHelpTopics = @($appTabs | Where-Object {
+    $tab = $_
+    $help -notmatch [regex]::Escape($tab) -and
+    -not ($tab -eq 'People' -and $help -match 'People and Business')
+})
+$helpDetail = if ($missingHelpTopics.Count -eq 0) {
+    "help text covers all $($appTabs.Count) tabs; $($helpSectionTitles.Count) expandable sections"
+} else {
+    "missing help topics: $($missingHelpTopics -join ', ')"
+}
+Add-Check -name 'Help tab covers every navigation topic' -passed ($missingHelpTopics.Count -eq 0) -detail $helpDetail
 
-# --- 5. The README names the store listing folder and the version ------------
+# --- 4. The README names the store listing folder and the version ------------
 
 Add-Check -name 'README points at the store listing copy' -passed ($readme -match 'store_listing/') `
     -detail 'README should name the store_listing/ folder'
@@ -198,7 +178,7 @@ if (-not (Test-Path $reportDirectory)) {
     New-Item -ItemType Directory -Path $reportDirectory -Force | Out-Null
 }
 $report = @(
-    "Airline Investor documentation audit"
+    "Maintenance Manager documentation audit"
     "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     "App version: $appVersion"
     ''

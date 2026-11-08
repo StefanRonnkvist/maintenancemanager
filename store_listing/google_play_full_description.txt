@@ -1,17 +1,17 @@
-Keep maintenance equipment, spare parts, people, businesses, work orders, and email messages organized in Maintenance Manager.
+Organize equipment, spare parts, people, businesses, work orders, and email compositions with Maintenance Manager.
 
 Create and update records in focused lists:
 
-- **Equipment** — record a category and name, saved business and location, local name and number, manufacturer, model, serial number, maintenance manual, and publisher. Add details in up to four optional subsections, then tap a row to edit it.
-- **Spare Parts** — track OEM and vendor part numbers and descriptions, serial number, stock quantity, vendor, vendor location, and storage location. Choose vendors from businesses marked Vendor; open a part and select a matching vendor contact to prefill a message with the recipient and part details.
-- **Work Order** — select a saved business and location to fill in its contact details, choose equipment at that location, review matching people and Principle-business contacts, add component details and notes, and save a numbered work order. Edit, print, complete, or reopen work orders.
-- **People** — keep names, titles, phone numbers, email, business and work location, remote-work status, and nearest airport together.
-- **Business** — organize Customer, Vendor, and Principle businesses with contact details and up to four locations, including address, direct phone, and nearest airport.
-- **Message** — compose an email using people from your contact list. Filter recipients by business and location, select To and Cc contacts, and choose Principle contacts separately. The composition is saved locally before an external email app opens with a `mailto` link; Maintenance Manager does not send or confirm delivery.
+- **Equipment** — choose a category and name from available lists or enter your own. Associate equipment with a saved business and location, track local name and number, manufacturer, model, serial number, maintenance manual, publisher, and add details in up to four optional subsections. Tap a row to edit.
+- **Spare Parts** — track OEM and vendor part numbers and descriptions, serial numbers, stock quantity, vendor, vendor location, and storage location. Choose vendors and locations from saved Vendor businesses; while editing a part, select a matching contact to prefill an email with the recipient and part details.
+- **Work Order** — select a saved business and location to view its address, direct phone, and nearest airport. Choose equipment at that location, review matching people and Principle-business contacts, add component details and notes, and save a numbered work order. Edit, print, complete, or reopen work orders.
+- **People** — keep each person’s name, title, address, direct phone and extension, cell phone, email, nearest airport, and business/location association. Mark remote workers where applicable.
+- **Business** — organize Customer, Vendor, and Principle businesses with an address, direct phone, nearest airport, and up to four locations with their own contact details. Add airports to the selectable list when needed.
+- **Message** — compose email using people with email addresses in your contact list. Filter To and Cc recipients by business and location; select Principle contacts separately, and they are added to Cc. The composition is saved locally before an external email app opens with a `mailto` link. Maintenance Manager does not send or confirm delivery. Tap a saved message to delete it.
 - **Information** — contact support with a question and view available responses in Submissions.
 - **Application DB** — create, edit, and delete local key/value records. Import and export CSV for Equipment, Spare Parts, People, Business, Work Order, or Messages, and generate example or blank templates. Imports require the selected table’s expected headers and append valid records; check for duplicates. Delete all records in a selected table or all Application DB records when needed.
-- **Help** — find guidance for records, work orders, messages, CSV tools, saved data, settings, and support.
+- **Help** — find practical guidance for records, work orders, messages, CSV tools, saved data, settings, and support.
 
-Choose System, Dark, or Light appearance and rearrange tabs in Settings. The app opens on Application DB; your tab order is saved on the device, while appearance resets to Dark when the app restarts. Equipment, parts, people, businesses, work orders, message history, and Application DB records are stored locally. Keep CSV exports as backups because clearing app data or uninstalling may remove these records.
+Choose System, Dark, or Light appearance and rearrange tabs in Settings. The app opens on Application DB in Dark appearance. Your tab order is saved on the device; appearance resets to Dark when the app restarts. Equipment, parts, people, businesses, work orders, message history, and Application DB records are stored locally. Keep CSV exports as backups because clearing app data or uninstalling may remove these records.
 
-Contact submissions send the name, return email, question, app/package version and build details, and platform and screen-layout diagnostics to the configured support service. Review your message and avoid including sensitive information.
+Contact submissions send your name, return email, question, app/package version and build details, and platform and screen-layout diagnostics to the configured support service. Review your message and avoid including sensitive information.

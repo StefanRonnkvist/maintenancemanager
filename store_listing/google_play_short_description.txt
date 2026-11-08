@@ -1,1 +1,1 @@
-Manage maintenance equipment, parts, contacts, work orders, and email.
+Organize equipment, spare parts, contacts, work orders, and email locally.

@@ -2,7 +2,7 @@ name: maintenancemanager
 # Private Flutter app for organizing maintenance inventory and contacts.
 description: "Maintenance records for equipment, spare parts, people, and businesses."
 publish_to: 'none'
-version: 0.1.68+69
+version: 0.1.69+70
 
 environment:
   sdk: ^3.13.4
@@ -35,4 +35,4 @@ flutter:
   assets:
     - assets/
 msix_config:
-  msix_version: 0.1.68.69
+  msix_version: 0.1.69.70
