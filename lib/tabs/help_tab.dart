@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// In-app reference guide; each topic is expandable to keep the page compact.
 class HelpTab extends StatelessWidget {

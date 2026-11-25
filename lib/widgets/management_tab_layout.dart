@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Common responsive frame for a management form and its records section.
 class ManagementTabLayout extends StatelessWidget {

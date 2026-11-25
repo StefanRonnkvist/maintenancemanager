@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// DataTable with sortable columns and independent per-column filters.
 class SortableDataTable extends StatefulWidget {

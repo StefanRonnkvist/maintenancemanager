@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Ordered top-level app pages; AppTab.values must match MainTabPage's children.
 enum AppTab {
